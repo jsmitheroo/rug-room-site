@@ -437,7 +437,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .mcoin.on{border-color:rgba(255,79,163,.6);background:rgba(255,79,163,.12)}.mcoin b{font-size:12.5px}.mcoin>span:not(.mce){font:700 11.5px var(--f-mono)}
 .mcoin svg{grid-column:1/-1;width:100%;height:22px}.mcoin small{grid-column:1/-1;font-size:10.5px;color:var(--muted);line-height:1.3}
 .stylebox{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:rgba(20,24,40,.8)}
-.srow{display:flex;align-items:center;gap:10px}.srow>span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);width:44px;flex:none}
+.srow{display:flex;align-items:center;gap:10px}.srow>span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);width:64px;flex:none}
+.swc.rgbsw{background:conic-gradient(#ff4545,#ffc93d,#39ff88,#4fe0ff,#3d6bff,#b06bff,#ff4fa3,#ff4545)}
+.swc.pick{position:relative;overflow:hidden;display:inline-grid;place-items:center}.swc.pick::after{content:'+';color:#fff;font:700 15px var(--f-mono);text-shadow:0 0 3px #000}.swc.pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:0;padding:0}
 .sw8{display:flex;gap:6px;flex-wrap:wrap}.swc{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.15);cursor:pointer;padding:0}.swc.on{border-color:#fff}
 .devnav{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;flex:none}
 .devnav button{flex:none;font:600 11.5px var(--f-ui);letter-spacing:.06em;text-transform:uppercase;padding:6px 11px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted);cursor:pointer}
@@ -689,12 +691,12 @@ const TYPES={
   airdrop:{label:'Airdrop farmers',color:'#8b93ad'},
 };
 const SHOP=[
-  {k:'plant',name:'Houseplant',price:400,tiers:['Monstera','Fiddle-leaf fig','Indoor palm','Bonsai garden','Living wall'],p:t=>'Buy slippage −'+(8*t)+'%',desc:'Greenery by the window. A calm trader gets better fills.'},
+  {k:'plant',name:'Houseplant',price:400,tiers:['Monstera','Fiddle-leaf fig','Indoor palm','Bonsai garden','Living wall'],p:t=>'Deeper liquidity +'+(6*t)+'%',desc:'Greenery by the window. A calm trader gets better fills.'},
   {k:'beanbag',name:'Bean bag',price:600,tiers:['Teal','Velvet purple','Hot pink','Gold leather','Black diamond'],p:t=>'Rug insurance: '+(6*t)+'% back when you get rugged',desc:'Somewhere soft to land when a coin goes to zero.'},
-  {k:'fridge',name:'Energy drink fridge',price:1000,tiers:['Mini fridge','Glass door','Neon cooler','Smart fridge','Champagne vault'],p:t=>'Sniper: +'+(4*t)+'% tokens on coins under 5 minutes old',desc:'Caffeine for the first-block snipes.'},
-  {k:'led',name:'LED desk strip',price:1200,tiers:['Purple','Cyan','Sunset','Matrix green','Rainbow'],p:t=>'+'+(3*t)+'% tokens on every buy',desc:'Underglow on the desk. Better entries, somehow.'},
-  {k:'monitor2',name:'Second monitor',price:1500,tiers:['1080p','1440p','4K','OLED','Ultrawide'],p:t=>'Sell slippage −'+(8*t)+'%',desc:'A live trade feed so you time your exits.'},
-  {k:'vinyl',name:'Record player',price:2000,tiers:['Thrift deck','Hi-fi deck','DJ deck','Vintage reel','Studio rig'],p:t=>'Coin sell taxes −'+(10*t)+'%',desc:'Lofi on the shelf. Diamond hands, cheaper exits.'},
+  {k:'fridge',name:'Energy drink fridge',price:1000,tiers:['Mini fridge','Glass door','Neon cooler','Smart fridge','Champagne vault'],p:t=>'Sniper: +'+(4*t)+'% extra profit on coins you bought under 5 minutes old',desc:'Caffeine for the first-block snipes.'},
+  {k:'led',name:'LED desk strip',price:1200,tiers:['Purple','Cyan','Sunset','Matrix green','Rainbow'],p:t=>'+'+(3*t)+'% extra profit on winning trades',desc:'Underglow on the desk. Better entries, somehow.'},
+  {k:'monitor2',name:'Second monitor',price:1500,tiers:['1080p','1440p','4K','OLED','Ultrawide'],p:t=>'Deeper liquidity +'+(6*t)+'%',desc:'A live trade feed so you time your exits.'},
+  {k:'vinyl',name:'Record player',price:2000,tiers:['Thrift deck','Hi-fi deck','DJ deck','Vintage reel','Studio rig'],p:t=>'+'+(2*t)+'% extra profit on winning sells',desc:'Lofi on the shelf. Diamond hands, sweeter exits.'},
   {k:'lava',name:'Lava lamp',price:2500,tiers:['Orange','Blue','Green','Pink','Gold'],p:t=>'Coins you hold climb faster toward graduation',desc:'Blobs on the desk. Good vibes for your bags.'},
   {k:'neon',name:'Neon ticker sign',price:3000,tiers:['Pink','Cyan','Purple','Gold','Rainbow'],p:t=>'Your buys spark +'+(2*t)+'% momentum',desc:'Your ticker in neon. When you ape, others follow.'},
   {k:'monitor3',name:'Third monitor',price:6000,tiers:['Basic','Curved','Dual-feed','Trading wall','Command centre'],p:t=>'Rug radar: '+(15*t)+'% chance to get warned before a rug',desc:'A dashboard that watches dev wallets for you.'},
@@ -1304,8 +1306,12 @@ function buyItem(k){
 function itemSpent(it){let v=0;for(let i=1;i<=tierOf(it.k);i++) v+=priceFor(it,i);return v}
 const WALLS=[['Lofi purple','#2b2646'],['Midnight','#1c2333'],['Charcoal','#2a2b30'],['Forest','#1f3329'],['Burgundy','#3a1f28'],['Sand','#5a4a3c'],['Ice','#3c4a5c']];
 const FLOORS=[['Dark oak','wood'],['Light oak','light'],['Concrete','concrete'],['Black','black']];
-const NEONS=[['Pink','#ff4fa3'],['Cyan','#4fe0ff'],['Purple','#b06bff'],['Gold','#ffc93d'],['Green','#39ff88'],['Red','#ff4545']];
+const NEONS=[['Pink','#ff4fa3'],['Cyan','#4fe0ff'],['Purple','#b06bff'],['Gold','#ffc93d'],['Green','#39ff88'],['Red','#ff4545'],['Blue','#3d6bff'],['White','#f4f1ff']];
+const SKIRTS=[['Default','#1a1630'],['Black','#0e0e12'],['White','#eeeae2'],['Oak','#a77b52'],['Walnut','#5a3a26'],['Grey','#6b6d76'],['Gold','#c9a14a'],['Pink','#ff7ab8']];
+const TRIMS=[['Default','#3a3458'],['Black','#141418'],['White','#f0ede6'],['Brass','#b8913f'],['Chrome','#c9ccd6'],['Teal','#26a69a'],['Rose','#d77a8f']];
+const DESKS=[['Walnut','#3b2a24'],['Oak','#b9936a'],['White','#ece8e1'],['Black','#18181d'],['Grey','#5e6170'],['Pink','#e58fb7'],['Mint','#8ee6b8']];
 function custom(){if(!G.custom||typeof G.custom!=='object') G.custom={};return G.custom}
+function swatch(k,list,def){const cu=custom();return list.map(([n,c])=>`<button class="swc ${(cu[k]||def)===c?'on':''}" style="background:${c}" title="${n}" data-act="style" data-id="${k}" data-v="${c}"></button>`).join('')}
 function setStyle(kind,v){custom()[kind]=v;save();Room.apply();renderRoomShop()}
 function renderRoomShop(){
   const n=SHOP.filter(x=>own(x.k)).length, maxed=SHOP.filter(x=>tierOf(x.k)>=maxT(x)).length, val=SHOP.reduce((a,x)=>a+itemSpent(x),0);
@@ -1316,8 +1322,12 @@ function renderRoomShop(){
   h+=`<div class="sec">Style</div><div class="stylebox">
     <div class="srow"><span>Walls</span><div class="sw8">${WALLS.map(([n,c])=>`<button class="swc ${(cu.wall||'#2b2646')===c?'on':''}" style="background:${c}" title="${n}" data-act="style" data-id="wall" data-v="${c}"></button>`).join('')}</div></div>
     <div class="srow"><span>Floor</span><div class="sw8">${FLOORS.map(([n,k])=>`<button class="chipb ${(cu.floor||'wood')===k?'on':''}" data-act="style" data-id="floor" data-v="${k}">${n}</button>`).join('')}</div></div>
-    <div class="srow"><span>Neon</span><div class="sw8">${NEONS.map(([n,c])=>`<button class="swc ${(cu.neon||'')===c?'on':''}" style="background:${c};box-shadow:0 0 8px ${c}" title="${n}" data-act="style" data-id="neon" data-v="${c}"></button>`).join('')}<button class="chipb ${!cu.neon?'on':''}" data-act="style" data-id="neon" data-v="">Auto</button></div></div>
-  </div><div class="caught">Wall and floor colours apply to the bedroom; the penthouse keeps its own finishes. Neon applies everywhere.</div>`;
+    <div class="srow"><span>Skirting</span><div class="sw8">${swatch('skirt',SKIRTS,'#1a1630')}</div></div>
+    <div class="srow"><span>Trim</span><div class="sw8">${swatch('trim',TRIMS,'#3a3458')}</div></div>
+    <div class="srow"><span>Desk</span><div class="sw8">${swatch('desk',DESKS,'')}<button class="chipb ${!cu.desk?'on':''}" data-act="style" data-id="desk" data-v="">Auto</button></div></div>
+    <div class="srow"><span>Neon</span><div class="sw8">${NEONS.map(([n,c])=>`<button class="swc ${(cu.neon||'')===c?'on':''}" style="background:${c};box-shadow:0 0 8px ${c}" title="${n}" data-act="style" data-id="neon" data-v="${c}"></button>`).join('')}<button class="swc rgbsw ${cu.neon==='rgb'?'on':''}" title="RGB cycle" data-act="style" data-id="neon" data-v="rgb"></button><label class="swc pick ${cu.neon&&cu.neon[0]==='#'&&!NEONS.some(x=>x[1]===cu.neon)?'on':''}" title="Pick any colour" style="background:${cu.neon&&cu.neon[0]==='#'&&!NEONS.some(x=>x[1]===cu.neon)?cu.neon:'#222'}"><input type="color" id="neonPick" value="${cu.neon&&cu.neon[0]==='#'?cu.neon:'#ff4fa3'}"></label><button class="chipb ${!cu.neon?'on':''}" data-act="style" data-id="neon" data-v="">Auto</button></div></div>
+    <div class="srow"><span>Strips</span><div class="sw8"><button class="chipb ${cu.strips!=='off'?'on':''}" data-act="style" data-id="strips" data-v="">On</button><button class="chipb ${cu.strips==='off'?'on':''}" data-act="style" data-id="strips" data-v="off">Off</button></div></div>
+  </div><div class="caught">Wall and floor colours apply to the bedroom; the penthouse keeps its own finishes. Skirting, trim, desk and neon apply everywhere. Neon colours every light strip in the room, including the sign, desk LEDs and floor glow. Auto uses your upgrade colours.</div>`;
   h+=`<div class="sec">Upgrades</div>`;
   h+=SHOP.map(it=>{const mt=maxT(it), t=tierOf(it.k), next=t<mt?priceFor(it,t+1):0, can=t<mt&&G.cash>=next;
     const pips='<span class="pips">'+Array.from({length:mt},(_,i)=>`<i class="${i<t?'on':''}"></i>`).join('')+'</span>';
@@ -1541,7 +1551,8 @@ function doRug(r,quiet){
 }
 function liveCandle(r){if(!r.c||!r.c.length) return;const k=r.c[r.c.length-1];k.c=r.mc;if(r.mc>k.h) k.h=r.mc;if(r.mc<k.l) k.l=r.mc}
 function logTrade(side,r,usd,pnl){if(!Array.isArray(G.trades)) G.trades=[];G.trades.unshift({at:Date.now(),side,id:r.id,tk:r.ticker,nm:r.name,m:r.mascot,usd:Math.round(usd),pnl:pnl==null?null:Math.round(pnl),mc:Math.round(r.mc)});if(G.trades.length>150) G.trades.length=150}
-function bagValue(){return TR.coins.reduce((a,r)=>a+(r.alive&&r.units>0?r.units*r.mc:0),0)}
+function posVal(r){return r.alive&&r.units>0?poolSell(r,r.units).out:0}
+function bagValue(){return TR.coins.reduce((a,r)=>a+posVal(r),0)}
 function candlesFromHist(r){const c=[];for(let i=1;i<r.hist.length;i++){const o=r.hist[i-1],cl=r.hist[i],w=Math.abs(gauss())*(r.grad?.02:.045);c.push({o,c:cl,h:Math.max(o,cl)*(1+w),l:Math.min(o,cl)*(1-w*.8)})}return c}
 function normCoins(){TR.coins.forEach(r=>{if(!r.c||!r.c.length) r.c=candlesFromHist(r);if(r.born==null) r.born=G.tick-(r.age||0)*SUBS;if(!r.ath) r.ath=r.mc;if(r.vol==null) r.vol=0;if(!r.boost) r.boost=0;if(!r.rugIn) r.rugIn=0;if(r.grad==null) r.grad=false})}
 function trenchTick(){
@@ -1558,30 +1569,33 @@ function trenchTick(){
   const pt=tierOf('penthouse'); if(pt){const inc=bagValue()*.0005*pt;if(inc>0) G.cash+=inc}
   if(MK.sel&&!TR.coins.some(r=>r.id===MK.sel)) MK.sel=null;
 }
+// each coin keeps its own pool token reserve (px). Price = mc, so the cash side is mc*px. Same pool for buys and sells = no free round trips.
+function poolX(r){if(!(r.px>0)) r.px=(r.grad?6:3)*(1+.06*(tierOf('plant')+tierOf('monitor2')));return r.px}
+function poolBuy(r,n){const X=poolX(r),Y=X*r.mc,X2=X*Y/(Y+n);return {units:X-X2,mc:(Y+n)/X2,px:X2}}
+function poolSell(r,u){const X=poolX(r),Y=X*r.mc,X2=X+u,Y2=X*Y/X2;return {out:Y-Y2,mc:Y2/X2,px:X2}}
 function trenchBuy(id,amt){
   const r=TR.coins.find(x=>x.id===id); if(!r||!r.alive) return;
   amt=Math.floor(amt); if(!(amt>=1)) return;
   if(G.cash<amt) return toast('Not enough cash','bad');
-  const net=amt*(1-feeRate()), mult=1+.03*tierOf('led')+(!r.grad&&r.age<5?.04*tierOf('fridge'):0);
-  // fill at the price after your own buy moves it
-  G.cash-=amt; r.units+=net/(r.mc+net*1.2*(1-.08*tierOf('plant')))*mult; r.cost+=amt; r.mc+=net*1.2; r.hist[r.hist.length-1]=r.mc; if(r.mc>r.ath) r.ath=r.mc; liveCandle(r);
+  const net=amt*(1-feeRate()), mult=1; if(!r.grad&&r.age<5) r.snipe=true;
+  // constant-product pool: price impact is real, but buying then selling straight away gives your money back
+  const q=poolBuy(r,net); G.cash-=amt; r.units+=q.units*mult; r.cost+=amt; r.mc=q.mc; r.px=q.px; r.hist[r.hist.length-1]=r.mc; if(r.mc>r.ath) r.ath=r.mc; liveCandle(r);
   if(tierOf('neon')) r.boost=4;
   logTrade('buy',r,amt,null);
   st('trades'); toast('Bought '+fmtUSD(amt)+' of $'+r.ticker,'good'); Snd.fx('buy'); saveRun(); renderAll();
 }
 function trenchSell(id,frac){
   const r=TR.coins.find(x=>x.id===id); if(!r||!r.alive||r.units<=0) return; frac=Math.min(1,frac||1);
-  const u=r.units*frac, gross=u*r.mc, after=Math.max(500,r.mc-gross*.8*(1-.08*tierOf('monitor2'))), fill=u*(r.mc+after)/2;
-  const tax=r.tax*(1-.1*tierOf('vinyl'));
-  let val=fill*(1-tax/100)*(1-feeRate()); const costPart=r.cost*frac; let pnl=val-costPart;
-  if(pnl>0){const bonus=pnl*(.02*tierOf('trophy')+.04*tierOf('mansion')+(r.grad?.04*tierOf('chair'):0));val+=bonus;pnl+=bonus}
+  const u=r.units*frac, q=poolSell(r,u), after=Math.max(200,q.mc); r.px=q.px;
+  let val=q.out; const costPart=r.cost*frac; let pnl=val-costPart;
+  if(pnl>0){const bonus=pnl*(.02*tierOf('trophy')+.04*tierOf('mansion')+(r.grad?.04*tierOf('chair'):0)+.03*tierOf('led')+.02*tierOf('vinyl')+(r.snipe?.04*tierOf('fridge'):0));val+=bonus;pnl+=bonus}
   G.cash+=val; TR.pnl+=pnl; st('tradePnl',pnl); st('trades'); if(pnl>0) st('trenchWins'); logTrade(frac<1?'sell '+Math.round(frac*100)+'%':'sell',r,val,pnl);
   if(costPart>0){const x=val/costPart;if(x>(G.stats.bestX||0)) G.stats.bestX=x}
-  r.mc=after; liveCandle(r); r.units-=u; r.cost-=costPart; if(frac>=1||r.units*r.mc<.5){r.units=0;r.cost=0}
+  r.mc=after; liveCandle(r); r.units-=u; r.cost-=costPart; if(frac>=1||r.units*r.mc<.5){r.units=0;r.cost=0;r.snipe=false}
   toast('Sold '+(frac<1?Math.round(frac*100)+'% of ':'')+'$'+r.ticker+' for '+fmtUSD(val)+'. '+(pnl>=0?'+':'')+fmtUSD(pnl),pnl>=0?'good':'bad');
   save(); saveRun(); renderAll();
 }
-function riskOf(r){const sc=(r.dev>15?2:r.dev>8?1:0)+(r.locked?0:2)+(r.tax>=15?3:r.tax>5?1:0);return sc>=4?['HIGH RISK','hi']:sc>=2?['MEDIUM','md']:['LOW RISK','lo']}
+function riskOf(r){const sc=(r.dev>15?2:r.dev>8?1:0)+(r.locked?0:2)+0;return sc>=4?['HIGH RISK','hi']:sc>=2?['MEDIUM','md']:['LOW RISK','lo']}
 function parseAmt(v){
   v=String(v||'').trim().toLowerCase().replace(/[$,£\s]/g,''); const m=v.match(/^(\d*\.?\d+)([kmb]?)$/); if(!m) return NaN;
   return parseFloat(m[1])*({'':1,k:1e3,m:1e6,b:1e9}[m[2]]);
@@ -1665,7 +1679,7 @@ function renderTrench(){
   const r=MK.sel&&TR.coins.find(x=>x.id===MK.sel);
   let h=`<div class="qbrow"><span>Quick buy</span>${QB.map(a=>`<button class="chipb ${MK.qb===a?'on':''}" data-act="qb" data-id="${a}" ${G.cash<a?'disabled':''}>${fmtUSD(a).replace(/\.0+(?=[KMB])/,'')}</button>`).join('')}</div>`;
   if(r){
-    const first=r.hist[0]||r.mc, c=(r.mc-first)/first*100, [rk,rc]=riskOf(r), val=r.units*r.mc, pl=val-r.cost, prog=Math.min(100,r.mc/GRAD_MC*100);
+    const first=r.hist[0]||r.mc, c=(r.mc-first)/first*100, [rk,rc]=riskOf(r), val=posVal(r), pl=val-r.cost, prog=Math.min(100,r.mc/GRAD_MC*100);
     h+=`<button class="btn mback" data-act="mback">← Back to market</button>
     <div class="tr ${r.alive?'':'dead'}">
       <div class="tr-h"><span class="lc-m">${MASCOT_EMOJI[r.mascot]}</span><span class="tr-n"><b>${esc(r.name)}</b><span>$${r.ticker} · by ${esc(r.devName)} · ${fmtAge(r.age)} old</span></span>
@@ -1675,13 +1689,13 @@ function renderTrench(){
       ${r.alive?'':'<span class="stamp">'+(r.fizzled?'DEAD':'RUGGED')+'</span>'}
       ${r.grad?`<div class="caught"><b class="gradb">GRADUATED</b> Bonded at $69K. Liquidity locked, calmer and much safer.</div>`:`<div class="bondrow"><span>Bonding curve</span><span class="bond big"><i style="width:${prog.toFixed(0)}%"></i></span><b>${prog.toFixed(0)}%</b></div>`}
       <div class="sumgrid"><div class="kpi"><label>ATH</label><b>${fmtUSD(r.ath)}</b></div><div class="kpi"><label>Vol</label><b>${fmtUSD(r.vol)}</b></div></div>
-      <div class="tags"><span class="risk ${rc}">${rk}</span><span class="tag ${r.dev>15?'heat':''}">dev ${r.dev}%</span><span class="tag ${r.locked?'good':'heat'}">LP ${r.locked?'locked':'unlocked'}</span><span class="tag ${r.tax>=15?'heat':''}">tax ${r.tax}%</span></div>
+      <div class="tags"><span class="risk ${rc}">${rk}</span><span class="tag ${r.dev>15?'heat':''}">dev ${r.dev}%</span><span class="tag ${r.locked?'good':'heat'}">LP ${r.locked?'locked':'unlocked'}</span></div>
       ${r.units>0?`<div class="tr-pos"><span>Holding <b>${fmtUSD(val)}</b></span><span>cost ${fmtUSD(r.cost)}</span><span class="${pl>=0?'up':'down'}">${pl>=0?'+':''}${fmtUSD(pl)} (${(pl/r.cost*100).toFixed(0)}%)</span></div>`:''}
       ${r.alive?`<div class="tr-b"><button class="btn primary" data-act="tbuy" data-id="${r.id}" data-amt="${MK.qb}" ${G.cash<MK.qb?'disabled':''}>Buy ${fmtUSD(MK.qb)}</button><button class="btn" data-act="tcustom" data-id="${r.id}">Custom</button>
         ${r.units>0?`<button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".25">Sell 25%</button><button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".5">50%</button><button class="btn danger" data-act="tsellp" data-id="${r.id}" data-f="1">Sell all</button>`:''}</div>`:''}
       <div class="sec">Chat</div><div class="cchat">${(r.chat&&r.chat.length)?r.chat.slice(-10).reverse().map(m=>`<div class="cm ${m.c}"><b>${esc(m.w)}</b><span>${esc(m.t)}</span></div>`).join(''):'<div class="caught">Quiet in here. Messages appear while you watch or hold.</div>'}</div>
       ${(G.trades||[]).some(t=>t.id===r.id)?'<div class="sec">Your trades on $'+esc(r.ticker)+'</div>'+tradeRows((G.trades||[]).filter(t=>t.id===r.id).slice(0,10)):''}
-      <div class="caught">No trading fees.${r.tax?' This coin has a '+r.tax+'% sell tax.':''}</div>
+      <div class="caught">No trading fees or sell taxes. Big orders move the price, but selling straight back returns what you put in.</div>
     </div>`;
   } else {
     const tabs=[['trend','Trending'],['new','New'],['grad','Graduated'],['copy','Copy']];
@@ -1701,11 +1715,11 @@ function tradeRows(list){
       <span class="mr-p"><b>${bad?'—':fmtUSD(t.usd)}</b>${t.pnl==null?'':`<span class="${t.pnl>=0?'up':'down'}">${t.pnl>=0?'+':''}${fmtUSD(t.pnl)}</span>`}</span></div>`}).join('')+'</div>';
 }
 function renderBags(){
-  const held=TR.coins.filter(r=>r.units>0), val=held.reduce((a,r)=>a+(r.alive?r.units*r.mc:0),0), cost=held.reduce((a,r)=>a+r.cost,0), un=val-cost;
+  const held=TR.coins.filter(r=>r.units>0), val=held.reduce((a,r)=>a+posVal(r),0), cost=held.reduce((a,r)=>a+r.cost,0), un=val-cost;
   let h=`<div class="pos"><div class="kpi"><label>Bags value</label><b>${fmtUSD(val)}</b></div><div class="kpi"><label>Unrealised</label><b class="${un>=0?'up':'down'}">${un>=0?'+':''}${fmtUSD(un)}</b></div>
     <div class="kpi"><label>Realised P/L</label><b class="${TR.pnl>=0?'up':'down'}">${TR.pnl>=0?'+':''}${fmtUSD(TR.pnl)}</b></div><div class="kpi"><label>Best trade</label><b>${(G.stats.bestX||0).toFixed(1)}×</b></div></div>`;
   if(!held.length) h+=`<div class="caught">No bags yet. Find something in the Market.</div><button class="btn primary big" data-go="trench">Open the market</button>`;
-  else h+='<div class="mlist">'+held.sort((a,b)=>b.units*b.mc-a.units*a.mc).map(r=>{const v=r.units*r.mc,p=v-r.cost;
+  else h+='<div class="mlist">'+held.sort((a,b)=>posVal(b)-posVal(a)).map(r=>{const v=posVal(r),p=v-r.cost;
     return `<div class="mrow held" data-act="bagopen" data-id="${r.id}"><span class="lc-m">${MASCOT_EMOJI[r.mascot]}</span>
       <span class="mr-n"><b>${esc(r.name)}</b><span>$${r.ticker} · mc ${fmtUSD(r.mc)}${r.grad?' · GRAD':''}</span></span>
       <span class="mr-p"><b>${fmtUSD(v)}</b><span class="${p>=0?'up':'down'}">${p>=0?'+':''}${(p/r.cost*100).toFixed(0)}%</span></span>
@@ -2285,8 +2299,8 @@ $('#sheet').addEventListener('click',e=>{
     case 'wipe': if(Date.now()-wipeArm<3000){restart()} else {wipeArm=Date.now();b.textContent='Tap again to reset everything'} break;
   }
 });
-$('#sheet').addEventListener('input',e=>{if(e.target.id==='setVol'){SET.vol=+e.target.value;Snd.ensure();Snd.setVol(SET.vol);saveSet()}});
-$('#sheet').addEventListener('change',e=>{if(e.target.id==='payTok'){$('#promotePane').dataset.tok=e.target.checked?'1':'0';renderPromote()}});
+$('#sheet').addEventListener('input',e=>{if(e.target.id==='setVol'){SET.vol=+e.target.value;Snd.ensure();Snd.setVol(SET.vol);saveSet()} if(e.target.id==='neonPick'){custom().neon=e.target.value;Room.apply();const l=e.target.parentNode;l.style.background=e.target.value}});
+$('#sheet').addEventListener('change',e=>{if(e.target.id==='neonPick'){setStyle('neon',e.target.value);return}if(e.target.id==='payTok'){$('#promotePane').dataset.tok=e.target.checked?'1':'0';renderPromote()}});
 
 /* modal */
 function openModal(html,locked){$('#modal').innerHTML=html;$('#overlay').hidden=false;$('#overlay').dataset.locked=locked?'1':'';const b=$('#modal .btn.primary');if(b) b.focus()}
@@ -2543,7 +2557,7 @@ const Room=(()=>{
       const fr=std(0x3c8f4a,{roughness:.7,side:THREE.DoubleSide});for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const f=new THREE.Mesh(new THREE.PlaneGeometry(.22,1.1),fr);f.position.set(px+.14+Math.cos(a)*.35,2.75,-4.45+Math.sin(a)*.35);f.lookAt(px+.14+Math.cos(a)*2,2.1,-4.45+Math.sin(a)*2);g.add(f)}}}
     // III: bar with stools and backlit bottles
     {const g=tg('mansion',3);const bx=3.55,bz=-.9;box(.55,1.0,2.0,std(0x1b1c22,{roughness:.4,metalness:.3}),bx,.5,bz,g);box(.68,.05,2.1,std(0xf2f0ec,{roughness:.2}),bx,1.02,bz,g);
-      const strip=new THREE.MeshBasicMaterial({color:0xffb36b,toneMapped:false});box(.01,.02,1.96,strip,bx-.28,.1,bz,g);
+      box(.01,.02,1.96,anim.rnMat,bx-.28,.1,bz,g);box(.01,.02,1.96,anim.rnMat,bx-.28,.98,bz,g);
       for(let i=0;i<3;i++){const sz=bz-.6+i*.6;cyl(.17,.17,.05,std(0xd4af37,{metalness:.9,roughness:.25}),bx-.62,.78,sz,g);cyl(.02,.02,.76,metal,bx-.62,.39,sz,g,8);cyl(.15,.15,.02,metal,bx-.62,.01,sz,g)}
       for(let i=0;i<7;i++) bottle(bx+.1,1.15,bz-.75+i*.25,g,[0x1d4a2a,0x5a2a10,0x3a1424,0x1a3a5a][i%4]);glow(0xffb36b,1.8,bx,1.3,bz,.25,g);
       L.bar=new THREE.PointLight(0xffb36b,0,3,2);L.bar.position.set(bx-.3,1.6,bz);g.add(L.bar)}
@@ -2675,7 +2689,7 @@ const Room=(()=>{
     const rail=(w,d,x,z)=>{const g=new THREE.Mesh(new THREE.BoxGeometry(w,1,d),glassM);g.position.set(x,4.4,z);L2.add(g);box(w||.04,.04,d||.04,anim.railMat,x,4.92,z,L2)};
     // tall left wall for the double-height space
     anim.tallWall=new THREE.Mesh(new THREE.PlaneGeometry(6.8,3.6),std(0x1f2127,{roughness:.95}));anim.tallWall.rotation.y=Math.PI/2;anim.tallWall.position.set(-3.9,6.2,.8);L2.add(anim.tallWall);
-    box(.22,3.6,7.1,anim.shellMat,-4.02,6.2,.8,L2);box(.24,.06,7.1,std(0x3a3458),-4.02,8.03,.8,L2);
+    box(.22,3.6,7.1,anim.shellMat,-4.02,6.2,.8,L2);box(.24,.06,7.1,anim.trimMat,-4.02,8.03,.8,L2);
     // mezzanine slab over the lounge
     box(3.3,.22,4.9,white,-2.25,3.79,-.15,L2);box(3.3,.24,.03,dark,-2.25,3.79,2.31,L2);box(.03,.24,4.9,dark,-.6,3.79,-.15,L2);
     const fl=new THREE.Mesh(new THREE.PlaneGeometry(3.3,4.9),oak);fl.rotation.x=-Math.PI/2;fl.position.set(-2.25,3.905,-.15);fl.receiveShadow=true;L2.add(fl);
@@ -2704,6 +2718,14 @@ const Room=(()=>{
     cyl(.25,.25,.04,marbleMat(),3.85,y3+.42,-1.2,L3,24);cyl(.03,.03,.4,dark,3.85,y3+.2,-1.2,L3);
     const tel=cyl(.05,.07,.7,dark,2.8,y3+1.1,-2.2,L3);tel.rotation.z=1.0;for(const a of [0,2.1,4.2]){const lg=cyl(.012,.012,.9,dark,2.8+Math.cos(a)*.15,y3+.42,-2.2+Math.sin(a)*.15,L3);lg.rotation.set(Math.sin(a)*.25,0,-Math.cos(a)*.25)}
     glow(0xb06bff,2.2,3.8,y3+.05,-1.45,.15,L3);
+    // room neon in the penthouse: mezzanine and sky-lounge edges, top of the glass, stair stringer
+    {const RN=anim.rnMat,rg=new THREE.Group();L2.add(rg);anim.rnPent=rg;const sp=(sz,x,y,z,op,par)=>anim.rnSprites.push(glow(0xff4fa3,sz,x,y,z,op,par||rg));
+      box(3.3,.02,.02,RN,-2.25,3.67,2.33,rg);box(.02,.02,4.9,RN,-.58,3.67,-.15,rg);
+      box(9.3,.02,.02,RN,.5,7.85,-2.5,rg);box(.02,.02,7.0,RN,-3.78,7.85,.8,rg);
+      const sl=new THREE.Mesh(new THREE.BoxGeometry(3.4,.02,.02),RN);sl.position.set(1.0,1.94,1.27);sl.rotation.z=-Math.atan2(3.75,3.1);rg.add(sl);
+      for(let i=0;i<3;i++) sp(1.4,-3.4+i*1.2,3.6,2.3,.3); for(let i=0;i<6;i++) sp(1.8,-3+i*1.6,7.75,-2.4,.25);
+      const r3=new THREE.Group();L3.add(r3);box(2.1,.02,.02,RN,3.45,y3-.22,-.28,r3);box(.02,.02,2.3,RN,2.38,y3-.22,-1.45,r3);sp(1.4,3.4,y3-.3,-.3,.3,r3);
+      L.rn2=new THREE.PointLight(0xff4fa3,0,8,2);L.rn2.position.set(-1.5,3.2,1.5);rg.add(L.rn2)}
   }
   function marbleMat(){return std(0xffffff,{map:anim.marble,roughness:.25})}
   function dayFactor(){
@@ -2729,7 +2751,22 @@ const Room=(()=>{
     if(!pent){const w=new THREE.Color(cu.wall||'#2b2646');anim.wallMat.color.copy(w);anim.leftMat.color.copy(w).multiplyScalar(.86);
       const f=cu.floor||'wood',fm=anim.floor.material;fm.map=f==='light'?anim.lightWood:f==='concrete'?anim.concreteTex:anim.woodMap;fm.color.set(f==='black'?0x3a3a42:0xffffff);fm.roughness=f==='concrete'?.85:.55;fm.needsUpdate=true}
     else anim.floor.material.color.set(0xffffff);
-    anim.neonCustom=cu.neon||''; drawNeon();
+    const dk=cu.desk; if(dk){anim.deskMat.color.set(dk);anim.drawerMat.color.set(dk).multiplyScalar(.88)} else {anim.deskMat.color.set(pent?0xece8e1:0x3b2a24);anim.drawerMat.color.set(pent?0xdcd6cc:0x2f2420)}
+    anim.skirtMat.color.set(cu.skirt||0x1a1630); anim.trimMat.color.set(cu.trim||0x3a3458);
+    const strips=cu.strips!=='off'; anim.rnBed.visible=strips&&!pent; anim.rnShared.visible=strips; if(anim.rnPent) anim.rnPent.visible=strips;
+    L.rn.intensity=strips&&!pent?.55:0; if(L.rn2) L.rn2.intensity=strips&&pent?.7:0;
+    anim.neonCustom=cu.neon||''; neonPaint(); drawNeon();
+  }
+  function neonAutoHex(){const nt=anim.neonTier|0;return ['#ff4fa3','#ff4fa3','#4fe0ff','#b06bff','#ffc93d','#ff4fa3'][nt]}
+  const _nc=new THREE.Color();
+  function neonPaint(t){ // colour every neon piece; t = time for RGB cycling
+    const m=anim.neonCustom, rgb=m==='rgb'||(!m&&(anim.neonTier|0)>=5);
+    if(rgb) _nc.setHSL(((t!=null?t:performance.now()/1000)*.1)%1,1,.6); else _nc.set(m||neonAutoHex());
+    anim.rnMat.color.copy(_nc); anim.rnSprites.forEach(s=>s.material.color.copy(_nc)); L.rn.color.copy(_nc); if(L.rn2) L.rn2.color.copy(_nc);
+    if(!m) return; // Auto: the sign, desk LEDs and penthouse cove keep their own upgrade colours
+    if(anim.neonFrame) anim.neonFrame.color.copy(_nc); if(anim.neonGlow) anim.neonGlow.material.color.copy(_nc); if(L.neon) L.neon.color.copy(_nc);
+    if(anim.ledMat){anim.ledMat.color.copy(_nc);L.led.color.copy(_nc)} if(anim.ledBack) anim.ledBack.material.color.copy(_nc);
+    if(anim.coveMat){anim.coveMat.color.copy(_nc);L.cove.color.copy(_nc)}
   }
   function applyModern(tier){
     if(!modern||tier===modernOn) return; modernOn=tier; const on=tier>0;
@@ -2784,16 +2821,17 @@ const Room=(()=>{
     anim.shellMat=std(0x1a1726,{roughness:.9});
     oldRoom.push(box(9.9,4.5,.22,anim.shellMat,.65,2.25,-2.72));                // back wall thickness
     anim.leftShell=box(.22,4.5,7.1,anim.shellMat,-3.32,2.25,.8);                 // left wall thickness (stays in both rooms)
-    oldRoom.push(box(9.9,.06,.24,std(0x3a3458,{roughness:.6}),.65,4.48,-2.72));  // wall caps
-    anim.leftCap=box(.24,.06,7.1,std(0x3a3458,{roughness:.6}),-3.32,4.48,.8);
-    oldRoom.push(box(9.6,.12,.03,std(0x1a1630),.65,.06,-2.585));box(.03,.12,6.8,std(0x1a1630),-3.185,.06,.8);
+    anim.trimMat=std(0x3a3458,{roughness:.6});anim.skirtMat=std(0x1a1630,{roughness:.6});
+    oldRoom.push(box(9.9,.06,.24,anim.trimMat,.65,4.48,-2.72));  // wall caps
+    anim.leftCap=box(.24,.06,7.1,anim.trimMat,-3.32,4.48,.8);
+    oldRoom.push(box(8.62,.12,.03,anim.skirtMat,1.14,.06,-2.585));box(.03,.12,6.8,anim.skirtMat,-3.185,.06,.8);
 
     // window
     const nWin=S.children.length;
     const sk=ctex(1024,768,(g,w,h)=>drawSkyline(g,w,h,false));scr.sky=sk;
     const view=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.5),new THREE.MeshBasicMaterial({map:sk.t,toneMapped:false}));view.position.set(1.55,1.95,-2.592);S.add(view);
     {const dk=ctex(1024,768,(g,w,h)=>drawSkylineDay(g,w,h,0));anim.viewDayTex=dk;anim.viewDay=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.5),new THREE.MeshBasicMaterial({map:dk.t,toneMapped:false,transparent:true,opacity:0,depthWrite:false}));anim.viewDay.position.set(1.55,1.95,-2.5915);S.add(anim.viewDay)}
-    const fm=std(0x3a3458,{roughness:.6});
+    const fm=anim.trimMat;
     box(2.04,.07,.08,fm,1.55,2.73,-2.56);box(2.04,.07,.08,fm,1.55,1.17,-2.56);box(.07,1.6,.08,fm,.55,1.95,-2.56);box(.07,1.6,.08,fm,2.55,1.95,-2.56);
     box(.035,1.5,.05,fm,1.55,1.95,-2.565);box(1.9,.035,.05,fm,1.55,2.05,-2.565);
     box(2.2,.05,.22,std(0x4a4270,{roughness:.6}),1.55,1.13,-2.49);
@@ -2884,6 +2922,18 @@ const Room=(()=>{
     L.neon=new THREE.PointLight(0xff4fa3,0,3.5,2);L.neon.position.set(-.6,2.35,-2.2);S.add(L.neon);
     const gl=group('led');anim.ledMat=new THREE.MeshBasicMaterial({color:0xb06bff,toneMapped:false});box(2.5,.015,.015,anim.ledMat,-.5,.88,-2.56,gl);box(.015,.015,.9,anim.ledMat,.75,.88,-2.1,gl);box(.015,.015,.9,anim.ledMat,-1.75,.88,-2.1,gl);
     L.led=new THREE.PointLight(0xb06bff,0,2.5,2);L.led.position.set(-.5,.8,-2.4);S.add(L.led);
+    // room neon: strips around the room, coloured by the Style > Neon setting
+    anim.rnMat=new THREE.MeshBasicMaterial({color:0xff4fa3,toneMapped:false});anim.rnSprites=[];const NR=anim.rnMat;
+    const rnG=new THREE.Group();S.add(rnG);anim.rnBed=rnG;oldRoom.push(rnG);
+    const rgl=(sz,x,y,z,op,par)=>{const sp=glow(0xff4fa3,sz,x,y,z,op,par);anim.rnSprites.push(sp);return sp};
+    box(8.55,.025,.025,NR,1.125,4.3,-2.55,rnG);box(.025,.025,6.75,NR,-3.17,4.3,.825,rnG);              // ceiling cove
+    box(8.55,.018,.018,NR,1.125,.135,-2.565,rnG);                                                        // along the back skirting
+    box(.02,.02,2.05,NR,-1.97,.03,.25,rnG);box(1.15,.02,.02,NR,-2.55,.03,1.28,rnG);                     // under the bed
+    box(2.6,.012,.012,NR,-.5,.885,-1.63,rnG);                                                             // desk front lip
+    for(let i=0;i<5;i++) rgl(1.6,-2.6+i*1.9,4.2,-2.45,.3,rnG); rgl(1.2,-2.0,.08,.25,.35,rnG); rgl(1.0,-.5,.8,-1.6,.25,rnG);
+    for(let i=0;i<4;i++) rgl(1.4,-3.05,4.2,-1.8+i*1.8,.25,rnG);
+    const rnS=new THREE.Group();S.add(rnS);anim.rnShared=rnS; box(.018,.018,6.75,NR,-3.165,.135,.825,rnS);   // along the left skirting (both rooms)
+    L.rn=new THREE.PointLight(0xff4fa3,0,6,2);L.rn.position.set(.5,3.8,.2);S.add(L.rn);
     // L3: lava lamp + record player
     const g3b=group('lava');
     cyl(.05,.07,.1,std(0x222230,{metalness:.6,roughness:.3}),-1.62,1.01,-1.95,g3b);
@@ -2965,7 +3015,7 @@ const Room=(()=>{
   }
   function drawNeon(){if(!scr.neon) return;const g=scr.neon.g,w=512,h=160;g.clearRect(0,0,w,h);const txt=coin&&coin.alive?'$'+coin.ticker:'RUG ROOM';
     g.textAlign='center';g.textBaseline='middle';let fs=74;g.font=fs+'px Monoton, "Chakra Petch", sans-serif';while(g.measureText(txt).width>w-40&&fs>30){fs-=4;g.font=fs+'px Monoton, "Chakra Petch", sans-serif'}
-    const nt=anim.neonTier|0;const col=anim.neonRed?'#ff3b3b':anim.neonCustom?anim.neonCustom:nt>=5?'hsl('+((Date.now()/20)%360)+',100%,62%)':['#ff4fa3','#ff4fa3','#4fe0ff','#b06bff','#ffc93d'][nt];
+    const nt=anim.neonTier|0;const col=anim.neonRed?'#ff3b3b':anim.neonCustom==='rgb'?'hsl('+((Date.now()/20)%360)+',100%,62%)':anim.neonCustom?anim.neonCustom:nt>=5?'hsl('+((Date.now()/20)%360)+',100%,62%)':['#ff4fa3','#ff4fa3','#4fe0ff','#b06bff','#ffc93d'][nt];
     for(const [b,a] of [[30,.5],[16,.7],[6,1]]){g.shadowColor=col;g.shadowBlur=b;g.fillStyle=col;g.globalAlpha=a;g.fillText(txt,w/2,h/2+4)}
     g.globalAlpha=1;g.shadowBlur=0;g.fillStyle='#ffe3f1';g.fillText(txt,w/2,h/2+4);scr.neon.t.needsUpdate=true}
   function drawScreens(){
@@ -3015,8 +3065,9 @@ const Room=(()=>{
     // lava + vinyl
     if(anim.blobs) anim.blobs.forEach(b=>{b.b.position.y=1.08+(Math.sin(t*.6+b.o)*.5+.5)*.2;b.b.scale.setScalar(.8+Math.sin(t*1.3+b.o)*.3)});
     if(anim.vinyl&&own('vinyl')) anim.vinyl.rotation.y+=dt*(3.5+tierOf('vinyl')*.6);
-    if(tierOf('led')>=5&&anim.ledMat){anim.ledMat.color.setHSL((t*.08)%1,1,.6);L.led.color.copy(anim.ledMat.color)}
-    if(tierOf('neon')>=5&&Math.floor(t*4)!==anim.nT){anim.nT=Math.floor(t*4);drawNeon()}
+    const nCus=anim.neonCustom; if(nCus==='rgb'||(!nCus&&(anim.neonTier|0)>=5)) neonPaint(t);
+    if(!nCus&&tierOf('led')>=5&&anim.ledMat){anim.ledMat.color.setHSL((t*.08)%1,1,.6);L.led.color.copy(anim.ledMat.color)}
+    if((nCus==='rgb'||(!nCus&&tierOf('neon')>=5))&&Math.floor(t*4)!==anim.nT){anim.nT=Math.floor(t*4);drawNeon()}
     if(anim.fairy&&own('fairy')) anim.fairy.forEach((f,i)=>{f.material.opacity=.35+Math.sin(t*2+i*1.7)*.2});
     // lamp flicker
     L.lamp.intensity=1.7+Math.sin(t*7)*.03+(Math.random()<.01?-.3:0);
@@ -3039,9 +3090,9 @@ const Room=(()=>{
     if(anim.stars&&tierOf('fairy')>=4) anim.stars.material.opacity=.7+Math.sin(t*2)*.2;
     if(anim.m2Halo&&tierOf('monitor2')>=5) anim.m2Halo.material.color.setHSL((t*.1)%1,1,.6);
     if(anim.m3Halo&&tierOf('monitor3')>=5) anim.m3Halo.material.color.setHSL((t*.1+.5)%1,1,.6);
-    if(anim.neonFrame&&tierOf('neon')>=5) anim.neonFrame.color.setHSL((t*.12+.5)%1,1,.62);
+    if(!nCus&&anim.neonFrame&&tierOf('neon')>=5) anim.neonFrame.color.setHSL((t*.12+.5)%1,1,.62);
     if(anim.armLed&&tierOf('chair')>=2) anim.armLed.color.setHSL((t*.08)%1,1,.6);
-    if(anim.ledBack&&tierOf('led')>=2) anim.ledBack.material.color.copy(anim.ledMat.color);
+    if(!nCus&&anim.ledBack&&tierOf('led')>=2) anim.ledBack.material.color.copy(anim.ledMat.color);
     // penthouse: pool shimmer and fireworks
     if(modernOn>=2&&anim.waterMat){anim.waterMat.opacity=.78+Math.sin(t*2.2)*.07;L.pool.intensity=.9+Math.sin(t*1.7)*.15}
     if(modernOn>=5&&anim.fw) anim.fw.forEach(f=>{f.t+=dt;const life=1.6;if(f.t>life+rnd(.2,1.6)){f.t=0;f.x=rnd(-9,11);f.y=rnd(4,8.5)}
