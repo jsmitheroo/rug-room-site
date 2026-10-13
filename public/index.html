@@ -1291,11 +1291,14 @@ function newAccount(){
   $('#chartEmpty').hidden=false; chatEl.innerHTML=''; Room.reset(); form=randomCoin(); closeModal(); syncSpeed(); closeSheet(); renderAll(true);
   onboarding();
 }
-function buyItem(k){
+function buyItem(k,ok){
   const it=SHOP.find(x=>x.k===k); if(!it) return; const t=tierOf(k); if(t>=maxT(it)) return;
   const cost=priceFor(it,t+1);
   if(G.cash<cost) return toast('Not enough cash for '+it.name.toLowerCase()+' tier '+ROMAN[t+1],'bad');
+  const others=SHOP.filter(x=>x.k!=='mansion'&&tierOf(x.k)>0);
+  if(k==='mansion'&&others.length&&!ok) return openModal(`<div class="kick">NEW ROOM LEVEL</div><h3>Move up to ${esc(it.tiers[t])}?</h3><p>Moving up a room level resets everything else in the room. Your ${others.length} other item${others.length>1?'s':''} (${others.reduce((a,x)=>a+tierOf(x.k),0)} tiers) go back to zero and you rebuild the new space from scratch. Your cash, bags and mining aren't touched.</p><div class="acts"><button class="btn" data-act="ok">Not yet</button><button class="btn primary" data-act="buymansion">Upgrade for ${fmtUSD(cost)}</button></div>`);
   G.cash-=cost; G.owned[k]=t+1;
+  if(k==='mansion') SHOP.forEach(x=>{if(x.k!=='mansion') G.owned[x.k]=0});
   if(k==='trophy') G.trust=Math.min(100,G.trust+5*(t+1));
   if(k==='mansion') G.trust=Math.min(100,G.trust+5);
   save(); Room.apply(k); Snd.fx('buy');
@@ -1346,6 +1349,7 @@ function renderRoomShop(){
     const tags=[pips];
     if(t) tags.push('<span class="tag good">'+it.p(t)+'</span>');
     if(t<mt) tags.push('<span class="tag">'+(t?'Next: ':'')+it.p(t+1)+'</span>');
+    if(it.k==='mansion'&&t<mt) tags.push('<span class="tag heat">Resets your other items</span>');
     return card({title,cost:t>=mt?(mt>1?'MAX':'OWNED'):fmtCash(next),desc:t<mt?it.desc+(t?' Next tier: '+it.tiers[t]+'.':''):it.desc,tags,
       btn:t>=mt?'<span class="tag good">'+(mt>1?'Maxed':'Owned')+'</span>':`<button class="btn ${can?'primary':''}" data-act="buy" data-id="${it.k}" ${can?'':'disabled'}>${t?'Upgrade to '+ROMAN[t+1]:'Buy'}</button>`})}).join('');
   setHTML($('#roomPane'),h);
@@ -1470,7 +1474,7 @@ const BOTS=[
 ];
 const BOTST={}; BOTS.forEach(b=>BOTST[b.k]={pos:{},trades:0,wins:0,ret:0});
 function copyState(){if(!G.copy||typeof G.copy!=='object') G.copy={bot:null,amt:1000,pos:{}};if(!G.copy.pos) G.copy.pos={};return G.copy}
-const COPY_FEE=.25, COPY_MAX=50000;
+const COPY_FEE=.25, COPY_MAX=Infinity;
 function botsTick(){
   const cp=copyState();
   // copied orders land one tick after the trader's, so you get a slightly worse price than they did
@@ -1492,7 +1496,7 @@ function botsTick(){
 }
 function renderCopy(){
   const cp=copyState();
-  let h=`<div class="caught">Follow one trader and your account copies their buys (using your quick-buy amount, now <b>${fmtUSD(Math.min(MK.qb,COPY_MAX))}</b>, max ${fmtUSD(COPY_MAX)}) and sells. Copies land a moment after the trader's, you hold at most 2 copied coins at once, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. Stats are since you opened the game.</div>`;
+  let h=`<div class="caught">Follow one trader and your account copies their buys (using your quick-buy amount, now <b>${fmtUSD(MK.qb)}</b>) and sells. Copies land a moment after the trader's, you hold at most 2 copied coins at once, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. Stats are since you opened the game.</div>`;
   h+=BOTS.map(b=>{const st=BOTST[b.k],on=cp.bot===b.k,wr=st.trades?Math.round(st.wins/st.trades*100):null,avg=st.trades?st.ret/st.trades*100:null,open=Object.keys(st.pos).length;
     return card({title:`${b.e} ${b.n}${on?' <span class="tier">FOLLOWING · '+fmtUSD(cp.amt)+'</span>':''}`,cost:wr==null?'new':wr+'% wins',desc:b.d,
       tags:[`<span class="tag">${st.trades} trades</span>`,avg==null?'':`<span class="tag ${avg>=0?'good':'heat'}">avg ${avg>=0?'+':''}${avg.toFixed(0)}%</span>`,`<span class="tag">${open} open</span>`],
@@ -2345,7 +2349,7 @@ function openModal(html,locked){$('#modal').innerHTML=html;$('#overlay').hidden=
 function closeModal(){$('#overlay').hidden=true}
 $('#overlay').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');
-  if(b){const a=b.dataset.act; if(a==='restart') return restart(); if(a==='newacct') return newAccount(); if(a==='dellocalok') return deleteLocal(); if(a==='share'){if(lastResult) shareCoin(lastResult);return} closeModal();
+  if(b){const a=b.dataset.act; if(a==='restart') return restart(); if(a==='newacct') return newAccount(); if(a==='dellocalok') return deleteLocal(); if(a==='buymansion'){closeModal();return buyItem('mansion',true)} if(a==='share'){if(lastResult) shareCoin(lastResult);return} closeModal();
     if(a==='next'){form=randomCoin();form.seed=Math.min(1000,Math.max(200,Math.floor((G.cash-50)/100)*100));openSheet('launch')}
     if(a==='shame') openSheet('shame');
     if(a==='alias') aliasModal(); return}
