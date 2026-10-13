@@ -37,9 +37,9 @@ async function ensureSchema(db) {
   schemaReady = true;
 }
 
-// One-time wipe of every account (requested 13 Oct 2026), then the owner account is created
-// with $100M on Chill. Only a salted PBKDF2 hash of the owner's password is stored here.
-const WIPE_ID = 'wipe-2026-10-13';
+// One-time wipe of every account (second reset, 13 Oct 2026), then the owner account is created
+// with $5B on Chill. Only a salted PBKDF2 hash of the owner's password is stored here.
+const WIPE_ID = 'wipe-2026-10-13-b';
 const OWNER = {
   email: 'jamesmsmith555@gmail.com',
   salt: '7685f921600862656271f6d419b3d015',
@@ -67,7 +67,7 @@ async function ensureSeed(db) {
       .bind(OWNER.email, OWNER.hash, OWNER.salt, now).run();
     const { id } = await db.prepare('SELECT id FROM users WHERE email = ?').bind(OWNER.email).first();
     const state = {
-      cash: 100000000, peakCash: 100000000, heat: 0, trust: 60, alias: 'james', aliasN: 1,
+      cash: 5000000000, peakCash: 5000000000, heat: 0, trust: 60, alias: 'james', aliasN: 1,
       lifetime: { launched: 0, rugs: 0, extracted: 0, victims: 0, lost: 0 }, shame: [],
       profile: { name: 'james', avatar: '👑', wallet: '0x7A3E5000000000000000000000000000000BEEF', created: now },
       blacklisted: false, diff: 'easy', owned: {}, done: {}, stats: {}, savedAt: now,
