@@ -39,7 +39,7 @@ async function ensureSchema(db) {
 
 // One-time wipe of every account (fifth reset, 13 Oct 2026), then the owner account is created
 // with $5M on Chill. Only a salted PBKDF2 hash of the owner's password is stored here.
-const WIPE_ID = 'wipe-2026-10-13-f';
+const WIPE_ID = 'wipe-2026-10-13-g';
 const OWNER = {
   email: 'jamesmsmith555@gmail.com',
   salt: '7685f921600862656271f6d419b3d015',
