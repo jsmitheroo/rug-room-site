@@ -40,7 +40,7 @@ button{font-family:inherit}
 .glass{background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(16px) saturate(1.35);-webkit-backdrop-filter:blur(16px) saturate(1.35);box-shadow:0 10px 40px rgba(0,0,0,.35)}
 
 /* ---------- fixed background ---------- */
-#scene{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none}
+#scene{position:fixed;left:0;top:0;width:100%;height:100%;height:100lvh;display:block;z-index:0;touch-action:none}
 .vignette{position:fixed;inset:0;pointer-events:none;z-index:1;
   background:radial-gradient(130% 95% at 42% 48%,transparent 52%,rgba(5,6,12,.62) 100%),linear-gradient(180deg,rgba(5,6,12,.55),transparent 16%,transparent 76%,rgba(5,6,12,.72))}
 .ui{position:fixed;inset:0;z-index:2;pointer-events:none;display:flex;flex-direction:column;gap:10px;box-sizing:border-box;
@@ -438,7 +438,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .mcoin.on{border-color:rgba(255,79,163,.6);background:rgba(255,79,163,.12)}.mcoin b{font-size:12.5px}.mcoin>span:not(.mce){font:700 11.5px var(--f-mono)}
 .mcoin svg{grid-column:1/-1;width:100%;height:22px}.mcoin small{grid-column:1/-1;font-size:10.5px;color:var(--muted);line-height:1.3}
 .stylebox{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:rgba(20,24,40,.8)}
-.srow{display:flex;align-items:center;gap:10px}.srow>span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);width:64px;flex:none}
+.srow{display:flex;align-items:center;gap:10px}.srow>span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);width:74px;flex:none}
 .swc.rgbsw{background:conic-gradient(#ff4545,#ffc93d,#39ff88,#4fe0ff,#3d6bff,#b06bff,#ff4fa3,#ff4545)}
 .swc.pick{position:relative;overflow:hidden;display:inline-grid;place-items:center}.swc.pick::after{content:'+';color:#fff;font:700 15px var(--f-mono);text-shadow:0 0 3px #000}.swc.pick input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;border:0;padding:0}
 .sw8{display:flex;gap:6px;flex-wrap:wrap}.swc{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.15);cursor:pointer;padding:0}.swc.on{border-color:#fff}
@@ -1310,6 +1310,10 @@ const FLOORS=[['Dark oak','wood'],['Light oak','light'],['Concrete','concrete'],
 const NEONS=[['Pink','#ff4fa3'],['Cyan','#4fe0ff'],['Purple','#b06bff'],['Gold','#ffc93d'],['Green','#39ff88'],['Red','#ff4545'],['Blue','#3d6bff'],['White','#f4f1ff']];
 const SKIRTS=[['Default','#1a1630'],['Black','#0e0e12'],['White','#eeeae2'],['Oak','#a77b52'],['Walnut','#5a3a26'],['Grey','#6b6d76'],['Gold','#c9a14a'],['Pink','#ff7ab8']];
 const TRIMS=[['Default','#3a3458'],['Black','#141418'],['White','#f0ede6'],['Brass','#b8913f'],['Chrome','#c9ccd6'],['Teal','#26a69a'],['Rose','#d77a8f']];
+const BEDS=[['Lavender','#5b4a8a'],['Navy','#2a3a6a'],['Sage','#6f8f6a'],['Blush','#e7a3b8'],['Cream','#efe6d4'],['Charcoal','#33343c'],['Mustard','#d1a43a']];
+const CURTS=[['Plum','#5a3f86'],['Navy','#26325a'],['Velvet red','#7a1f2e'],['Linen','#e8e0d0'],['Sage','#7e9a7a'],['Black','#141418'],['Pink','#f08cba']];
+const CHAIRS=[['Black','#1a1a20'],['White','#eeeae2'],['Red','#c8323c'],['Pink','#ff7ab8'],['Blue','#3d6bff'],['Green','#2f9e5f'],['Gold','#c9a14a']];
+const OUTS=[['Default','#1a1726'],['Black','#0b0b0e'],['White','#eeeae2'],['Concrete','#7a7b80'],['Walnut','#4a3020'],['Navy','#1c2541'],['Pink','#d76c9c'],['Gold','#b8913f']];
 const DESKS=[['Walnut','#3b2a24'],['Oak','#b9936a'],['White','#ece8e1'],['Black','#18181d'],['Grey','#5e6170'],['Pink','#e58fb7'],['Mint','#8ee6b8']];
 function custom(){if(!G.custom||typeof G.custom!=='object') G.custom={};return G.custom}
 function picker(k,list){const v=custom()[k],c=v&&v[0]==='#'&&!list.some(x=>x[1]===v);return `<label class="swc pick ${c?'on':''}" title="Pick any colour" style="background:${c?v:'#222'}"><input type="color" class="cpick" data-k="${k}" value="${v&&v[0]==='#'?v:'#ff4fa3'}"></label>`}
@@ -1327,9 +1331,14 @@ function renderRoomShop(){
     <div class="srow"><span>Skirting</span><div class="sw8">${swatch('skirt',SKIRTS,'#1a1630')}${picker('skirt',SKIRTS)}</div></div>
     <div class="srow"><span>Trim</span><div class="sw8">${swatch('trim',TRIMS,'#3a3458')}${picker('trim',TRIMS)}</div></div>
     <div class="srow"><span>Desk</span><div class="sw8">${swatch('desk',DESKS,'')}${picker('desk',DESKS)}<button class="chipb ${!cu.desk?'on':''}" data-act="style" data-id="desk" data-v="">Auto</button></div></div>
+    <div class="srow"><span>Bedding</span><div class="sw8">${swatch('bed',BEDS,'#5b4a8a')}${picker('bed',BEDS)}</div></div>
+    <div class="srow"><span>Bed frame</span><div class="sw8">${swatch('bedframe',DESKS,'')}${picker('bedframe',DESKS)}<button class="chipb ${!cu.bedframe?'on':''}" data-act="style" data-id="bedframe" data-v="">Auto</button></div></div>
+    <div class="srow"><span>Curtains</span><div class="sw8">${swatch('curtain',CURTS,'#5a3f86')}${picker('curtain',CURTS)}</div></div>
+    <div class="srow"><span>Chair</span><div class="sw8">${swatch('chair',CHAIRS,'')}${picker('chair',CHAIRS)}<button class="chipb ${!cu.chair?'on':''}" data-act="style" data-id="chair" data-v="">Auto</button></div></div>
+    <div class="srow"><span>Outside</span><div class="sw8">${swatch('outside',OUTS,'#1a1726')}${picker('outside',OUTS)}</div></div>
     <div class="srow"><span>Neon</span><div class="sw8">${NEONS.map(([n,c])=>`<button class="swc ${(cu.neon||'')===c?'on':''}" style="background:${c};box-shadow:0 0 8px ${c}" title="${n}" data-act="style" data-id="neon" data-v="${c}"></button>`).join('')}<button class="swc rgbsw ${cu.neon==='rgb'?'on':''}" title="RGB cycle" data-act="style" data-id="neon" data-v="rgb"></button>${picker('neon',NEONS)}<button class="chipb ${!cu.neon?'on':''}" data-act="style" data-id="neon" data-v="">Auto</button></div></div>
     <div class="srow"><span>Strips</span><div class="sw8"><button class="chipb ${cu.strips!=='off'?'on':''}" data-act="style" data-id="strips" data-v="">On</button><button class="chipb ${cu.strips==='off'?'on':''}" data-act="style" data-id="strips" data-v="off">Off</button></div></div>
-  </div><div class="caught">Wall and floor colours apply to the bedroom; the penthouse keeps its own finishes. Skirting, trim, desk and neon apply everywhere. Neon colours every light strip in the room, including the sign, desk LEDs and floor glow. Auto uses your upgrade colours.</div>`;
+  </div><div class="caught">Wall and floor colours apply to the bedroom; the penthouse keeps its own finishes. Skirting, trim, desk, bedding, chair, outside and neon apply everywhere; curtains are in the bedroom. Chair Auto uses your upgrade finish. Neon colours every light strip in the room, including the sign, desk LEDs and floor glow. Auto uses your upgrade colours.</div>`;
   h+=`<div class="sec">Upgrades</div>`;
   h+=SHOP.map(it=>{const mt=maxT(it), t=tierOf(it.k), next=t<mt?priceFor(it,t+1):0, can=t<mt&&G.cash>=next;
     const pips='<span class="pips">'+Array.from({length:mt},(_,i)=>`<i class="${i<t?'on':''}"></i>`).join('')+'</span>';
@@ -1952,7 +1961,7 @@ function openSheet(name){
   document.querySelectorAll('.dk').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.sheet===name||(b.dataset.sheet==='dev'&&DEV.includes(name)))?'true':'false'));
   if(name==='launch') $('#launchPane').dataset.mode='';
   renderAll(name==='launch');
-  Room.setShift(window.innerWidth>760?sh.getBoundingClientRect().width:0);
+  Room.setShift(window.innerWidth>760?sh.offsetWidth:0);
   if(name==='chart'&&chart&&coin) setTimeout(()=>chart.timeScale().scrollToRealTime(),60);
 }
 function closeSheet(){
@@ -1974,7 +1983,7 @@ document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',(
 $('#livecard').addEventListener('click',()=>{if(coin&&coin.alive) return openSheet('chart');const t=+$('#livecard').dataset.tid;if(t) MK.sel=t;if(curSheet==='trench'){renderTrench();$('#sheetBody').scrollTop=0}else openSheet('trench')});
 const activeTab=g=>g==='feed'?(curSheet==='chart'?feedTab:null):curSheet;
 function syncLayoutVars(){const r=document.documentElement.style;r.setProperty('--hudH',$('#hud').offsetHeight+'px');r.setProperty('--dockH',$('#dock').offsetHeight+'px');
-  if(curSheet) Room.setShift(window.innerWidth>760?$('#sheet').getBoundingClientRect().width:0)}
+  if(curSheet) Room.setShift(window.innerWidth>760?$('#sheet').offsetWidth:0)}
 new ResizeObserver(syncLayoutVars).observe($('#hud'));new ResizeObserver(syncLayoutVars).observe($('#dock'));
 function renderQuick(){
   const q=$('#quick'), live=coin&&coin.alive; if(q.hidden===!!live) q.hidden=!live; if(!live) return;
@@ -2579,7 +2588,7 @@ const Room=(()=>{
       const fr=std(0x3c8f4a,{roughness:.7,side:THREE.DoubleSide});for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const f=new THREE.Mesh(new THREE.PlaneGeometry(.22,1.1),fr);f.position.set(px+.14+Math.cos(a)*.35,2.75,-4.45+Math.sin(a)*.35);f.lookAt(px+.14+Math.cos(a)*2,2.1,-4.45+Math.sin(a)*2);g.add(f)}}}
     // III: bar with stools and backlit bottles
     {const g=tg('mansion',3);const bx=3.55,bz=-.9;box(.55,1.0,2.0,std(0x1b1c22,{roughness:.4,metalness:.3}),bx,.5,bz,g);box(.68,.05,2.1,std(0xf2f0ec,{roughness:.2}),bx,1.02,bz,g);
-      box(.01,.02,1.96,anim.rnMat,bx-.28,.1,bz,g);box(.01,.02,1.96,anim.rnMat,bx-.28,.98,bz,g);
+      anim.tube(1.96,'z',bx-.29,.1,bz,g);anim.tube(1.96,'z',bx-.29,.98,bz,g);
       for(let i=0;i<3;i++){const sz=bz-.6+i*.6;cyl(.17,.17,.05,std(0xd4af37,{metalness:.9,roughness:.25}),bx-.62,.78,sz,g);cyl(.02,.02,.76,metal,bx-.62,.39,sz,g,8);cyl(.15,.15,.02,metal,bx-.62,.01,sz,g)}
       for(let i=0;i<7;i++) bottle(bx+.1,1.15,bz-.75+i*.25,g,[0x1d4a2a,0x5a2a10,0x3a1424,0x1a3a5a][i%4]);glow(0xffb36b,1.8,bx,1.3,bz,.25,g);
       L.bar=new THREE.PointLight(0xffb36b,0,3,2);L.bar.position.set(bx-.3,1.6,bz);g.add(L.bar)}
@@ -2723,7 +2732,7 @@ const Room=(()=>{
     const sg=new THREE.Mesh(new THREE.BoxGeometry(3.5,1,.02),glassM);sg.position.set(1.0,2.4,2.27);sg.rotation.z=-Math.atan2(3.75,3.1);L2.add(sg);
     // upstairs bedroom
     const y0=3.905;box(2.1,.25,1.7,dark,-2.85,y0+.13,-1.15,L2);box(1.95,.18,1.6,std(0xf4f1ec,{roughness:.95}),-2.8,y0+.34,-1.15,L2);
-    box(1.0,.07,1.62,std(0x6a7d9a,{roughness:.95}),-2.25,y0+.46,-1.15,L2);for(const pz of [-1.55,-.75]) box(.3,.12,.5,std(0xffffff,{roughness:.95}),-3.6,y0+.5,pz,L2);
+    anim.duvet2=std(0x6a7d9a,{roughness:.95});box(1.0,.07,1.62,anim.duvet2,-2.25,y0+.46,-1.15,L2);for(const pz of [-1.55,-.75]) box(.3,.12,.5,std(0xffffff,{roughness:.95}),-3.6,y0+.5,pz,L2);
     box(.08,1.0,1.9,oak,-3.86,y0+.55,-1.15,L2);
     box(.4,.4,.4,oak,-3.6,y0+.2,.0,L2);cyl(.1,.12,.3,white,-3.6,y0+.55,.0,L2);glow(0xffd29a,.7,-3.6,y0+.8,.0,.5,L2);
     const lf=std(0x2c6b40,{roughness:.8,flatShading:true});cyl(.22,.18,.5,dark,-3.5,y0+.25,1.8,L2);for(let i=0;i<9;i++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(.22,0),lf);b.position.set(-3.5+rnd(-.2,.2),y0+.7+i*.12,1.8+rnd(-.2,.2));b.scale.set(1,.8,1);L2.add(b)}
@@ -2742,11 +2751,11 @@ const Room=(()=>{
     glow(0xb06bff,2.2,3.8,y3+.05,-1.45,.15,L3);
     // room neon in the penthouse: mezzanine and sky-lounge edges, top of the glass, stair stringer
     {const RN=anim.rnMat,rg=new THREE.Group();L2.add(rg);anim.rnPent=rg;const sp=(sz,x,y,z,op,par)=>anim.rnSprites.push(glow(0xff4fa3,sz,x,y,z,op,par||rg));
-      box(3.3,.02,.02,RN,-2.25,3.67,2.33,rg);box(.02,.02,4.9,RN,-.58,3.67,-.15,rg);
-      box(9.3,.02,.02,RN,.5,7.85,-2.5,rg);box(.02,.02,7.0,RN,-3.78,7.85,.8,rg);
-      const sl=new THREE.Mesh(new THREE.BoxGeometry(3.4,.02,.02),RN);sl.position.set(1.0,1.94,1.27);sl.rotation.z=-Math.atan2(3.75,3.1);rg.add(sl);
+      const TB=anim.tube; TB(3.3,'x',-2.25,3.66,2.34,rg);TB(4.9,'z',-.57,3.66,-.15,rg);
+      TB(9.3,'x',.5,7.85,-2.5,rg);TB(7.0,'z',-3.77,7.85,.8,rg);
+      TB(3.4,'x',1.0,1.94,1.27,rg,-Math.atan2(3.75,3.1));
       for(let i=0;i<3;i++) sp(1.4,-3.4+i*1.2,3.6,2.3,.3); for(let i=0;i<6;i++) sp(1.8,-3+i*1.6,7.75,-2.4,.25);
-      const r3=new THREE.Group();L3.add(r3);box(2.1,.02,.02,RN,3.45,y3-.22,-.28,r3);box(.02,.02,2.3,RN,2.38,y3-.22,-1.45,r3);sp(1.4,3.4,y3-.3,-.3,.3,r3);
+      const r3=new THREE.Group();L3.add(r3);TB(2.1,'x',3.45,y3-.23,-.27,r3);TB(2.3,'z',2.37,y3-.23,-1.45,r3);sp(1.4,3.4,y3-.3,-.3,.3,r3);
       L.rn2=new THREE.PointLight(0xff4fa3,0,8,2);L.rn2.position.set(-1.5,3.2,1.5);rg.add(L.rn2)}
   }
   function marbleMat(){return std(0xffffff,{map:anim.marble,roughness:.25})}
@@ -2775,20 +2784,26 @@ const Room=(()=>{
     else anim.floor.material.color.set(0xffffff);
     const dk=cu.desk; if(dk){anim.deskMat.color.set(dk);anim.drawerMat.color.set(dk).multiplyScalar(.88)} else {anim.deskMat.color.set(pent?0xece8e1:0x3b2a24);anim.drawerMat.color.set(pent?0xdcd6cc:0x2f2420)}
     anim.skirtMat.color.set(cu.skirt||0x1a1630); anim.trimMat.color.set(cu.trim||0x3a3458);
+    anim.duvet.color.set(cu.bed||0x5b4a8a); if(anim.duvet2) anim.duvet2.color.set(cu.bed||0x6a7d9a); anim.bedFrame.color.set(cu.bedframe||0x2a2236);
+    anim.curtMat.color.set(cu.curtain||0x5a3f86);
+    if(cu.chair){anim.chairMat.color.set(cu.chair);anim.chairMat.metalness=.2;anim.chairMat.roughness=.5}
+    {const o=cu.outside;anim.shellMat.color.set(o||0x1a1726);anim.slabMat.color.set(o?new THREE.Color(o).multiplyScalar(.8):0x15131f)}
     const strips=cu.strips!=='off'; anim.rnBed.visible=strips&&!pent; anim.rnShared.visible=strips; if(anim.rnPent) anim.rnPent.visible=strips;
     L.rn.intensity=strips&&!pent?.55:0; if(L.rn2) L.rn2.intensity=strips&&pent?.7:0;
     anim.neonCustom=cu.neon||''; neonPaint(); drawNeon();
   }
   function neonAutoHex(){const nt=anim.neonTier|0;return ['#ff4fa3','#ff4fa3','#4fe0ff','#b06bff','#ffc93d','#ff4fa3'][nt]}
-  const _nc=new THREE.Color();
+  const _nc=new THREE.Color(), _white=new THREE.Color(0xffffff);
+  const rgbHue=t=>((t!=null?t:performance.now()/1000)*.1)%1;
   function neonPaint(t){ // colour every neon piece; t = time for RGB cycling
     const m=anim.neonCustom, rgb=m==='rgb'||(!m&&(anim.neonTier|0)>=5);
-    if(rgb) _nc.setHSL(((t!=null?t:performance.now()/1000)*.1)%1,1,.6); else _nc.set(m||neonAutoHex());
-    anim.rnMat.color.copy(_nc); anim.rnSprites.forEach(s=>s.material.color.copy(_nc)); L.rn.color.copy(_nc); if(L.rn2) L.rn2.color.copy(_nc);
+    if(rgb) _nc.setHSL(rgbHue(t),1,.6); else _nc.set(m||neonAutoHex());
+    anim.rnMat.color.copy(_nc).lerp(_white,.55); anim.rnHalo.color.copy(_nc); anim.rnHalo2.color.copy(_nc); anim.rnSprites.forEach(s=>s.material.color.copy(_nc)); L.rn.color.copy(_nc); if(L.rn2) L.rn2.color.copy(_nc);
     if(!m) return; // Auto: the sign, desk LEDs and penthouse cove keep their own upgrade colours
     if(anim.neonFrame) anim.neonFrame.color.copy(_nc); if(anim.neonGlow) anim.neonGlow.material.color.copy(_nc); if(L.neon) L.neon.color.copy(_nc);
     if(anim.ledMat){anim.ledMat.color.copy(_nc);L.led.color.copy(_nc)} if(anim.ledBack) anim.ledBack.material.color.copy(_nc);
     if(anim.coveMat){anim.coveMat.color.copy(_nc);L.cove.color.copy(_nc)}
+    if(m==='rgb'){if(anim.armLed) anim.armLed.color.copy(_nc); if(anim.m2Halo) anim.m2Halo.material.color.copy(_nc); if(anim.m3Halo) anim.m3Halo.material.color.copy(_nc)}
   }
   function applyModern(tier){
     if(!modern||tier===modernOn) return; modernOn=tier; const on=tier>0;
@@ -2865,7 +2880,7 @@ const Room=(()=>{
     const rg=new THREE.BufferGeometry();rg.setAttribute('position',new THREE.BufferAttribute(rp,3));
     anim.rainMesh=new THREE.LineSegments(rg,new THREE.LineBasicMaterial({color:0xaab8ff,transparent:true,opacity:.35}));S.add(anim.rainMesh);
     // curtains
-    const cm=std(0x5a3f86,{roughness:.9,side:THREE.DoubleSide});
+    const cm=std(0x5a3f86,{roughness:.9,side:THREE.DoubleSide});anim.curtMat=cm;
     for(const sx of [.38,2.72]){const cg=new THREE.PlaneGeometry(.42,2.1,24,1);const p=cg.attributes.position;for(let i=0;i<p.count;i++) p.setZ(i,Math.sin(p.getX(i)*38)*.035);cg.computeVertexNormals();const cu=new THREE.Mesh(cg,cm);cu.position.set(sx,1.9,-2.5);cu.castShadow=true;S.add(cu)}
     box(2.9,.03,.03,std(0x1a1630,{metalness:.6}),1.55,2.96,-2.5);
     tagOld(nWin);
@@ -2911,11 +2926,12 @@ const Room=(()=>{
     const rugM=new THREE.Mesh(new THREE.CircleGeometry(1.05,64),std(0xffffff,{map:rugTex(),roughness:1}));rugM.rotation.x=-Math.PI/2;rugM.position.set(-.5,.006,-1.05);rugM.receiveShadow=true;S.add(rugM);anim.rug=rugM;
     // bed
     const nBed=S.children.length;
-    box(1.15,.3,2.05,std(0x2a2236,{roughness:.7}),-2.55,.15,.25);
+    anim.bedFrame=std(0x2a2236,{roughness:.7});anim.duvet=std(0x5b4a8a,{roughness:.95});
+    box(1.15,.3,2.05,anim.bedFrame,-2.55,.15,.25);
     box(1.08,.17,1.98,std(0xe5ddf0,{roughness:.9}),-2.55,.385,.25);
-    box(1.1,.07,1.3,std(0x5b4a8a,{roughness:.95}),-2.55,.5,.58);
+    box(1.1,.07,1.3,anim.duvet,-2.55,.5,.58);
     box(.5,.11,.32,std(0xf4effa,{roughness:.95}),-2.55,.52,-.5);
-    box(1.15,.7,.08,std(0x2a2236,{roughness:.7}),-2.55,.65,-.82);
+    box(1.15,.7,.08,anim.bedFrame,-2.55,.65,-.82);
     tagOld(nBed);
     // shelves + books
     const sh=std(0x3b2a24,{roughness:.6});
@@ -2945,16 +2961,25 @@ const Room=(()=>{
     const gl=group('led');anim.ledMat=new THREE.MeshBasicMaterial({color:0xb06bff,toneMapped:false});box(2.5,.015,.015,anim.ledMat,-.5,.88,-2.56,gl);box(.015,.015,.9,anim.ledMat,.75,.88,-2.1,gl);box(.015,.015,.9,anim.ledMat,-1.75,.88,-2.1,gl);
     L.led=new THREE.PointLight(0xb06bff,0,2.5,2);L.led.position.set(-.5,.8,-2.4);S.add(L.led);
     // room neon: strips around the room, coloured by the Style > Neon setting
-    anim.rnMat=new THREE.MeshBasicMaterial({color:0xff4fa3,toneMapped:false});anim.rnSprites=[];const NR=anim.rnMat;
+    anim.rnMat=new THREE.MeshBasicMaterial({color:0xffc0e0,toneMapped:false});anim.rnSprites=[];const NR=anim.rnMat;
+    {const ht=ctex(8,64,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'rgba(255,255,255,0)');gr.addColorStop(.38,'rgba(255,255,255,.35)');gr.addColorStop(.5,'rgba(255,255,255,1)');gr.addColorStop(.62,'rgba(255,255,255,.35)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h)});
+      anim.rnHalo=new THREE.MeshBasicMaterial({map:ht.t,color:0xff4fa3,transparent:true,opacity:.75,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,toneMapped:false});
+      anim.rnHalo2=anim.rnHalo.clone();anim.rnHalo2.opacity=.28}
+    // neon tube: hot core + tight halo + wide soft bloom (two crossed ribbons so it reads from any angle)
+    anim.tube=(len,axis,x,y,z,par,rz)=>{const g=new THREE.Group();g.position.set(x,y,z);if(rz) g.rotation.z=rz;par.add(g);
+      const core=new THREE.Mesh(new THREE.CylinderGeometry(.011,.011,len,8),anim.rnMat);core.rotation.z=Math.PI/2;g.add(core);
+      for(const [w,m] of [[.09,anim.rnHalo],[.34,anim.rnHalo2]]) for(const rx of [0,Math.PI/2]){const h=new THREE.Mesh(new THREE.PlaneGeometry(len+w*.5,w),m);h.rotation.x=rx;h.renderOrder=3;g.add(h)}
+      if(axis==='z') g.rotation.y=Math.PI/2; return g};
+    const TB=anim.tube;
     const rnG=new THREE.Group();S.add(rnG);anim.rnBed=rnG;oldRoom.push(rnG);
     const rgl=(sz,x,y,z,op,par)=>{const sp=glow(0xff4fa3,sz,x,y,z,op,par);anim.rnSprites.push(sp);return sp};
-    box(8.55,.025,.025,NR,1.125,4.3,-2.55,rnG);box(.025,.025,6.75,NR,-3.17,4.3,.825,rnG);              // ceiling cove
-    box(8.55,.018,.018,NR,1.125,.135,-2.565,rnG);                                                        // along the back skirting
-    box(.02,.02,2.05,NR,-1.97,.03,.25,rnG);box(1.15,.02,.02,NR,-2.55,.03,1.28,rnG);                     // under the bed
-    box(2.6,.012,.012,NR,-.5,.885,-1.63,rnG);                                                             // desk front lip
+    TB(8.55,'x',1.125,4.3,-2.55,rnG);TB(6.75,'z',-3.16,4.3,.825,rnG);                // ceiling cove
+    TB(8.55,'x',1.125,.15,-2.56,rnG);                                                 // along the back skirting
+    TB(2.05,'z',-1.96,.04,.25,rnG);TB(1.15,'x',-2.55,.04,1.29,rnG);                  // under the bed
+    TB(2.6,'x',-.5,.88,-1.62,rnG);                                                     // desk front lip
     for(let i=0;i<5;i++) rgl(1.6,-2.6+i*1.9,4.2,-2.45,.3,rnG); rgl(1.2,-2.0,.08,.25,.35,rnG); rgl(1.0,-.5,.8,-1.6,.25,rnG);
     for(let i=0;i<4;i++) rgl(1.4,-3.05,4.2,-1.8+i*1.8,.25,rnG);
-    const rnS=new THREE.Group();S.add(rnS);anim.rnShared=rnS; box(.018,.018,6.75,NR,-3.165,.135,.825,rnS);   // along the left skirting (both rooms)
+    const rnS=new THREE.Group();S.add(rnS);anim.rnShared=rnS; TB(6.75,'z',-3.16,.15,.825,rnS);   // along the left skirting (both rooms)
     L.rn=new THREE.PointLight(0xff4fa3,0,6,2);L.rn.position.set(.5,3.8,.2);S.add(L.rn);
     // L3: lava lamp + record player
     const g3b=group('lava');
@@ -3011,7 +3036,7 @@ const Room=(()=>{
     if(document.fonts&&document.fonts.load) document.fonts.load('40px Monoton').then(drawNeon).catch(()=>{});
   }
   let VW=1,VH=1;
-  function resize(){if(!R) return;VW=Math.max(10,window.innerWidth);VH=Math.max(10,window.innerHeight);R.setSize(VW,VH,false);C.aspect=VW/VH;C.fov=VW/VH<.8?58:VW/VH<1.2?48:40;applyView()}
+  function resize(){if(!R) return;const w=Math.max(10,canvas.clientWidth||window.innerWidth),h=Math.max(10,canvas.clientHeight||window.innerHeight);if(Math.abs(w-VW)<2&&Math.abs(h-VH)<2&&R.domElement.width) return;VW=w;VH=h;R.setSize(VW,VH,false);C.aspect=VW/VH;{const ar=VW/VH;if(ar<.8){const hf=2*Math.atan(Math.tan(29*Math.PI/180)*.47);C.fov=Math.min(75,Math.max(48,2*Math.atan(Math.tan(hf/2)/ar)*180/Math.PI))}else C.fov=ar<1.2?48:40}applyView()}
   function applyView(){if(Math.abs(shiftC)<.5) C.clearViewOffset(); else C.setViewOffset(VW,VH,shiftC,0,VW,VH);C.updateProjectionMatrix()}
   let skyRich=null;
   function hud(){const n=SHOP.reduce((a,x)=>a+tierOf(x.k),0);$('#roomLevel').textContent='ROOM '+n+'/'+TOTAL_T();
@@ -3037,7 +3062,7 @@ const Room=(()=>{
   }
   function drawNeon(){if(!scr.neon) return;const g=scr.neon.g,w=512,h=160;g.clearRect(0,0,w,h);const txt=coin&&coin.alive?'$'+coin.ticker:'RUG ROOM';
     g.textAlign='center';g.textBaseline='middle';let fs=74;g.font=fs+'px Monoton, "Chakra Petch", sans-serif';while(g.measureText(txt).width>w-40&&fs>30){fs-=4;g.font=fs+'px Monoton, "Chakra Petch", sans-serif'}
-    const nt=anim.neonTier|0;const col=anim.neonRed?'#ff3b3b':anim.neonCustom==='rgb'?'hsl('+((Date.now()/20)%360)+',100%,62%)':anim.neonCustom?anim.neonCustom:nt>=5?'hsl('+((Date.now()/20)%360)+',100%,62%)':['#ff4fa3','#ff4fa3','#4fe0ff','#b06bff','#ffc93d'][nt];
+    const nt=anim.neonTier|0;const hs='hsl('+Math.round(rgbHue()*360)+',100%,62%)', col=anim.neonRed?'#ff3b3b':anim.neonCustom==='rgb'?hs:anim.neonCustom?anim.neonCustom:nt>=5?hs:['#ff4fa3','#ff4fa3','#4fe0ff','#b06bff','#ffc93d'][nt];
     for(const [b,a] of [[30,.5],[16,.7],[6,1]]){g.shadowColor=col;g.shadowBlur=b;g.fillStyle=col;g.globalAlpha=a;g.fillText(txt,w/2,h/2+4)}
     g.globalAlpha=1;g.shadowBlur=0;g.fillStyle='#ffe3f1';g.fillText(txt,w/2,h/2+4);scr.neon.t.needsUpdate=true}
   function drawScreens(){
@@ -3088,8 +3113,8 @@ const Room=(()=>{
     if(anim.blobs) anim.blobs.forEach(b=>{b.b.position.y=1.08+(Math.sin(t*.6+b.o)*.5+.5)*.2;b.b.scale.setScalar(.8+Math.sin(t*1.3+b.o)*.3)});
     if(anim.vinyl&&own('vinyl')) anim.vinyl.rotation.y+=dt*(3.5+tierOf('vinyl')*.6);
     const nCus=anim.neonCustom; if(nCus==='rgb'||(!nCus&&(anim.neonTier|0)>=5)) neonPaint(t);
-    if(!nCus&&tierOf('led')>=5&&anim.ledMat){anim.ledMat.color.setHSL((t*.08)%1,1,.6);L.led.color.copy(anim.ledMat.color)}
-    if((nCus==='rgb'||(!nCus&&tierOf('neon')>=5))&&Math.floor(t*4)!==anim.nT){anim.nT=Math.floor(t*4);drawNeon()}
+    if(!nCus&&tierOf('led')>=5&&anim.ledMat){anim.ledMat.color.setHSL(rgbHue(t),1,.6);L.led.color.copy(anim.ledMat.color)}
+    if((nCus==='rgb'||(!nCus&&tierOf('neon')>=5))&&Math.floor(t*10)!==anim.nT){anim.nT=Math.floor(t*10);drawNeon()}
     if(anim.fairy&&own('fairy')) anim.fairy.forEach((f,i)=>{f.material.opacity=.35+Math.sin(t*2+i*1.7)*.2});
     // lamp flicker
     L.lamp.intensity=1.7+Math.sin(t*7)*.03+(Math.random()<.01?-.3:0);
@@ -3110,10 +3135,10 @@ const Room=(()=>{
     if(anim.bbSpark&&tierOf('beanbag')>=5) anim.bbSpark.forEach((s,i)=>s.material.opacity=Math.max(0,Math.sin(t*3+i*1.9))*.8);
     if(anim.auroraMat&&tierOf('fairy')>=5){const p=anim.auroraGeo.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i);p.setZ(i,Math.sin(x*1.3+t*.8)*.25)}p.needsUpdate=true;anim.auroraMat.color.setHSL((.42+Math.sin(t*.15)*.12)%1,1,.6);anim.auroraMat.opacity=.16+Math.sin(t*.7)*.06;anim.auroraMat2.opacity=.14+Math.sin(t*.9+1)*.06}
     if(anim.stars&&tierOf('fairy')>=4) anim.stars.material.opacity=.7+Math.sin(t*2)*.2;
-    if(anim.m2Halo&&tierOf('monitor2')>=5) anim.m2Halo.material.color.setHSL((t*.1)%1,1,.6);
-    if(anim.m3Halo&&tierOf('monitor3')>=5) anim.m3Halo.material.color.setHSL((t*.1+.5)%1,1,.6);
-    if(!nCus&&anim.neonFrame&&tierOf('neon')>=5) anim.neonFrame.color.setHSL((t*.12+.5)%1,1,.62);
-    if(anim.armLed&&tierOf('chair')>=2) anim.armLed.color.setHSL((t*.08)%1,1,.6);
+    if(nCus!=='rgb'&&anim.m2Halo&&tierOf('monitor2')>=5) anim.m2Halo.material.color.setHSL(rgbHue(t),1,.6);
+    if(nCus!=='rgb'&&anim.m3Halo&&tierOf('monitor3')>=5) anim.m3Halo.material.color.setHSL(rgbHue(t),1,.6);
+    if(!nCus&&anim.neonFrame&&tierOf('neon')>=5) anim.neonFrame.color.setHSL(rgbHue(t),1,.62);
+    if(nCus!=='rgb'&&anim.armLed&&tierOf('chair')>=2) anim.armLed.color.setHSL(rgbHue(t),1,.6);
     if(!nCus&&anim.ledBack&&tierOf('led')>=2) anim.ledBack.material.color.copy(anim.ledMat.color);
     // penthouse: pool shimmer and fireworks
     if(modernOn>=2&&anim.waterMat){anim.waterMat.opacity=.78+Math.sin(t*2.2)*.07;L.pool.intensity=.9+Math.sin(t*1.7)*.15}
