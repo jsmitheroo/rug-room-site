@@ -1,5 +1,9 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Rug Room</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.png" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#090b13">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Monoton&display=swap">
@@ -353,9 +357,9 @@ button.chip:hover{border-color:rgba(255,79,163,.4)}
 .field>label{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
 .field>label output{font:600 11.5px var(--f-mono);color:var(--fg)}
 .row2{display:grid;grid-template-columns:1fr 92px;gap:8px}
-input[type=text],textarea,select{background:rgba(5,6,12,.7);border:1px solid var(--line2);color:var(--fg);border-radius:8px;padding:9px 10px;font:500 13px var(--f-ui);width:100%;box-sizing:border-box}
+input[type=text],input[type=email],textarea,select{background:rgba(5,6,12,.7);border:1px solid var(--line2);color:var(--fg);border-radius:8px;padding:9px 10px;font:500 13px var(--f-ui);width:100%;box-sizing:border-box}
 textarea{resize:vertical;min-height:58px;line-height:1.4;font-size:12.5px}
-input[type=text]:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+input[type=text]:focus,input[type=email]:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
 input[type=range]{width:100%;accent-color:var(--accent)}
 .mascots{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
 .mascots button{aspect-ratio:1;max-width:100%;border-radius:8px;border:1px solid var(--line2);background:rgba(5,6,12,.7);font-size:18px;cursor:pointer;padding:0}
@@ -2325,7 +2329,7 @@ var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,l
   },
   async webMe(){try{const j=await this.api('GET','/api/me');this.webUser=j.user;this.uid=String(j.user.id);this.who=j.user.username;await this.pull();return true}catch(e){if(e.status===401){try{localStorage.removeItem('rugroom.token')}catch(_){}}return false}},
   async auth(kind,username,password){
-    const j=await this.api('POST','/api/'+kind,{username,password});
+    const j=await this.api('POST','/api/'+kind,{email:username,password});
     this.token=j.token; try{localStorage.setItem('rugroom.token',j.token)}catch(e){}
     this.webUser=j.user; this.uid=String(j.user.id); this.who=j.user.username; this.status='syncing';
     const res=await this.pull(); this.status='synced'; this.refreshBoard(); renderAll(true); return res;
@@ -2425,18 +2429,18 @@ function authModal(kind){
   openModal(`<div class="kick">${reg?'CREATE ACCOUNT':'SIGN IN'}</div><h3>${reg?'Save your progress to the cloud':'Welcome back'}</h3>
   <p>${reg?'Your current progress moves into this account, and your score goes on the leaderboard.':'Your saved progress loads onto this device.'}</p>
   <form id="authForm" class="field" style="gap:10px" autocomplete="on">
-    <div class="field"><label for="authUser">Username</label><input type="text" id="authUser" name="username" maxlength="18" autocomplete="username" spellcheck="false" style="font-family:var(--f-mono)"></div>
+    <div class="field"><label for="authUser">Email</label><input type="email" id="authUser" name="email" maxlength="120" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"></div>
     <div class="field"><label for="authPass">Password</label><input type="password" id="authPass" name="password" maxlength="64" autocomplete="${reg?'new-password':'current-password'}"></div>
     <div class="ob-err" id="authErr"></div>
     <div class="acts"><button type="button" class="btn" data-act="ok">Cancel</button><button type="submit" class="btn primary" id="authGo">${reg?'Create account':'Sign in'}</button></div>
   </form>
   <p style="font-size:12px">${reg?'Already have one? <a href="#" id="authSwap">Sign in</a>':'New here? <a href="#" id="authSwap">Create an account</a>'}</p>`);
-  const u=$('#authUser'); u.value=reg?(G.alias||''):''; u.focus();
+  const u=$('#authUser'); u.value=''; u.focus();
   $('#authSwap').addEventListener('click',e=>{e.preventDefault();authModal(reg?'login':'register')});
   $('#authForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const un=u.value.trim(), pw=$('#authPass').value, err=$('#authErr'), go=$('#authGo');
-    if(!/^[A-Za-z0-9_.]{3,18}$/.test(un)){err.textContent='Username: 3 to 18 letters, numbers, dots or underscores.';return}
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(un)){err.textContent='Enter a valid email address.';return}
     if(pw.length<6){err.textContent='Password needs at least 6 characters.';return}
     go.disabled=true; go.textContent=reg?'Creating…':'Signing in…'; err.textContent='';
     try{const res=await Cloud.auth(kind,un,pw); obOpen=false; closeModal();

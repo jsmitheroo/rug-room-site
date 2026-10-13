@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="rug" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff4fa3"/>
+      <stop offset="1" stop-color="#b06bff"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#090b13"/>
+  <g filter="url(#glow)" transform="rotate(-14 32 32)">
+    <!-- tassels on the short ends -->
+    <g stroke="#ffd1e8" stroke-width="1.8" stroke-linecap="round">
+      <path d="M12 21h-4M12 26h-4M12 31h-4M12 36h-4M12 41h-4"/>
+      <path d="M52 21h4M52 26h4M52 31h4M52 36h4M52 41h4"/>
+    </g>
+    <rect x="12" y="18" width="40" height="27" rx="2.5" fill="url(#rug)"/>
+    <!-- woven stripes -->
+    <path d="M18 18v27M46 18v27" stroke="#090b13" stroke-width="2.4"/>
+    <path d="M32 24.5l6.5 7-6.5 7-6.5-7z" fill="#090b13"/>
+    <path d="M32 28.3l3 3.2-3 3.2-3-3.2z" fill="#ffe7a8"/>
+  </g>
+</svg>
