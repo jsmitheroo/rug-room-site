@@ -1291,10 +1291,12 @@ function newAccount(){
   $('#chartEmpty').hidden=false; chatEl.innerHTML=''; Room.reset(); form=randomCoin(); closeModal(); syncSpeed(); closeSheet(); renderAll(true);
   onboarding();
 }
+const roomMissing=()=>SHOP.filter(x=>x.k!=='mansion'&&x.k!=='penthouse'&&!own(x.k));
 function buyItem(k,ok){
   const it=SHOP.find(x=>x.k===k); if(!it) return; const t=tierOf(k); if(t>=maxT(it)) return;
   const cost=priceFor(it,t+1);
   if(G.cash<cost) return toast('Not enough cash for '+it.name.toLowerCase()+' tier '+ROMAN[t+1],'bad');
+  if(k==='mansion'&&roomMissing().length) return toast('Buy every room item first (skyline view not needed). Still missing: '+roomMissing().map(x=>x.name).join(', ')+'.','bad');
   const others=SHOP.filter(x=>x.k!=='mansion'&&tierOf(x.k)>0);
   if(k==='mansion'&&others.length&&!ok) return openModal(`<div class="kick">NEW ROOM LEVEL</div><h3>Move up to ${esc(it.tiers[t])}?</h3><p>Moving up a room level resets everything else in the room. Your ${others.length} other item${others.length>1?'s':''} (${others.reduce((a,x)=>a+tierOf(x.k),0)} tiers) go back to zero and you rebuild the new space from scratch. Your cash, bags and mining aren't touched.</p><div class="acts"><button class="btn" data-act="ok">Not yet</button><button class="btn primary" data-act="buymansion">Upgrade for ${fmtUSD(cost)}</button></div>`);
   G.cash-=cost; G.owned[k]=t+1;
@@ -1343,13 +1345,14 @@ function renderRoomShop(){
     <div class="srow"><span>Strips</span><div class="sw8"><button class="chipb ${cu.strips!=='off'?'on':''}" data-act="style" data-id="strips" data-v="">On</button><button class="chipb ${cu.strips==='off'?'on':''}" data-act="style" data-id="strips" data-v="off">Off</button></div></div>
   </div><div class="caught">Wall and floor colours apply to the bedroom; the penthouse keeps its own finishes. Skirting, trim, desk, bedding, chair, outside and neon apply everywhere; curtains are in the bedroom. Chair Auto uses your upgrade finish. Neon colours every light strip in the room, including the sign, desk LEDs and floor glow. Auto uses your upgrade colours.</div>`;
   h+=`<div class="sec">Upgrades</div>`;
-  h+=SHOP.map(it=>{const mt=maxT(it), t=tierOf(it.k), next=t<mt?priceFor(it,t+1):0, can=t<mt&&G.cash>=next;
+  h+=SHOP.map(it=>{const mt=maxT(it), t=tierOf(it.k), next=t<mt?priceFor(it,t+1):0, can=t<mt&&G.cash>=next&&!(it.k==='mansion'&&roomMissing().length);
     const pips='<span class="pips">'+Array.from({length:mt},(_,i)=>`<i class="${i<t?'on':''}"></i>`).join('')+'</span>';
     const title=`${it.name}${t?` <span class="tier">${mt>1?ROMAN[t]+' · ':''}${esc(it.tiers[t-1])}</span>`:''}`;
     const tags=[pips];
     if(t) tags.push('<span class="tag good">'+it.p(t)+'</span>');
     if(t<mt) tags.push('<span class="tag">'+(t?'Next: ':'')+it.p(t+1)+'</span>');
-    if(it.k==='mansion'&&t<mt) tags.push('<span class="tag heat">Resets your other items</span>');
+    const lockM=it.k==='mansion'&&t<mt&&roomMissing().length;
+    if(it.k==='mansion'&&t<mt) tags.push(lockM?'<span class="tag heat">Buy every item first · '+roomMissing().length+' left</span>':'<span class="tag heat">Resets your other items</span>');
     return card({title,cost:t>=mt?(mt>1?'MAX':'OWNED'):fmtCash(next),desc:t<mt?it.desc+(t?' Next tier: '+it.tiers[t]+'.':''):it.desc,tags,
       btn:t>=mt?'<span class="tag good">'+(mt>1?'Maxed':'Owned')+'</span>':`<button class="btn ${can?'primary':''}" data-act="buy" data-id="${it.k}" ${can?'':'disabled'}>${t?'Upgrade to '+ROMAN[t+1]:'Buy'}</button>`})}).join('');
   setHTML($('#roomPane'),h);
