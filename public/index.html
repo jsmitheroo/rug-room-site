@@ -1491,15 +1491,15 @@ function botsTick(){
       else{const x=r.mc/e.mc;if(x>=b.tp||x<=b.sl||(b.gradExit&&r.grad&&G.tick-(r.gradAt||0)>=2*SUBS)){close=true;st.ret+=x-1;if(x>1) st.wins++}}
       if(close){st.trades++;delete st.pos[id];
         if(cp.pos[id]===b.k){delete cp.pos[id];if(r&&r.alive&&r.units>0) cp.q.push({a:'sell',id:r.id,b:b.k,n:b.n})}}}
-    if(Object.keys(st.pos).length<3&&Math.random()<.3){
+    if(Object.keys(st.pos).length<6&&Math.random()<.3){
       const smart=Math.random()<b.skill, cands=TR.coins.filter(r=>r.alive&&!st.pos[r.id]&&(smart?b.pick(r):!r.grad||Math.random()<.3));
       if(cands.length){const r=pick(cands);st.pos[r.id]={mc:r.mc,at:G.tick};
-        if(cp.bots.includes(b.k)&&!cp.pos[r.id]&&Object.values(cp.pos).filter(v=>v===b.k).length<2&&!cp.q.some(o=>o.id===r.id)) cp.q.push({a:'buy',id:r.id,b:b.k,n:b.n})}}
+        if(cp.bots.includes(b.k)&&!cp.pos[r.id]&&!cp.q.some(o=>o.id===r.id)) cp.q.push({a:'buy',id:r.id,b:b.k,n:b.n})}}
   }
 }
 function renderCopy(){
   const cp=copyState();
-  let h=`<div class="caught">Follow up to 2 traders and your account copies their buys (each one uses the quick-buy amount you had when you followed them, now <b>${fmtUSD(MK.qb)}</b>) and sells. Copies land a moment after the trader's, you hold at most 2 copied coins per trader, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. Stats are since you opened the game.</div>`;
+  let h=`<div class="caught">Follow up to 2 traders and your account copies their buys (each one uses the quick-buy amount you had when you followed them, now <b>${fmtUSD(MK.qb)}</b>) and sells. Copies land a moment after the trader's, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. Stats are since you opened the game.</div>`;
   h+=BOTS.map(b=>{const st=BOTST[b.k],on=cp.bots.includes(b.k),full=!on&&cp.bots.length>=COPY_SLOTS,wr=st.trades?Math.round(st.wins/st.trades*100):null,avg=st.trades?st.ret/st.trades*100:null,open=Object.keys(st.pos).length;
     return card({title:`${b.e} ${b.n}${on?' <span class="tier">FOLLOWING · '+fmtUSD(cp.amts[b.k]||MK.qb)+'</span>':''}`,cost:wr==null?'new':wr+'% wins',desc:b.d,
       tags:[`<span class="tag">${st.trades} trades</span>`,avg==null?'':`<span class="tag ${avg>=0?'good':'heat'}">avg ${avg>=0?'+':''}${avg.toFixed(0)}%</span>`,`<span class="tag">${open} open</span>`],
