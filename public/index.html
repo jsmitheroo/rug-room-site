@@ -2246,7 +2246,7 @@ const Room=(()=>{
     {const g=tg('beanbag',5);anim.bbSpark=[];for(let i=0;i<6;i++) anim.bbSpark.push(glow(0xbfefff,.12,1.75+rnd(-.4,.4),.3+rnd(0,.35),-.85+rnd(-.4,.4),.6,g))}
     // fairy lights: II second string, III festival bulbs, IV starfield, V aurora
     {const g=tg('fairy',2);for(let i=0;i<18;i++){const t=i/17,x=.55+t*2,y=2.78-Math.sin(t*Math.PI*2.5)*.06;const b=new THREE.Mesh(new THREE.SphereGeometry(.016,8,6),new THREE.MeshBasicMaterial({color:0xffe6b0,toneMapped:false}));b.position.set(x,y,-2.48);g.add(b);glow(0xffc46b,.14,x,y,-2.47,.5,g)}}
-    {const g=tg('fairy',4);const N=90,pp=new Float32Array(N*3);for(let i=0;i<N;i++){const onWall=Math.random()<.5;pp.set(onWall?[-3.15,rnd(2.6,4.3),rnd(-2.5,1.5)]:[rnd(-3.1,3.5),rnd(3.1,4.35),-2.55],i*3)}
+    {const g=tg('fairy',4);const N=90,pp=new Float32Array(N*3);for(let i=0;i<N;i++){const onWall=Math.random()<.5;pp.set(onWall?[-3.85,rnd(2.6,4.3),rnd(-2.5,1.5)]:[rnd(-3.1,3.5),rnd(3.1,4.35),-2.55],i*3)}
       const pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pp,3));anim.stars=new THREE.Points(pg,new THREE.PointsMaterial({color:0xfff2d0,size:.028,transparent:true,opacity:.75,blending:THREE.AdditiveBlending,depthWrite:false}));g.add(anim.stars)}
     {const g=tg('fairy',5);anim.auroraMat=new THREE.MeshBasicMaterial({color:0x5affc0,transparent:true,opacity:.18,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,toneMapped:false});
       const ag=new THREE.PlaneGeometry(6.2,1.1,40,1);anim.auroraGeo=ag;const am=new THREE.Mesh(ag,anim.auroraMat);am.position.set(.2,3.7,-2.4);g.add(am);
@@ -2280,8 +2280,8 @@ const Room=(()=>{
     {const g=tg('monitor2',5);anim.m2Halo=glow(0xff4fa3,2,-1.42,1.5,-2.3,.4,g)}
     // record player: II speakers, III DJ decks, IV reel-to-reel, V studio towers
     const spk=std(0x16161c,{roughness:.5});
-    {const g=tg('vinyl',2);for(const sz of [.12,.38]){box(.22,.34,.22,spk,-3.0,1.94,sz,g);cyl(.06,.06,.01,std(0x2a2a33),-2.885,1.98,sz,g).rotation.z=Math.PI/2;cyl(.035,.035,.01,std(0x2a2a33),-2.885,1.86,sz,g).rotation.z=Math.PI/2}}
-    {const g=tg('vinyl',4);glow(0xff4fa3,.9,-3.0,1.9,-.25,.3,g)}
+    {const g=tg('vinyl',2);for(const sz of [-1.04,-.46]){box(.22,.34,.22,spk,-3.0,1.94,sz,g);cyl(.06,.06,.01,std(0x2a2a33),-2.885,1.98,sz,g).rotation.z=Math.PI/2;cyl(.035,.035,.01,std(0x2a2a33),-2.885,1.86,sz,g).rotation.z=Math.PI/2}}
+    {const g=tg('vinyl',4);glow(0xff4fa3,.9,-3.0,1.9,-.75,.3,g)}
     // lava lamp: III second, IV third, V giant gold floor lamp
     const lavaAt=(x,z,c,g)=>{cyl(.05,.07,.1,std(0x222230,{metalness:.6,roughness:.3}),x,1.01,z,g);const m=new THREE.MeshStandardMaterial({color:c,transparent:true,opacity:.6,emissive:c,emissiveIntensity:.8});const l=new THREE.Mesh(new THREE.CylinderGeometry(.04,.05,.26,16),m);l.position.set(x,1.19,z);g.add(l);glow(c,.6,x,1.2,z,.35,g)};
     // neon: V gets a glowing frame
@@ -2337,7 +2337,7 @@ const Room=(()=>{
     if(anim.fridgeG) anim.fridgeG.visible=T('fridge')===1;
     const pent=own('mansion');
     // layout per room: nothing tall in front of the window / glass
-    if(anim.plantAnchor) anim.plantAnchor.position.set(pent?2.75:-2.72,0,pent?-2.15:-2.25);
+    if(anim.plantAnchor) anim.plantAnchor.position.set(pent?2.75:-3.35,0,pent?-2.15:-2.25);
     if(anim.fridgeAnchor){const fa=anim.fridgeAnchor;if(pent){fa.position.set(3.7,0,.75);fa.rotation.y=-Math.PI/2}else{fa.position.set(T('fridge')>=3?3.25:2.05,0,-2.28);fa.rotation.y=0}}
     if(scr.side) scr.side.g.scale.setScalar([1,1,1.08,1.16,1.24,1.32][T('monitor2')]);
     if(scr.third) scr.third.g.scale.setScalar([1,1,1.08,1.16,1.24,1.32][T('monitor3')]);
@@ -2356,16 +2356,16 @@ const Room=(()=>{
     const city=new THREE.Mesh(new THREE.PlaneGeometry(34,15),new THREE.MeshBasicMaterial({map:big.t,toneMapped:false,fog:false}));city.position.set(.5,2.2,-15);M.add(city);
     glow(0xff8fc8,9,6,6.5,-14.8,.18,M);
     // full-height glass wall with slim black mullions
-    const glassWall=new THREE.Mesh(new THREE.PlaneGeometry(8.6,4.4),new THREE.MeshStandardMaterial({color:0xb8c8ff,transparent:true,opacity:.09,roughness:.04,metalness:.95,depthWrite:false}));glassWall.position.set(.9,2.2,-2.6);M.add(glassWall);
-    for(let x=-3.2;x<=5.2;x+=1.2) box(.045,4.4,.07,black,x,2.2,-2.6,M);
-    box(8.6,.06,.12,black,.9,.03,-2.6,M);box(8.6,.08,.12,black,.9,4.36,-2.6,M);
+    const glassWall=new THREE.Mesh(new THREE.PlaneGeometry(9.4,4.4),new THREE.MeshStandardMaterial({color:0xb8c8ff,transparent:true,opacity:.09,roughness:.04,metalness:.95,depthWrite:false}));glassWall.position.set(.5,2.2,-2.6);M.add(glassWall);
+    for(let x=-3.9;x<=5.2;x+=1.3) box(.045,4.4,.07,black,x,2.2,-2.6,M);
+    box(9.4,.06,.12,black,.5,.03,-2.6,M);box(9.4,.08,.12,black,.5,4.36,-2.6,M);
     // balcony: deck, glass balustrade, loungers, planter
-    box(8.6,.14,2.4,std(0x6f6f76,{roughness:.9}),.9,-.08,-3.85,M);
-    for(let i=0;i<14;i++) box(8.5,.02,.15,std(i%2?0x7a5536:0x6b4a2f,{roughness:.7}),.9,.005,-2.75-i*.165,M);
-    const bal=new THREE.Mesh(new THREE.BoxGeometry(8.6,1.0,.02),new THREE.MeshStandardMaterial({color:0xcfe0ff,transparent:true,opacity:.16,roughness:.05,metalness:.6,depthWrite:false}));bal.position.set(.9,.5,-5.0);M.add(bal);
+    box(9.4,.14,2.4,std(0x6f6f76,{roughness:.9}),.5,-.08,-3.85,M);
+    for(let i=0;i<14;i++) box(9.3,.02,.15,std(i%2?0x7a5536:0x6b4a2f,{roughness:.7}),.5,.005,-2.75-i*.165,M);
+    const bal=new THREE.Mesh(new THREE.BoxGeometry(9.4,1.0,.02),new THREE.MeshStandardMaterial({color:0xcfe0ff,transparent:true,opacity:.16,roughness:.05,metalness:.6,depthWrite:false}));bal.position.set(.5,.5,-5.0);M.add(bal);
     anim.railMat=std(0xc9ccd6,{metalness:.9,roughness:.2});
-    box(8.6,.045,.06,anim.railMat,.9,1.02,-5.0,M);
-    for(let x=-3.2;x<=5.2;x+=1.4) box(.03,1.0,.03,anim.railMat,x,.5,-4.99,M);
+    box(9.4,.045,.06,anim.railMat,.5,1.02,-5.0,M);
+    for(let x=-3.9;x<=5.2;x+=1.4) box(.03,1.0,.03,anim.railMat,x,.5,-4.99,M);
     const cushion=std(0xf1ede6,{roughness:.9}), frame=std(0x2a2a30,{metalness:.5,roughness:.4});
     anim.loungers=new THREE.Group();M.add(anim.loungers);
     for(const lx of [1.3,2.4]){const lg=new THREE.Group();lg.position.set(lx,0,-3.95);anim.loungers.add(lg);
@@ -2384,8 +2384,8 @@ const Room=(()=>{
     box(.26,.55,2.4,fab,-3.0,.55,.25,M);box(1.0,.42,.2,fab,-2.62,.42,-.95,M);box(1.0,.42,.2,fab,-2.62,.42,1.45,M);
     box(.12,.32,.32,std(0xff4fa3,{roughness:.9}),-2.84,.6,-.45,M).rotation.y=.2;box(.12,.32,.32,std(0x26a69a,{roughness:.9}),-2.84,.6,.95,M).rotation.y=-.2;
     const marble=std(0xf2f0ec,{roughness:.25,metalness:.05});cyl(.38,.38,.04,marble,-1.72,.34,.5,M,40);cyl(.05,.12,.32,black,-1.72,.16,.5,M);
-    const art=new THREE.Mesh(new THREE.PlaneGeometry(1.35,.9),std(0xffffff,{map:artTex().t,roughness:.9}));art.rotation.y=Math.PI/2;art.position.set(-3.12,2.05,.25);M.add(art);
-    box(.03,.96,1.41,black,-3.135,2.05,.25,M);
+    const art=new THREE.Mesh(new THREE.PlaneGeometry(1.35,.9),std(0xffffff,{map:artTex().t,roughness:.9}));art.rotation.y=Math.PI/2;art.position.set(-3.105,2.05,.25);M.add(art);
+    box(.03,.96,1.41,black,-3.14,2.05,.25,M);
     for(const px of [-1.3,-.5,.3]){cyl(.004,.004,1.75,black,px,3.5,-1.95,M,6);
       const gl=new THREE.Mesh(new THREE.SphereGeometry(.085,20,14),new THREE.MeshBasicMaterial({color:0xffe2b8,toneMapped:false}));gl.position.set(px,2.58,-1.95);M.add(gl);glow(0xffc77a,.9,px,2.58,-1.95,.45,M)}
     L.pend=new THREE.PointLight(0xffd2a0,0,5,2);L.pend.position.set(-.5,2.4,-1.8);M.add(L.pend);
@@ -2446,10 +2446,10 @@ const Room=(()=>{
 
     // room shell
     const wt=woodTex();wt.wrapS=wt.wrapT=THREE.RepeatWrapping;wt.repeat.set(2.4,2.4);
-    const floor=new THREE.Mesh(new THREE.PlaneGeometry(10,10),std(0xffffff,{map:wt,roughness:.55}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;S.add(floor);anim.floor=floor;anim.woodMap=wt;
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(16,16),std(0xffffff,{map:wt,roughness:.55}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;S.add(floor);anim.floor=floor;anim.woodMap=wt;
     const wallMat=std(0x2b2646,{roughness:.95});
-    const back=new THREE.Mesh(new THREE.PlaneGeometry(10,4.4),wallMat);back.position.set(0,2.2,-2.6);back.receiveShadow=true;S.add(back);oldRoom.push(back);
-    const left=new THREE.Mesh(new THREE.PlaneGeometry(10,4.4),std(0x241f3c,{roughness:.95}));left.rotation.y=Math.PI/2;left.position.set(-3.2,2.2,0);left.receiveShadow=true;S.add(left);anim.leftMat=left.material;
+    const back=new THREE.Mesh(new THREE.PlaneGeometry(16,4.4),wallMat);back.position.set(0,2.2,-2.6);back.receiveShadow=true;S.add(back);oldRoom.push(back);
+    const left=new THREE.Mesh(new THREE.PlaneGeometry(16,4.4),std(0x241f3c,{roughness:.95}));left.rotation.y=Math.PI/2;left.position.set(-3.2,2.2,0);left.receiveShadow=true;S.add(left);anim.leftMat=left.material;
     oldRoom.push(box(10,.12,.03,std(0x1a1630),0,.06,-2.585));box(.03,.12,10,std(0x1a1630),-3.185,.06,0);
 
     // window
@@ -2528,10 +2528,9 @@ const Room=(()=>{
     // posters
     const nPost=S.children.length;
     const p1=posterTex('HODL','since block 0','#3a1d5a','#ff4fa3');const pm1=new THREE.Mesh(new THREE.PlaneGeometry(.55,.77),std(0xffffff,{map:p1.t,roughness:.9}));pm1.rotation.y=Math.PI/2;pm1.position.set(-3.18,2.2,.3);S.add(pm1);
-    const p2=posterTex('WAGMI','(we will not)','#0d2a3a','#5aa9ff');const pm2=new THREE.Mesh(new THREE.PlaneGeometry(.45,.63),std(0xffffff,{map:p2.t,roughness:.9}));pm2.rotation.y=Math.PI/2;pm2.position.set(-3.18,2.05,1.05);S.add(pm2);
     tagOld(nPost);
     // dust
-    const DN=160, dp=new Float32Array(DN*3);for(let i=0;i<DN;i++) dp.set([rnd(-1.6,1.4),rnd(.4,2.6),rnd(-2.4,-.4)],i*3);
+    const DN=80, dp=new Float32Array(DN*3);for(let i=0;i<DN;i++) dp.set([rnd(-1.6,1.4),rnd(.4,2.6),rnd(-2.4,-.4)],i*3);
     const dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.BufferAttribute(dp,3));
     anim.dust=new THREE.Points(dg,new THREE.PointsMaterial({color:0xffd6a8,size:.012,transparent:true,opacity:.55,blending:THREE.AdditiveBlending,depthWrite:false}));S.add(anim.dust);
 
@@ -2554,10 +2553,10 @@ const Room=(()=>{
     anim.lavaMat=new THREE.MeshStandardMaterial({color:0xff6a3d,transparent:true,opacity:.55,emissive:0xff4a1d,emissiveIntensity:.7});const lava=new THREE.Mesh(new THREE.CylinderGeometry(.04,.05,.26,16),anim.lavaMat);lava.position.set(-1.62,1.19,-1.95);g3b.add(lava);
     anim.blobs=[];anim.blobMat=new THREE.MeshBasicMaterial({color:0xffd04a,toneMapped:false});for(let i=0;i<3;i++){const b=new THREE.Mesh(new THREE.SphereGeometry(.022,12,10),anim.blobMat);b.position.set(-1.62,1.1,-1.95);g3b.add(b);anim.blobs.push({b,o:i*2.1})}
     glow(0xff6a3d,.6,-1.62,1.2,-1.95,.35,g3b);
-    const gv=group('vinyl');box(.42,.08,.34,std(0x2f2420,{roughness:.5}),-3.0,1.81,-.25,gv);
-    anim.vinyl=cyl(.14,.14,.01,std(0x0a0a0a,{roughness:.25,metalness:.4}),-3.0,1.86,-.25,gv,32);
-    cyl(.04,.04,.012,std(0xff4fa3,{roughness:.5}),-3.0,1.868,-.25,gv);
-    box(.015,.015,.16,std(0xc0c0c8,{metalness:.8,roughness:.3}),-2.86,1.88,-.2,gv);
+    const gv=group('vinyl');box(.42,.08,.34,std(0x2f2420,{roughness:.5}),-3.0,1.81,-.75,gv);
+    anim.vinyl=cyl(.14,.14,.01,std(0x0a0a0a,{roughness:.25,metalness:.4}),-3.0,1.86,-.75,gv,32);
+    cyl(.04,.04,.012,std(0xff4fa3,{roughness:.5}),-3.0,1.868,-.75,gv);
+    box(.015,.015,.16,std(0xc0c0c8,{metalness:.8,roughness:.3}),-2.86,1.88,-.7,gv);
     // L4: gold chair + trophy
     const g4=group('trophy');
     cyl(.05,.07,.04,std(0xc9a14a,{metalness:.9,roughness:.25}),-3.06,2.24,-1.6,g4);
@@ -2584,6 +2583,9 @@ const Room=(()=>{
     buildModern();
     buildTiers();
     S.traverse(o=>{if(o.material)[].concat(o.material).forEach(m=>{if(m.isMeshStandardMaterial) m.envMapIntensity=m.metalness>.4?1.15:.35})});
+    // more space: everything along the left wall (wall, bed, shelves, sofa, art...) moves 0.7 m further out
+    {const bb=new THREE.Box3(),c=new THREE.Vector3();const shift=o=>{if(o===anim.plantAnchor||o===anim.fridgeAnchor) return;bb.setFromObject(o);if(bb.isEmpty()) return;bb.getCenter(c);if(c.x<-2.2&&c.z>-2.55) o.position.x-=.7};
+      S.children.slice().forEach(o=>{if(o===modern) modern.children.slice().forEach(shift); else shift(o)})}
 
     // HUD interaction
     window.addEventListener('pointermove',e=>{if(e.pointerType==='touch') return;mouse.x=e.clientX/window.innerWidth-.5;mouse.y=e.clientY/window.innerHeight-.5});
@@ -2708,10 +2710,10 @@ const Room=(()=>{
     // camera
     if(Math.abs(shiftT-shiftC)>.5){shiftC+=(shiftT-shiftC)*Math.min(1,dt*7);applyView()}
     titleC+=(titleT-titleC)*Math.min(1,dt*1.6);
-    const portrait=VW/VH<.8,bx=portrait?2.6:3.25,by=portrait?2.55:2.35,bz=portrait?5.4:3.95, tk=titleC;
+    const portrait=VW/VH<.8,bx=portrait?2.5:3.5,by=portrait?2.5:2.45,bz=portrait?5.2:4.7, tk=titleC;
     const tz=portrait?.15:.9, tx=portrait?.35:.9;
     C.position.set(bx+Math.sin(t*.17)*.06+mouse.x*.6+tk*(Math.sin(t*.11)*tx-tx*.66),by+Math.sin(t*.23)*.03-mouse.y*.3+tk*(portrait?.1:.35),bz+tk*tz);
-    C.lookAt(-.55+mouse.x*.2,1.15,-1.6);
+    C.lookAt((portrait?-.65:-.85)+mouse.x*.2,portrait?1.15:1.1,portrait?-1.6:-1.5);
     R.render(S,C);
   }
   return{
