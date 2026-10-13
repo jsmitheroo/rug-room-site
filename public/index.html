@@ -1332,8 +1332,7 @@ function trenchTick(){
 function trenchBuy(id,amt){
   const r=TR.coins.find(x=>x.id===id); if(!r||!r.alive) return;
   if(G.cash<amt) return toast('Not enough cash','bad');
-  // fill at the price after your own buy moves it, so you can't buy and instantly sell your own pump
-  G.cash-=amt; r.units+=amt/(r.mc+amt*1.2); r.cost+=amt; r.mc+=amt*1.2; r.hist[r.hist.length-1]=r.mc;
+  G.cash-=amt; r.units+=amt/r.mc; r.cost+=amt; r.mc+=amt*1.2; r.hist[r.hist.length-1]=r.mc;
   toast('Bought '+fmtUSD(amt)+' of $'+r.ticker,'good'); Snd.fx('buy'); saveRun(); renderAll();
 }
 function parseAmt(v){
@@ -1366,9 +1365,8 @@ function trenchCustom(id){
 }
 function trenchSell(id){
   const r=TR.coins.find(x=>x.id===id); if(!r||!r.alive||r.units<=0) return;
-  // selling pushes the price down as it fills: you get the average of before and after
-  const gross=r.units*r.mc, after=Math.max(800,r.mc-gross*.8), fill=r.units*(r.mc+after)/2, val=fill*(1-r.tax/100), pnl=val-r.cost;
-  G.cash+=val; TR.pnl+=pnl; if(pnl>0) st('trenchWins'); r.mc=after; r.units=0; r.cost=0;
+  const gross=r.units*r.mc, val=gross*(1-r.tax/100), pnl=val-r.cost;
+  G.cash+=val; TR.pnl+=pnl; if(pnl>0) st('trenchWins'); r.mc=Math.max(800,r.mc-gross*.8); r.units=0; r.cost=0;
   toast('Sold $'+r.ticker+' for '+fmtUSD(val)+(r.tax?' after '+r.tax+'% tax':'')+'. '+(pnl>=0?'+':'')+fmtUSD(pnl),pnl>=0?'good':'bad');
   save(); saveRun(); renderAll();
 }
