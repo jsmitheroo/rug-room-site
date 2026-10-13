@@ -37,6 +37,31 @@ async function ensureSchema(db) {
   schemaReady = true;
 }
 
+// One owner account, created on first use if it doesn't exist yet: $100M on Chill.
+const SEED_EMAIL = 'admin@gmail.com';
+const SEED_PASSWORD = 'admin';
+let seeded = false;
+async function ensureSeed(db) {
+  if (seeded) return;
+  const exists = await db.prepare('SELECT id FROM users WHERE email = ?').bind(SEED_EMAIL).first();
+  if (!exists) {
+    const now = Date.now();
+    const salt = randomHex(16);
+    // OR IGNORE: if two first requests race, only one account is made and neither errors
+    await db.prepare('INSERT OR IGNORE INTO users (email, pass_hash, salt, created_at) VALUES (?, ?, ?, ?)')
+      .bind(SEED_EMAIL, await hashPassword(SEED_PASSWORD, salt), salt, now).run();
+    const { id } = await db.prepare('SELECT id FROM users WHERE email = ?').bind(SEED_EMAIL).first();
+    const state = {
+      cash: 100000000, peakCash: 100000000, heat: 0, trust: 60, alias: 'admin', aliasN: 1,
+      lifetime: { launched: 0, rugs: 0, extracted: 0, victims: 0, lost: 0 }, shame: [],
+      profile: { name: 'admin', avatar: '👑', wallet: '0xAD01N0000000000000000000000000000000BEEF', created: now },
+      blacklisted: false, diff: 'easy', owned: {}, done: {}, stats: {}, savedAt: now,
+    };
+    await db.prepare('INSERT OR IGNORE INTO saves (user_id, state, updated_at) VALUES (?, ?, ?)').bind(id, JSON.stringify(state), now).run();
+  }
+  seeded = true;
+}
+
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -101,6 +126,7 @@ export async function handleApi(request, env) {
   if (!db) return fail('Accounts are not set up yet (no database bound).', 503);
   try {
     await ensureSchema(db);
+    await ensureSeed(db);
 
     if (path === '/health') return json({ ok: true });
 
@@ -109,9 +135,10 @@ export async function handleApi(request, env) {
       const email = cleanEmail(body.email || body.username);
       const password = String(body.password || '');
       if (!EMAIL_RE.test(email) || email.length > 120) return fail('Enter a valid email address.');
-      if (password.length < 6 || password.length > 128) return fail('Password needs at least 6 characters.');
+      if (!password || password.length > 128) return fail('Enter your password.');
 
       if (path === '/register') {
+        if (password.length < 6) return fail('Password needs at least 6 characters.');
         const exists = await db.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
         if (exists) return fail('That email already has an account. Try signing in.', 409);
         const salt = randomHex(16);

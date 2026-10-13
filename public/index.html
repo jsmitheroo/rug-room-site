@@ -2491,7 +2491,8 @@ function authModal(kind){
     e.preventDefault();
     const un=u.value.trim(), pw=$('#authPass').value, err=$('#authErr'), go=$('#authGo');
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(un)){err.textContent='Enter a valid email address.';return}
-    if(pw.length<6){err.textContent='Password needs at least 6 characters.';return}
+    if(reg&&pw.length<6){err.textContent='Password needs at least 6 characters.';return}
+    if(!pw){err.textContent='Enter your password.';return}
     go.disabled=true; go.textContent=reg?'Creating…':'Signing in…'; err.textContent='';
     try{const res=await Cloud.auth(kind,un,pw); obOpen=false; closeModal();
       if(res!=='loaded'){if(!G.profile){onboarding()} else toast(reg?'Account created. Your progress is now synced.':'Signed in. This device’s progress is now synced.','good')}}
