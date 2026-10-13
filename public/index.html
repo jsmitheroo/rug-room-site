@@ -756,7 +756,7 @@ document.addEventListener('visibilitychange',()=>{
   // back after a while: grab anything newer from another device
   else if(hiddenAt&&Date.now()-hiddenAt>20000&&typeof Cloud!=='undefined'&&Cloud.canSync()) Cloud.pull();
 });
-function writeLocal(){try{localStorage.setItem('rugroom.v1',JSON.stringify({cash:G.cash,peakCash:G.peakCash,heat:G.heat,trust:G.trust,alias:G.alias,aliasN:G.aliasN,lifetime:G.lifetime,shame:G.shame,profile:G.profile,blacklisted:G.blacklisted,diff:G.diff,owned:G.owned,done:G.done,stats:G.stats,trades:G.trades,mine:G.mine,copy:G.copy,custom:G.custom,savedAt:G.savedAt}))}catch(e){}}
+function writeLocal(){try{localStorage.setItem('rugroom.v1',JSON.stringify({cash:G.cash,peakCash:G.peakCash,heat:G.heat,trust:G.trust,alias:G.alias,aliasN:G.aliasN,lifetime:G.lifetime,shame:G.shame,profile:G.profile,blacklisted:G.blacklisted,diff:G.diff,owned:G.owned,done:G.done,stats:G.stats,trades:G.trades,mine:G.mine,copy:G.copy,custom:G.custom,fixes:G.fixes,savedAt:G.savedAt}))}catch(e){}}
 function save(){if(switching) return;G.savedAt=Date.now();writeLocal();if(typeof Cloud!=='undefined') Cloud.queue()}
 let coin=null, aid=0, titleOn=true;
 
@@ -1611,6 +1611,17 @@ function logTrade(side,r,usd,pnl){if(!Array.isArray(G.trades)) G.trades=[];G.tra
 function posVal(r){return r.alive&&r.units>0?poolSell(r,r.units).out:0}
 function bagValue(){return TR.coins.reduce((a,r)=>a+posVal(r),0)}
 function candlesFromHist(r){const c=[];for(let i=1;i<r.hist.length;i++){const o=r.hist[i-1],cl=r.hist[i],w=Math.abs(gauss())*(r.grad?.02:.045);c.push({o,c:cl,h:Math.max(o,cl)*(1+w),l:Math.min(o,cl)*(1-w*.8)})}return c}
+// safety net for saves that broke before the market caps existed (e.g. Baby Ribbington)
+function fixBroken(){
+  if(!G.fixes||typeof G.fixes!=='object') G.fixes={};
+  let hit=false;
+  TR.coins.forEach(r=>{if(r.alive&&(!isFinite(r.mc)||r.mc>MC_HARD||/ribbington/i.test(r.name||'')||(r.units>0&&posVal(r)>2e9))){r.mc=isFinite(r.mc)?Math.min(r.mc,MC_HARD):MC_HARD;doRug(r,false);hit=true;
+    toast('$'+r.ticker+' was rugged. That position is gone.','bad',8000)}});
+  if(typeof coin!=='undefined'&&coin&&coin.alive&&(!isFinite(mcapOf(coin))||mcapOf(coin)>MC_HARD||/ribbington/i.test(coin.name||''))){coin.devTokens=0;endCoin('Rugged by the market (broken coin)',false);hit=true}
+  if(!G.fixes.cash1&&G.cash>1e10){G.fixes.cash1=Date.now();const was=G.cash;G.cash=2e7;G.peakCash=Math.min(G.peakCash||0,2e7);hit=true;
+    toast('Glitched cash removed ('+fmtUSD(was)+' → '+fmtUSD(G.cash)+').','warn',9000)}
+  if(hit){save();saveRun();if(typeof renderAll==='function') renderAll()}
+}
 function normCoins(){TR.coins.forEach(r=>{if(r.alive&&(r.mc>MC_HARD||!isFinite(r.mc))){r.mc=Math.min(r.mc,MC_HARD)||MC_HARD;news('$'+r.ticker+' flew too close to the sun. The dev pulled everything at '+fmtUSD(r.mc)+'.');doRug(r,false);return}if(!r.c||!r.c.length) r.c=candlesFromHist(r);if(r.born==null) r.born=G.tick-(r.age||0)*SUBS;if(!r.ath) r.ath=r.mc;if(r.vol==null) r.vol=0;if(!r.boost) r.boost=0;if(!r.rugIn) r.rugIn=0;if(r.grad==null) r.grad=false})}
 function trenchTick(){
   normCoins();
@@ -3237,7 +3248,7 @@ function loop(t){
    - "claude": inside claude.ai, the viewer's Claude sign-in + the artifact's own database
    - "web":    self-hosted (Cloudflare Pages Functions + D1) at /api/*, username + password
    - "local":  neither available, progress stays on this device */
-const PKEYS=['cash','peakCash','heat','trust','alias','aliasN','lifetime','shame','profile','blacklisted','diff','owned','done','stats','trades','mine','copy','custom','savedAt'];
+const PKEYS=['cash','peakCash','heat','trust','alias','aliasN','lifetime','shame','profile','blacklisted','diff','owned','done','stats','trades','mine','copy','custom','fixes','savedAt'];
 const LB_TABS=[['peak','Richest',v=>fmtUSD(v)],['extracted','Extracted',v=>fmtUSD(v)],['peakMc','Biggest coin',v=>fmtUSD(v)],['rugs','Rugs',v=>Math.round(v).toLocaleString('en-GB')],['tiers','Room',v=>Math.round(v)+'/'+TOTAL_T()]];
 let lbTab='peak', obOpen=false;
 var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,lastSync:0,status:'local',token:null,webUser:null,_t:null,_chain:Promise.resolve(),_poll:null,
@@ -3497,7 +3508,7 @@ news('Markets quiet. Somewhere a dev is choosing a frog name.');
 syncLayoutVars();
 
 loadRun(); renderAll(true); syncSoundBtn();
-setInterval(()=>{if(!document.hidden&&G.profile){copyOffline();mineTick();if(curSheet==='mine'&&!pressing) renderMine()}},1000);
+setInterval(()=>{if(!document.hidden&&G.profile){try{fixBroken()}catch(e){} copyOffline();mineTick();if(curSheet==='mine'&&!pressing) renderMine()}},1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&G.profile) setTimeout(()=>{mineTick();setTimeout(copyOffline,900)},600)});
 const cloudReady=Cloud.init().catch(()=>{}).then(()=>{renderTitle();checkResetLink()});
 function renderTitle(){
