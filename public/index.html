@@ -691,7 +691,6 @@ const TYPES={
 const SHOP=[
   {k:'plant',name:'Houseplant',price:400,tiers:['Monstera','Fiddle-leaf fig','Indoor palm','Bonsai garden','Living wall'],p:t=>'Buy slippage −'+(8*t)+'%',desc:'Greenery by the window. A calm trader gets better fills.'},
   {k:'beanbag',name:'Bean bag',price:600,tiers:['Teal','Velvet purple','Hot pink','Gold leather','Black diamond'],p:t=>'Rug insurance: '+(6*t)+'% back when you get rugged',desc:'Somewhere soft to land when a coin goes to zero.'},
-  {k:'fairy',name:'Fairy lights',price:800,tiers:['Warm string','Double string','Festival','Starfield','Aurora'],p:t=>'+'+(4*t)+' more coins on the market',desc:'Lights over the window. More launches find their way to you.'},
   {k:'fridge',name:'Energy drink fridge',price:1000,tiers:['Mini fridge','Glass door','Neon cooler','Smart fridge','Champagne vault'],p:t=>'Sniper: +'+(4*t)+'% tokens on coins under 5 minutes old',desc:'Caffeine for the first-block snipes.'},
   {k:'led',name:'LED desk strip',price:1200,tiers:['Purple','Cyan','Sunset','Matrix green','Rainbow'],p:t=>'+'+(3*t)+'% tokens on every buy',desc:'Underglow on the desk. Better entries, somehow.'},
   {k:'monitor2',name:'Second monitor',price:1500,tiers:['1080p','1440p','4K','OLED','Ultrawide'],p:t=>'Sell slippage −'+(8*t)+'%',desc:'A live trade feed so you time your exits.'},
@@ -1478,7 +1477,7 @@ const TR={coins:[],pnl:0};
 const GRAD_MC=69000;
 const MK={tab:'trend',sel:null,qb:1000};
 function gauss(){return (Math.random()+Math.random()+Math.random()+Math.random()-2)/1.15}
-const mkCap=()=>30+4*tierOf('fairy');
+const mkCap=()=>34;
 const feeRate=()=>0;
 function newCoin(warm){
   const m=pick(MASCOTS)[0], a=pick(ANI[m]);
@@ -2167,6 +2166,7 @@ function renderSettings(){
   <div class="set-row"><label for="setVol">Volume</label><input type="range" id="setVol" min="0" max="1" step="0.05" value="${SET.vol}"></div>
   <div class="sec">Graphics</div>
   <div class="set-row"><span>Quality<small>${Room.qualityNote()}</small></span><div class="segs">${segQ}</div></div>
+  <div class="set-row"><span>Day and night<small>Auto follows your clock: sunrise 6–8am, sunset 6–8pm</small></span><div class="segs">${['auto','day','night'].map(v=>`<button data-act="setdn" data-id="${v}" aria-pressed="${(SET.daynight||'auto')===v}">${v[0].toUpperCase()+v.slice(1)}</button>`).join('')}</div></div>
   <div class="sec">Gameplay</div>
   <div class="set-row"><span>Tips<small>Short hints during your first games</small></span>${sw('tips',SET.tips)}</div>
   <div class="set-row"><span>How to play<small>The loop, heat, trust and everything else</small></span><button class="btn" data-go="help">Open</button></div>
@@ -2266,6 +2266,7 @@ $('#sheet').addEventListener('click',e=>{
     case 'buy':buyItem(id);break;
     case 'setsw':SET[id]=!SET[id];saveSet();if(id==='music') {Snd.setMusic(SET.music);syncSoundBtn()} if(id==='tips'&&SET.tips) SET.seen={}; renderSettings();break;
     case 'setq':SET.quality=id;saveSet();Room.setQuality(id);renderSettings();break;
+    case 'setdn':SET.daynight=id;saveSet();Room.refreshDay();renderSettings();break;
     case 'brag':shareCareer();break;
     case 'tbuy':trenchBuy(+id,+b.dataset.amt);break; case 'tcustom':trenchCustom(+id);break; case 'tsell':trenchSell(+id,1);break;
     case 'tsellp':trenchSell(+id,+b.dataset.f);break;
@@ -2374,6 +2375,44 @@ const Room=(()=>{
       if(Math.random()<.25){g.fillStyle=pick(['#ff4fa3','#5ad1ff','#b06bff']);g.shadowColor=g.fillStyle;g.shadowBlur=14;g.fillRect(x+bw*.2,top+12,bw*.6,5);g.shadowBlur=0}
       x+=bw+rnd(2,14)}}
     const haze=g.createLinearGradient(0,h*.7,0,h);haze.addColorStop(0,'rgba(255,111,181,0)');haze.addColorStop(1,'rgba(255,111,181,.22)');g.fillStyle=haze;g.fillRect(0,0,w,h);
+  }
+  // daytime skyline: blue sky, sun, glassy towers, very few lit windows
+  function drawSkylineDay(g,w,h,rich){
+    const sky=g.createLinearGradient(0,0,0,h);sky.addColorStop(0,'#5f9fd8');sky.addColorStop(.55,'#9cc7ea');sky.addColorStop(.85,'#d9e9f3');sky.addColorStop(1,'#eef3f2');g.fillStyle=sky;g.fillRect(0,0,w,h);
+    const sg=g.createRadialGradient(w*.78,h*.18,0,w*.78,h*.18,h*.22);sg.addColorStop(0,'rgba(255,255,240,1)');sg.addColorStop(.15,'rgba(255,250,220,.9)');sg.addColorStop(1,'rgba(255,240,200,0)');g.fillStyle=sg;g.fillRect(0,0,w,h);
+    for(let i=0;i<5;i++){g.fillStyle='rgba(255,255,255,'+rnd(.35,.7)+')';const cx=rnd(0,w),cy=rnd(h*.05,h*.35);for(let k=0;k<6;k++){g.beginPath();g.ellipse(cx+rnd(-60,60),cy+rnd(-10,10),rnd(30,70),rnd(12,22),0,0,Math.PI*2);g.fill()}}
+    const layers=[{c:'#8fa8c4',base:.58,hmin:.15,hmax:.38},{c:'#6f88a8',base:.66,hmin:.2,hmax:.5},{c:'#4f6684',base:.78,hmin:.25,hmax:.62}];
+    for(const L of layers){let x=-10;while(x<w){const bw=rnd(40,110),bh=h*rnd(L.hmin,L.hmax)*(1+(rich|0)*.045);const top=h*L.base+h*.3-bh;
+      g.fillStyle=L.c;g.fillRect(x,top,bw,h-top);g.fillStyle='rgba(255,255,255,.12)';g.fillRect(x+bw*.62,top,bw*.38,h-top);
+      for(let wy=top+8;wy<h-6;wy+=11) for(let wx=x+6;wx<x+bw-6;wx+=9){g.fillStyle=Math.random()<.5?'rgba(210,230,250,.35)':'rgba(40,60,90,.25)';g.fillRect(wx,wy,4,6)}
+      x+=bw+rnd(2,14)}}
+    const haze=g.createLinearGradient(0,h*.7,0,h);haze.addColorStop(0,'rgba(230,240,250,0)');haze.addColorStop(1,'rgba(230,240,250,.45)');g.fillStyle=haze;g.fillRect(0,0,w,h);
+  }
+  // the view outside by height: 0 = eye level, 1 = high up (skyline lower, more sky), 2 = above the clouds
+  function drawView(g,w,h,level,day,rich){
+    if(level===0) return day?drawSkylineDay(g,w,h,rich):drawSkyline(g,w,h,rich);
+    if(level===1){
+      const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;const tg=tmp.getContext('2d');(day?drawSkylineDay:drawSkyline)(tg,w,h,rich);
+      g.fillStyle=day?'#5f9fd8':'#070a22';g.fillRect(0,0,w,h);g.drawImage(tmp,0,h*.24);
+      const hz=g.createLinearGradient(0,h*.55,0,h);hz.addColorStop(0,day?'rgba(220,235,248,0)':'rgba(120,60,140,0)');hz.addColorStop(1,day?'rgba(220,235,248,.55)':'rgba(120,60,140,.35)');g.fillStyle=hz;g.fillRect(0,0,w,h);return}
+    // above the clouds
+    const sky=g.createLinearGradient(0,0,0,h);
+    if(day){sky.addColorStop(0,'#3f86d6');sky.addColorStop(.6,'#8ec2ee');sky.addColorStop(1,'#d6ebfa')}else{sky.addColorStop(0,'#050720');sky.addColorStop(.6,'#151a48');sky.addColorStop(1,'#2a2560')}
+    g.fillStyle=sky;g.fillRect(0,0,w,h);
+    if(!day) for(let i=0;i<260;i++){g.fillStyle='rgba(255,255,255,'+rnd(.2,.9)+')';g.fillRect(rnd(0,w),rnd(0,h*.6),1.4,1.4)}
+    const sx=w*.74,sy=h*.2,sr=day?h*.26:h*.18,sg=g.createRadialGradient(sx,sy,0,sx,sy,sr);sg.addColorStop(0,day?'rgba(255,255,240,1)':'rgba(255,245,230,.95)');sg.addColorStop(.12,day?'rgba(255,250,220,.9)':'rgba(255,230,220,.6)');sg.addColorStop(1,'rgba(255,240,220,0)');g.fillStyle=sg;g.fillRect(0,0,w,h);
+    // a few supertall spires poking out
+    for(const [fx,fh,fw] of [[.18,.5,.035],[.27,.38,.025],[.56,.6,.03],[.63,.42,.022],[.86,.47,.028]]){const x=w*fx,top=h*(1-fh),bw=w*fw;
+      g.fillStyle=day?'#5a7090':'#0d0c26';g.fillRect(x,top,bw,h-top);g.beginPath();g.moveTo(x,top);g.lineTo(x+bw/2,top-h*.06);g.lineTo(x+bw,top);g.fill();
+      if(!day){g.fillStyle='#ff4f5f';g.fillRect(x+bw/2-2,top-h*.065,4,4)}else{g.fillStyle='rgba(255,255,255,.25)';g.fillRect(x+bw*.6,top,bw*.4,h-top)}}
+    // sea of clouds
+    for(let layer=0;layer<3;layer++){const y0=h*(.6+layer*.1);
+      for(let i=0;i<70;i++){const x=rnd(-50,w+50),y=y0+rnd(-h*.04,h*.06),rx=rnd(40,120),ry=rnd(14,34);
+        const cg=g.createRadialGradient(x,y-ry*.3,0,x,y,rx);
+        if(day){cg.addColorStop(0,'rgba(255,255,255,.95)');cg.addColorStop(1,'rgba(220,232,245,0)')}else{cg.addColorStop(0,`rgba(${150+layer*20},${150+layer*15},${200+layer*10},.75)`);cg.addColorStop(1,'rgba(60,60,110,0)')}
+        g.fillStyle=cg;g.beginPath();g.ellipse(x,y,rx,ry,0,0,Math.PI*2);g.fill()}}
+    if(!day){const gl=g.createLinearGradient(0,h*.7,0,h);gl.addColorStop(0,'rgba(255,111,181,0)');gl.addColorStop(1,'rgba(255,111,181,.28)');g.fillStyle=gl;g.fillRect(0,0,w,h)}
+    else{g.fillStyle='rgba(255,255,255,.35)';g.fillRect(0,h*.88,w,h*.12)}
   }
   function woodTex(){return ctex(512,512,(g,w,h)=>{g.fillStyle='#3a2a26';g.fillRect(0,0,w,h);const ph=64;for(let y=0;y<h;y+=ph){const off=(y/ph%2)*180;for(let x=-off;x<w;x+=360){const c=Math.floor(rnd(48,68));g.fillStyle=`rgb(${c},${c*.72|0},${c*.62|0})`;g.fillRect(x+1,y+1,358,ph-2);
     for(let i=0;i<8;i++){g.strokeStyle='rgba(20,10,8,'+rnd(.08,.2)+')';g.lineWidth=rnd(.5,1.5);g.beginPath();const yy=y+rnd(4,ph-4);g.moveTo(x,yy);g.bezierCurveTo(x+120,yy+rnd(-4,4),x+240,yy+rnd(-4,4),x+360,yy);g.stroke()}}}
@@ -2549,11 +2588,14 @@ const Room=(()=>{
   }
   function applyTiers(){
     if(anim.rig){const lv=typeof mineLevel==='function'?mineLevel():0;anim.rig.visible=lv>0;anim.rigSmall.visible=lv>0&&lv<4;anim.rigRack.visible=lv>=4;anim.rig.scale.setScalar(lv>=6?1.2:1)}
-    tierGroups.forEach(o=>{const t=tierOf(o.key);o.g.visible=t>=o.min&&t<=o.max});
+    tierGroups.forEach(o=>{const t=tierOf(o.key);o.g.visible=o.key!=='fairy'&&t>=o.min&&t<=o.max});
     const T=tierOf;
     if(anim.plant) anim.plant.visible=false;
     if(anim.fridgeG) anim.fridgeG.visible=T('fridge')===1;
     const pent=own('mansion');
+    // penthouse: the neon sign would float on the glass wall, so it stays in the bedroom only
+    groups.forEach(o=>{if(o.key==='neon'&&pent) o.g.visible=false});
+    tierGroups.forEach(o=>{if(o.key==='neon'&&pent) o.g.visible=false});
     // layout per room: nothing tall in front of the window / glass
     if(anim.plantAnchor) anim.plantAnchor.position.set(pent?2.75:-3.35,0,pent?-2.15:-2.25);
     if(anim.fridgeAnchor){const fa=anim.fridgeAnchor;if(pent){fa.position.set(4.62,0,-2.22);fa.rotation.y=0}else{fa.position.set(T('fridge')>=3?3.25:2.05,0,-2.28);fa.rotation.y=0}}
@@ -2570,8 +2612,9 @@ const Room=(()=>{
     anim.lightWood=lightWoodTex();anim.lightWood.wrapS=anim.lightWood.wrapT=THREE.RepeatWrapping;anim.lightWood.repeat.set(2,2);
     const black=std(0x16171d,{metalness:.7,roughness:.3});anim.mullMat=black;
     // city far below: a big skyline backdrop past the balcony
-    const big=ctex(2048,1024,(g,w,h)=>drawSkyline(g,w,h,6));
+    const big=ctex(2048,1024,(g,w,h)=>drawSkyline(g,w,h,6));anim.cityNightTex=big;
     const city=new THREE.Mesh(new THREE.PlaneGeometry(34,15),new THREE.MeshBasicMaterial({map:big.t,toneMapped:false,fog:false}));city.position.set(.5,2.2,-15);M.add(city);
+    {const dk=ctex(2048,1024,(g,w,h)=>drawSkylineDay(g,w,h,6));anim.cityDayTex=dk;anim.cityDay=new THREE.Mesh(new THREE.PlaneGeometry(34,15),new THREE.MeshBasicMaterial({map:dk.t,toneMapped:false,fog:false,transparent:true,opacity:0,depthWrite:false}));anim.cityDay.position.set(.5,2.2,-14.99);M.add(anim.cityDay)}
     glow(0xff8fc8,9,6,6.5,-14.8,.18,M);
     // full-height glass wall with slim black mullions
     const glassWall=new THREE.Mesh(new THREE.PlaneGeometry(9.4,8),new THREE.MeshStandardMaterial({color:0xb8c8ff,transparent:true,opacity:.09,roughness:.04,metalness:.95,depthWrite:false}));glassWall.position.set(.5,4,-2.6);M.add(glassWall);
@@ -2662,6 +2705,24 @@ const Room=(()=>{
     glow(0xb06bff,2.2,3.8,y3+.05,-1.45,.15,L3);
   }
   function marbleMat(){return std(0xffffff,{map:anim.marble,roughness:.25})}
+  function dayFactor(){
+    const m=(typeof SET!=='undefined'&&SET.daynight)||'auto'; if(m==='day') return 1; if(m==='night') return 0;
+    const d=new Date(),h=d.getHours()+d.getMinutes()/60;
+    return h<6?0:h<8?(h-6)/2:h<18?1:h<20?1-(h-18)/2:0;
+  }
+  let dayD=-1;
+  function applyDay(force){
+    const d=dayFactor(); if(!force&&Math.abs(d-dayD)<.01) return; dayD=d;
+    const pent=modernOn>0, dusk=d>0&&d<1?1-Math.abs(d-.5)*2:0, c=new THREE.Color();
+    if(anim.viewDay) anim.viewDay.material.opacity=d; if(anim.cityDay) anim.cityDay.material.opacity=d;
+    const nb=new THREE.Color(pent?0x0b0e1e:0x07080f), db=new THREE.Color(0x8fb8dc), duskC=new THREE.Color(0xd98a6a);
+    c.copy(nb).lerp(db,d); if(dusk) c.lerp(duskC,dusk*.45); S.background.copy(c); S.fog.color.copy(c);
+    L.amb.color.set(pent?0x8a90b8:0x3a3468).lerp(new THREE.Color(0xfff6ea),d*.8); L.amb.intensity=(pent?.75:.55)+d*.55;
+    L.hemi.color.set(0x6a5bb0).lerp(new THREE.Color(0xcfe3ff),d); L.hemi.intensity=(pent?.6:.45)+d*.55;
+    L.moon.color.set(0x8fa6ff).lerp(new THREE.Color(dusk>.3?0xffb27a:0xfff1d8),d); L.moon.intensity=(pent?.7:.45)+d*1.2; L.moon.position.set(3,4+d*4,-6);
+    if(anim.rainMesh&&!pent) anim.rainMesh.visible=d<.5;
+    R.toneMappingExposure=1.15-d*.1;
+  }
   function applyCustom(){
     const cu=(typeof G!=='undefined'&&G.custom)||{}, pent=modernOn>0;
     if(!pent){const w=new THREE.Color(cu.wall||'#2b2646');anim.wallMat.color.copy(w);anim.leftMat.color.copy(w).multiplyScalar(.86);
@@ -2672,6 +2733,8 @@ const Room=(()=>{
   function applyModern(tier){
     if(!modern||tier===modernOn) return; modernOn=tier; const on=tier>0;
     if(anim.loft3) anim.loft3.visible=tier>=3;
+    {const lv=tier>=5?2:tier>=3?1:0;if(on&&lv!==anim.cityLv){anim.cityLv=lv;const n=anim.cityNightTex,d=anim.cityDayTex;
+      drawView(n.g,2048,1024,lv,false,6);n.t.needsUpdate=true;drawView(d.g,2048,1024,lv,true,6);d.t.needsUpdate=true}}
     anim.mPool.visible=tier>=2; anim.loungers.visible=tier<4; if(anim.rainMesh) anim.rainMesh.visible=!on; anim.mCove.visible=tier>=3; anim.mFw.visible=tier>=5;
     L.pool.intensity=tier>=2?1:0; L.cove.intensity=tier>=3?.7:0;
     const gold=tier>=4; anim.mullMat.color.set(gold?0xc9a14a:0x16171d); anim.mullMat.metalness=gold?.95:.7; anim.mullMat.roughness=gold?.2:.3;
@@ -2728,6 +2791,7 @@ const Room=(()=>{
     const nWin=S.children.length;
     const sk=ctex(1024,768,(g,w,h)=>drawSkyline(g,w,h,false));scr.sky=sk;
     const view=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.5),new THREE.MeshBasicMaterial({map:sk.t,toneMapped:false}));view.position.set(1.55,1.95,-2.592);S.add(view);
+    {const dk=ctex(1024,768,(g,w,h)=>drawSkylineDay(g,w,h,0));anim.viewDayTex=dk;anim.viewDay=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.5),new THREE.MeshBasicMaterial({map:dk.t,toneMapped:false,transparent:true,opacity:0,depthWrite:false}));anim.viewDay.position.set(1.55,1.95,-2.5915);S.add(anim.viewDay)}
     const fm=std(0x3a3458,{roughness:.6});
     box(2.04,.07,.08,fm,1.55,2.73,-2.56);box(2.04,.07,.08,fm,1.55,1.17,-2.56);box(.07,1.6,.08,fm,.55,1.95,-2.56);box(.07,1.6,.08,fm,2.55,1.95,-2.56);
     box(.035,1.5,.05,fm,1.55,1.95,-2.565);box(1.9,.035,.05,fm,1.55,2.05,-2.565);
@@ -2870,6 +2934,7 @@ const Room=(()=>{
     let last=performance.now();
     const loop=t=>{const dt=Math.min(.05,(t-last)/1000);last=t;frame(dt,t/1000);requestAnimationFrame(loop)};requestAnimationFrame(loop);
     setInterval(drawScreens,400);drawScreens();
+    setInterval(()=>applyDay(false),60000);
     if(document.fonts&&document.fonts.load) document.fonts.load('40px Monoton').then(drawNeon).catch(()=>{});
   }
   let VW=1,VH=1;
@@ -2881,9 +2946,9 @@ const Room=(()=>{
     $('#roomNext').textContent=nx?(G.cash>=np?'Can buy: ':'Next: ')+nx.name+(tierOf(nx.k)?' '+ROMAN[tierOf(nx.k)+1]:'')+' '+fmtUSD(np):'Room maxed out'}
   function apply(justBought){
     hud(); if(!ok||!S) return;
-    groups.forEach(o=>o.g.visible=own(o.key));
+    groups.forEach(o=>o.g.visible=own(o.key)&&o.key!=='fairy');
     const T=tierOf;
-    if(L.neon){L.neon.intensity=own('neon')?.9:0;L.led.intensity=own('led')?.45+.15*T('led'):0;L.fairy.intensity=own('fairy')?.35+.18*T('fairy'):0}
+    if(L.neon){L.neon.intensity=own('neon')&&!own('mansion')?.9:0;L.led.intensity=own('led')?.45+.15*T('led'):0;L.fairy.intensity=0}
     if(anim.plant){const t=T('plant');anim.plant.scale.setScalar(1+.14*Math.max(0,t-1));anim.leafMat.color.set([0x2f7d5b,0x2f7d5b,0x3c8f4a,0x4a9e3f,0x2f6e5b,0x4fbf7a][t]);anim.potMat.color.set(t>=4?0xd4af37:0xd8c7b5);anim.potMat.metalness=t>=4?.8:0}
     if(anim.bbMat){const t=T('beanbag');anim.bbMat.color.set([0x1f6e6a,0x1f6e6a,0x5b3f8a,0xd2468f,0xc9a14a,0x15151c][t]);anim.bbMat.metalness=t>=4?.5:0;anim.bbMat.roughness=t>=4?.35:.95}
     if(anim.door){const t=T('fridge');anim.door.material.color.set([0x4fe0ff,0x4fe0ff,0x9ad0ff,0xff4fa3,0x8ee6b8,0xffd36b][t])}
@@ -2893,8 +2958,9 @@ const Room=(()=>{
     anim.neonTier=T('neon'); drawNeon();
     if(justBought){flashC=0xffd36b;flashT=.7}
     if(anim.chairMat){if(own('chair')){anim.chairMat.color.set([0,0xc9a14a,0xd99a8a,0xd8dbe2,0xbfefff,0x1a1610][T('chair')]);anim.chairMat.metalness=.85;anim.chairMat.roughness=T('chair')>=4?.15:.28}else{anim.chairMat.color.set(0x2a2440);anim.chairMat.metalness=.05;anim.chairMat.roughness=.6}}
-    applyTiers(); applyModern(T('mansion')); applyCustom();
-    const rich=T('penthouse');if(scr.sky&&rich!==skyRich){skyRich=rich;drawSkyline(scr.sky.g,1024,768,rich);scr.sky.t.needsUpdate=true}
+    applyTiers(); applyModern(T('mansion')); applyCustom(); applyDay(true);
+    const rich=T('penthouse');if(scr.sky&&rich!==skyRich){skyRich=rich;const lv=rich>=5?2:rich>=3?1:0;drawView(scr.sky.g,1024,768,lv,false,rich);scr.sky.t.needsUpdate=true;
+      if(anim.viewDayTex){drawView(anim.viewDayTex.g,1024,768,lv,true,rich);anim.viewDayTex.t.needsUpdate=true}}
   }
   function drawNeon(){if(!scr.neon) return;const g=scr.neon.g,w=512,h=160;g.clearRect(0,0,w,h);const txt=coin&&coin.alive?'$'+coin.ticker:'RUG ROOM';
     g.textAlign='center';g.textBaseline='middle';let fs=74;g.font=fs+'px Monoton, "Chakra Petch", sans-serif';while(g.measureText(txt).width>w-40&&fs>30){fs-=4;g.font=fs+'px Monoton, "Chakra Petch", sans-serif'}
@@ -2954,7 +3020,7 @@ const Room=(()=>{
     // lamp flicker
     L.lamp.intensity=1.7+Math.sin(t*7)*.03+(Math.random()<.01?-.3:0);
     // neon flicker
-    if(anim.neonMesh&&own('neon')){const f=Math.random()<.015?.3:1;anim.neonMesh.material.opacity=f;L.neon.intensity=.9*f}
+    if(anim.neonMesh&&own('neon')&&!modernOn){const f=Math.random()<.015?.3:1;anim.neonMesh.material.opacity=f;L.neon.intensity=.9*f}
     // sirens
     if(G.heat>70||bust){const s=Math.sin(t*(bust?9:6));L.siren.color.set(s>0?0xff2020:0x2050ff);L.siren.intensity=(bust?2.2:(G.heat-70)/30*1.4)*Math.abs(s)}else L.siren.intensity=0;
     // flash
@@ -2996,6 +3062,7 @@ const Room=(()=>{
   return{
     init,hud,apply(k){apply(k)},
     setQuality(q){setQ(q)},
+    refreshDay(){if(ok&&S) applyDay(true)},
     qualityNote(){return 'Running at '+({high:'high',mid:'medium',low:'low'}[qEff]||qEff)+(lowered&&SET.quality==='auto'?' (lowered automatically)':'')},
     setTitle(on){titleT=on?1:0;if(on) titleC=1},
     setShift(px){shiftT=px*.5},
