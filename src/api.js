@@ -210,7 +210,7 @@ export async function handleApi(request, env) {
     if (path === '/save' && method === 'PUT') {
       const body = await readBody(request);
       const state = typeof body.state === 'string' ? body.state : JSON.stringify(body.state || {});
-      if (state.length > 500000) return fail('Save is too large.', 413);
+      if (state.length > 900000) return fail('Save is too large.', 413);
       await db.prepare(
         `INSERT INTO saves (user_id, state, updated_at) VALUES (?, ?, ?)
          ON CONFLICT(user_id) DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at`)

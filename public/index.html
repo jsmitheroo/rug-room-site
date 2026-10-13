@@ -681,12 +681,20 @@ try{const s=JSON.parse(localStorage.getItem('rugroom.v1')||'null');if(s&&typeof 
 if(!G.owned) G.owned={}; for(const k in G.owned) if(G.owned[k]===true) G.owned[k]=1; if(!G.done) G.done={}; if(!G.stats) G.stats={};
 const st=(k,n)=>{G.stats[k]=(G.stats[k]||0)+(n==null?1:n)};
 const ownedCount=()=>SHOP.filter(x=>own(x.k)).length;
-function saveRun(){
-  try{G.savedAt=Date.now();writeLocal();
-    localStorage.setItem('rugroom.run',JSON.stringify({v:1,coin:(coin&&coin.alive)?coin:null,tr:{coins:TR.coins,pnl:TR.pnl},aid}))}catch(e){}
+function runSnap(trim){
+  let c=(coin&&coin.alive)?coin:null;
+  if(c&&trim){c=Object.assign({},c,{candles:c.candles.slice(-trim),trades:(c.trades||[]).slice(-40),recent:(c.recent||[]).slice(-40),markers:(c.markers||[]).slice(-40)})}
+  return {v:1,coin:c,tr:{coins:TR.coins,pnl:TR.pnl},aid,at:G.savedAt||Date.now()};
 }
-function loadRun(){
-  let r=null; try{r=JSON.parse(localStorage.getItem('rugroom.run')||'null')}catch(e){}
+let switching=false; // true while reloading onto a newer save from another device: never write the old state back
+function saveRun(){
+  if(switching) return;
+  try{G.savedAt=Date.now();writeLocal();
+    localStorage.setItem('rugroom.run',JSON.stringify(runSnap(0)))}catch(e){}
+  if(typeof Cloud!=='undefined') Cloud.queue();
+}
+function loadRun(given){
+  let r=given||null; if(!r){try{r=JSON.parse(localStorage.getItem('rugroom.run')||'null')}catch(e){}}
   if(!r) return;
   if(r.tr&&Array.isArray(r.tr.coins)&&r.tr.coins.length){TR.coins=r.tr.coins;TR.pnl=r.tr.pnl||0}
   if(r.aid) aid=Math.max(aid,r.aid);
@@ -699,10 +707,15 @@ function loadRun(){
   $('#chartEmpty').hidden=true; Room.onLaunch(c);
   sys('Resumed $'+c.ticker+' where you left it. '+c.holders.length+' holders still in.');
 }
-window.addEventListener('pagehide',()=>saveRun());
-document.addEventListener('visibilitychange',()=>{if(document.hidden) saveRun()});
+let hiddenAt=0;
+window.addEventListener('pagehide',()=>{saveRun();if(typeof Cloud!=='undefined') Cloud.flush()});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){hiddenAt=Date.now();saveRun();if(typeof Cloud!=='undefined') Cloud.flush()}
+  // back after a while: grab anything newer from another device
+  else if(hiddenAt&&Date.now()-hiddenAt>20000&&typeof Cloud!=='undefined'&&Cloud.canSync()) Cloud.pull();
+});
 function writeLocal(){try{localStorage.setItem('rugroom.v1',JSON.stringify({cash:G.cash,peakCash:G.peakCash,heat:G.heat,trust:G.trust,alias:G.alias,aliasN:G.aliasN,lifetime:G.lifetime,shame:G.shame,profile:G.profile,blacklisted:G.blacklisted,diff:G.diff,owned:G.owned,done:G.done,stats:G.stats,savedAt:G.savedAt}))}catch(e){}}
-function save(){G.savedAt=Date.now();writeLocal();if(typeof Cloud!=='undefined') Cloud.queue()}
+function save(){if(switching) return;G.savedAt=Date.now();writeLocal();if(typeof Cloud!=='undefined') Cloud.queue()}
 let coin=null, aid=0, titleOn=true;
 
 /* ================= AMM ================= */
@@ -1026,7 +1039,7 @@ function launch(){
   G.cash-=cost;
   const devT=(f.dev+f.bundle)/100*SUPPLY, x0=SUPPLY-devT;
   const t0=Math.floor(Date.now()/60000)*60;
-  coin={name:f.name,ticker:f.ticker,mascot:f.mascot,pitch:f.pitch,devPct:f.dev,bundlePct:f.bundle,tax:f.tax,locked:f.locked,lockUntil:f.locked?40:0,
+  coin={uid:Date.now().toString(36)+Math.random().toString(36).slice(2,7),name:f.name,ticker:f.ticker,mascot:f.mascot,pitch:f.pitch,devPct:f.dev,bundlePct:f.bundle,tax:f.tax,locked:f.locked,lockUntil:f.locked?40:0,
     meme:j.meme,legit:j.legit,seed:f.seed,
     x:x0,y:f.seed,k:x0*f.seed,devTokens:devT,bagStart:devT,spent:cost,take:0,taxEarned:0,
     holders:[],candles:[],trades:[],recent:[],markers:[],promos:[],
@@ -2355,10 +2368,26 @@ var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,l
     }
     this.status='synced'; if(G.profile) this.push(); renderAccountLite(); return 'pushed';
   },
-  queue(){if(!this.canSync()) return; clearTimeout(this._t); this._t=setTimeout(()=>this.push(),4000)},
-  push(){if(!this.canSync()||!G.profile) return; clearTimeout(this._t); this._chain=this._chain.then(()=>this._push()).catch(()=>{})},
+  // throttled: at most one push every 15s while playing, so a constantly-saving game still syncs
+  // sync straight away when the live coin or trench holdings change (launch, rug, buy, sell)
+  sig(){return (coin&&coin.alive?(coin.uid||coin.ticker):'-')+'|'+TR.coins.filter(r=>r.units>0).map(r=>r.id).join(',')},
+  queue(){if(!this.canSync()) return; if(this.sig()!==this._sig){this.push();return}
+    if(this._t) return; this._t=setTimeout(()=>{this._t=null;this.push()},15000)},
+  push(){if(switching||!this.canSync()||!G.profile) return; clearTimeout(this._t); this._t=null; this._chain=this._chain.then(()=>this._push()).catch(()=>{})},
+  stateBody(trim){const st={}; PKEYS.forEach(k=>st[k]=G[k]); st.run=runSnap(trim); return JSON.stringify(st)},
+  // app being closed or hidden: send the save straight away, keepalive so it survives the tab closing
+  flush(){
+    if(switching||!this.canSync()||!G.profile) return; clearTimeout(this._t); this._t=null;
+    if(this.mode!=='web'){this.push();return}
+    let body=JSON.stringify({state:this.stateBody(300)});
+    if(body.length>60000) body=JSON.stringify({state:this.stateBody(60)});
+    try{fetch('/api/save',{method:'PUT',keepalive:body.length<64000,headers:{'content-type':'application/json',authorization:'Bearer '+this.token},body});
+      fetch('/api/score',{method:'PUT',keepalive:true,headers:{'content-type':'application/json',authorization:'Bearer '+this.token},body:JSON.stringify(scoreDoc())})}catch(e){}
+    this.lastSync=Date.now();
+  },
   async _push(){
-    const st={}; PKEYS.forEach(k=>st[k]=G[k]); const body=JSON.stringify(st), score=scoreDoc();
+    this._sig=this.sig();
+    const body=this.stateBody(400), score=scoreDoc();
     this.status='syncing'; renderAccountLite();
     try{
       if(this.mode==='claude'){await this.db.doc('data/users/'+this.uid+'/save').set({state:body,updatedAt:Date.now()}); await this.db.doc('leaderboard/'+this.uid).set(score)}
@@ -2379,6 +2408,18 @@ function scoreDoc(){
     extracted:Math.round(G.lifetime.extracted||0),rugs:G.lifetime.rugs|0,peakMc:Math.round(G.stats.peakMc||0),tiers:SHOP.reduce((a,x)=>a+tierOf(x.k),0),updatedAt:Date.now()};
 }
 function applyCloud(st){
+  const run=st.run&&typeof st.run==='object'?st.run:null;
+  if(run){
+    const localUid=coin&&coin.alive?(coin.uid||coin.ticker):null;
+    try{localStorage.setItem('rugroom.run',JSON.stringify(run))}catch(e){}
+    if(localUid){
+      // a coin is live on this screen but the account has a newer state: save it and reload so the chart rebuilds cleanly
+      switching=true; clearTimeout(Cloud._t); coin=null;
+      PKEYS.forEach(k=>{if(k in st) G[k]=st[k]}); writeLocal(); location.reload(); return;
+    }
+    if(!localUid) loadRun(run);
+    else if(run.tr&&Array.isArray(run.tr.coins)){TR.coins=run.tr.coins;TR.pnl=run.tr.pnl||0}
+  }
   PKEYS.forEach(k=>{if(k in st) G[k]=st[k]});
   if(!G.owned) G.owned={}; for(const k in G.owned) if(G.owned[k]===true) G.owned[k]=1;
   if(!G.done) G.done={}; if(!G.stats) G.stats={}; if(!G.lifetime) G.lifetime={launched:0,rugs:0,extracted:0,victims:0,lost:0}; if(!G.shame) G.shame=[];
