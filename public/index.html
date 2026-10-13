@@ -528,6 +528,7 @@ body.flash-red .vignette{animation:redflash .9s ease}
     <nav class="dock glass" id="dock" aria-label="Menus">
       <button class="dk" data-sheet="trench" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><rect x="5.5" y="10" width="3" height="5" rx=".5"/><path d="M7 8v2M7 15v2"/><rect x="10.5" y="6" width="3" height="7" rx=".5"/><path d="M12 4v2M12 13v3"/><rect x="15.5" y="8" width="3" height="4" rx=".5"/><path d="M17 6v2M17 12v3"/></svg>Market</button>
       <button class="dk" data-sheet="bags" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M16 13h2"/><path d="M3 10h18"/><path d="M7 6V4.5h10V6"/></svg>Bags</button>
+      <button class="dk" data-sheet="mine" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="8" y="8" width="8" height="8" rx="1"/><path d="M10 2v2M14 2v2M10 20v2M14 20v2M2 10h2M2 14h2M20 10h2M20 14h2"/></svg>Mine</button>
       <button class="dk" data-sheet="dev" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 2.5c3 2 4.6 5.6 4.6 9.5l-2 3.5H9.4l-2-3.5c0-3.9 1.6-7.5 4.6-9.5z"/><circle cx="12" cy="9.5" r="1.6"/><path d="M9.4 15.5 7 19.5l3-1M14.6 15.5 17 19.5l-3-1M12 17v4"/></svg>Dev</button>
       <button class="dk" data-sheet="room" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 11V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v3"/><path d="M3 11h18v5H3z"/><path d="M5 16v3M19 16v3"/></svg>Room</button>
       <button class="dk" data-sheet="shame" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6 21V10a6 6 0 0 1 12 0v11z"/><path d="M4 21h16M12 8.5v6M9.5 11h5"/></svg>Career</button>
@@ -594,6 +595,7 @@ body.flash-red .vignette{animation:redflash .9s ease}
     </section>
     <section data-pane="trench" hidden><div class="deckbody" id="trenchPane"></div></section>
     <section data-pane="bags" hidden><div class="deckbody" id="bagsPane"></div></section>
+    <section data-pane="mine" hidden><div class="deckbody" id="minePane"></div></section>
     <section data-pane="launch" hidden><div class="deckbody" id="launchPane"></div></section>
     <section data-pane="promote" hidden><div class="deckbody" id="promotePane"></div></section>
     <section data-pane="pump" hidden><div class="deckbody" id="pumpPane"></div></section>
@@ -700,7 +702,7 @@ const tierOf=k=>{const v=G.owned&&G.owned[k];return v===true?1:(v|0)};
 const own=k=>tierOf(k)>0;
 
 /* ================= state ================= */
-const FRESH=()=>({trades:[],owned:{},done:{},stats:{},cash:2000,peakCash:2000,heat:0,trust:60,alias:'anon_dev',aliasN:1,profile:null,blacklisted:false,diff:'normal',
+const FRESH=()=>({mine:{rigs:{},last:0,total:0},trades:[],owned:{},done:{},stats:{},cash:2000,peakCash:2000,heat:0,trust:60,alias:'anon_dev',aliasN:1,profile:null,blacklisted:false,diff:'normal',
   lifetime:{launched:0,rugs:0,extracted:0,victims:0,lost:0},shame:[]});
 let G=Object.assign(FRESH(),{speed:1,tick:0,over:false,events:[],mood:1});
 try{const s=JSON.parse(localStorage.getItem('rugroom.v1')||'null');if(s&&typeof s.cash==='number'){Object.assign(G,s);
@@ -741,7 +743,7 @@ document.addEventListener('visibilitychange',()=>{
   // back after a while: grab anything newer from another device
   else if(hiddenAt&&Date.now()-hiddenAt>20000&&typeof Cloud!=='undefined'&&Cloud.canSync()) Cloud.pull();
 });
-function writeLocal(){try{localStorage.setItem('rugroom.v1',JSON.stringify({cash:G.cash,peakCash:G.peakCash,heat:G.heat,trust:G.trust,alias:G.alias,aliasN:G.aliasN,lifetime:G.lifetime,shame:G.shame,profile:G.profile,blacklisted:G.blacklisted,diff:G.diff,owned:G.owned,done:G.done,stats:G.stats,trades:G.trades,savedAt:G.savedAt}))}catch(e){}}
+function writeLocal(){try{localStorage.setItem('rugroom.v1',JSON.stringify({cash:G.cash,peakCash:G.peakCash,heat:G.heat,trust:G.trust,alias:G.alias,aliasN:G.aliasN,lifetime:G.lifetime,shame:G.shame,profile:G.profile,blacklisted:G.blacklisted,diff:G.diff,owned:G.owned,done:G.done,stats:G.stats,trades:G.trades,mine:G.mine,savedAt:G.savedAt}))}catch(e){}}
 function save(){if(switching) return;G.savedAt=Date.now();writeLocal();if(typeof Cloud!=='undefined') Cloud.queue()}
 let coin=null, aid=0, titleOn=true;
 
@@ -1316,6 +1318,9 @@ const MISSIONS=[
   {id:'x6',t:'Make $10K trading profit',r:2500,c:()=>(G.stats.tradePnl||0)>=1e4},
   {id:'x7',t:'Hit a 5× on one trade',r:4000,c:()=>(G.stats.bestX||0)>=5},
   {id:'x8',t:'Launch your own coin (Dev tab)',r:1000,c:()=>G.lifetime.launched>=1},
+  {id:'m1',t:'Buy your first mining rig',r:1000,c:()=>mineRate()>0},
+  {id:'m2',t:'Mine $100K in total',r:10000,c:()=>(G.stats.mined||0)>=1e5},
+  {id:'m3',t:'Own an ASIC miner',r:25000,c:()=>rigCount('asic')>0},
   {id:'x9',t:'Make $100K trading profit',r:10000,c:()=>(G.stats.tradePnl||0)>=1e5},
   {id:'x10',t:'Catch 5 graduations',r:20000,c:()=>(G.stats.grads||0)>=5},
   {id:'x11',t:'Hit a 20× on one trade',r:25000,c:()=>(G.stats.bestX||0)>=20},
@@ -1333,6 +1338,55 @@ function checkMissions(){
 }
 function pip(name,on){const b=document.querySelector('.dk[data-sheet="'+name+'"]');if(!b) return;let p=b.querySelector('.pip');if(on&&!p){p=document.createElement('i');p.className='pip';b.appendChild(p)}else if(!on&&p) p.remove()}
 
+/* ---- Crypto mining: passive income from rigs. Full rate while playing, 15% while away (up to 24h) ---- */
+const RIGS=[
+  {k:'laptop',n:'Old laptop',e:'💻',price:2000,rate:10,d:'Mines in the background. Fans sound like a jet.'},
+  {k:'pc',n:'Gaming PC',e:'🖥️',price:15000,rate:90,d:'RGB everything. Hashes between matches.'},
+  {k:'gpu',n:'GPU rig',e:'🎛️',price:100000,rate:700,d:'Six graphics cards on an open frame.'},
+  {k:'asic',n:'ASIC miner',e:'📟',price:600000,rate:5000,d:'Built for one job. Very good at it.'},
+  {k:'rack',n:'Mining rack',e:'🗄️',price:4000000,rate:40000,d:'A full rack of ASICs and a lot of noise.'},
+  {k:'room',n:'Server room',e:'🏢',price:25000000,rate:300000,d:'Cooled, cabled, humming all night.'},
+  {k:'farm',n:'Mining farm',e:'🏭',price:150000000,rate:2000000,d:'A warehouse of machines out of town.'},
+  {k:'hydro',n:'Hydro data centre',e:'🌊',price:1000000000,rate:15000000,d:'Cheap power from a dam. Printing.'},
+];
+const OFFLINE_RATE=.15, OFFLINE_CAP=24*3600*1000;
+function mineState(){if(!G.mine||typeof G.mine!=='object') G.mine={rigs:{},last:0,total:0};if(!G.mine.rigs) G.mine.rigs={};return G.mine}
+const rigCount=k=>mineState().rigs[k]|0;
+const rigPrice=r=>Math.round(r.price*Math.pow(1.15,rigCount(r.k)));
+function mineRate(){return RIGS.reduce((a,r)=>a+r.rate*rigCount(r.k),0)} // $ per minute online
+function mineLevel(){let lv=0;RIGS.forEach((r,i)=>{if(rigCount(r.k)) lv=i+1});return lv}
+let mineSaveAt=0;
+function mineTick(){
+  const m=mineState(), now=Date.now(), rate=mineRate();
+  if(!m.last||!rate){m.last=now;return}
+  const gap=now-m.last; m.last=now; if(gap<=0) return;
+  if(gap>30000){ // you were away: offline rate, capped
+    const earn=rate/60000*Math.min(gap,OFFLINE_CAP)*OFFLINE_RATE;
+    if(earn>=1){G.cash+=earn;m.total+=earn;st('mined',earn);save();
+      const hrs=gap/3600000, away=hrs>=1?(hrs>=24?'over a day':Math.floor(hrs)+'h '+Math.round((hrs%1)*60)+'m'):Math.round(gap/60000)+' min';
+      if($('#overlay').hidden&&!obOpen) openModal(`<div class="kick">WELCOME BACK</div><h3>Your rigs mined ${fmtUSD(earn)}</h3><p>You were away ${away}. Rigs keep mining at ${Math.round(OFFLINE_RATE*100)}% of their normal rate while you're gone${gap>OFFLINE_CAP?' (up to 24 hours)':''}.</p><div class="acts"><button class="btn primary" data-act="ok">Nice</button></div>`);
+      else toast('Your rigs mined '+fmtUSD(earn)+' while you were away','good',6000)}
+    return}
+  const earn=rate/60000*gap; G.cash+=earn; m.total+=earn; st('mined',earn);
+  if(now-mineSaveAt>30000){mineSaveAt=now;save()}
+}
+function buyRig(k){
+  const r=RIGS.find(x=>x.k===k); if(!r) return; const price=rigPrice(r);
+  if(G.cash<price) return toast('Not enough cash for a '+r.n.toLowerCase(),'bad');
+  mineTick(); G.cash-=price; const m=mineState(); m.rigs[k]=(m.rigs[k]|0)+1; if(!m.last) m.last=Date.now();
+  save(); Room.apply(); Snd.fx('buy'); toast(r.n+' installed. +'+fmtUSD(r.rate)+'/min','good'); renderAll();
+}
+function renderMine(){
+  const m=mineState(), rate=mineRate();
+  let h=`<div class="pos"><div class="kpi"><label>Mining (playing)</label><b class="up">${fmtUSD(rate)}/min</b></div><div class="kpi"><label>While away (${Math.round(OFFLINE_RATE*100)}%)</label><b>${fmtUSD(rate*OFFLINE_RATE)}/min</b></div>
+    <div class="kpi"><label>Per hour</label><b>${fmtUSD(rate*60)}</b></div><div class="kpi"><label>Total mined</label><b>${fmtUSD(m.total||0)}</b></div></div>
+    <div class="caught">Rigs mine every second you play. Close the game and they keep going at ${Math.round(OFFLINE_RATE*100)}% speed for up to 24 hours. Each extra rig of the same kind costs 15% more.</div><div class="sec">Rigs</div>`;
+  h+=RIGS.map(r=>{const n=rigCount(r.k),price=rigPrice(r),can=G.cash>=price;
+    return card({title:`${r.e} ${r.n}${n?` <span class="tier">×${n}</span>`:''}`,cost:fmtCash(price),desc:r.d,
+      tags:[`<span class="tag good">+${fmtUSD(r.rate)}/min</span>`,n?`<span class="tag">making ${fmtUSD(r.rate*n)}/min</span>`:'',`<span class="tag">pays back in ${Math.round(price/r.rate)} min</span>`],
+      btn:`<button class="btn ${can?'primary':''}" data-act="rig" data-id="${r.k}" ${can?'':'disabled'}>${n?'Buy another':'Buy'}</button>`})}).join('');
+  setHTML($('#minePane'),h);
+}
 /* ---- Market: lots of memecoins; fresh launches, trending, and ones that graduate at $69K ---- */
 const TR={coins:[],pnl:0};
 const GRAD_MC=69000;
@@ -1738,7 +1792,7 @@ function step(){
 
 /* ================= UI ================= */
 /* --- sheets (menus over the room) --- */
-const SHEETS={settings:['Settings','Sound, graphics and your data'],help:['How to play','The whole game in two minutes'],room:['Room shop','Spend your profits on the setup. Every item has a perk'],chart:['Market','Live chart, chat, trades and holders'],trench:['Market','Trending, new launches and graduated coins'],bags:['Bags','Your positions and P/L'],launch:['Dev · Launch','Side hustle: make your own coin'],promote:['Promote','Streamers, KOLs and fake ads'],
+const SHEETS={settings:['Settings','Sound, graphics and your data'],help:['How to play','The whole game in two minutes'],room:['Room shop','Spend your profits on the setup. Every item has a perk'],chart:['Market','Live chart, chat, trades and holders'],trench:['Market','Trending, new launches and graduated coins'],bags:['Bags','Your positions and P/L'],mine:['Mining','Rigs that earn while you play, and a bit while you\'re away'],launch:['Dev · Launch','Side hustle: make your own coin'],promote:['Promote','Streamers, KOLs and fake ads'],
   pump:['Pump','Manufacture the hype'],exit:['Exit','Cash out before the sleuths find you'],shame:['Career','Missions, stats and the graveyard']};
 let curSheet=null, feedTab='chat';
 const DEV=['launch','chart','promote','pump','exit']; let lastDev='launch';
@@ -2026,6 +2080,7 @@ function renderHelp(){
    <div><b>Bonding and graduating</b><p>New coins bond toward $69K. If they get there they graduate, lock their liquidity and calm down. Buying before graduation is where the big multiples are.</p></div>
    <div><b>Slippage</b><p>No trading fees, but big orders move the price against you, and some coins charge a sell tax. Room upgrades cut both.</p></div>
    <div><b>Room</b><p>Every upgrade is a trading perk: lower fees, rug insurance, sniper bonuses, rug radar, profit bonuses and more. Every tier also changes how it looks.</p></div>
+   <div><b>Mining</b><p>Buy rigs in the Mine tab for steady income every minute you play. Close the game and they keep mining at 15% speed for up to 24 hours.</p></div>
    <div><b>Dev (side mode)</b><p>Fancy being the dev? Launch your own coin, promote it, and rug it if you dare. That is where Heat and Trust come in.</p></div>
    <div><b>Career</b><p>Missions pay cash rewards. Sign in to sync your save and climb the leaderboard.</p></div>
   </div>
@@ -2070,6 +2125,7 @@ function renderAll(full){
   else if(d==='room') renderRoomShop();
   else if(d==='trench') renderTrench();
   else if(d==='bags') renderBags();
+  else if(d==='mine') renderMine();
   else if(d==='settings') renderSettings();
   else if(d==='help') renderHelp();
   renderMix(); renderQuick(); renderGoal();
@@ -2103,7 +2159,7 @@ $('#sheet').addEventListener('click',e=>{
     case 'setq':SET.quality=id;saveSet();Room.setQuality(id);renderSettings();break;
     case 'brag':shareCareer();break;
     case 'tbuy':trenchBuy(+id,+b.dataset.amt);break; case 'tcustom':trenchCustom(+id);break; case 'tsell':trenchSell(+id,1);break;
-    case 'tsellp':trenchSell(+id,+b.dataset.f);break;
+    case 'tsellp':trenchSell(+id,+b.dataset.f);break; case 'rig':buyRig(id);break;
     case 'qb':MK.qb=+id;renderTrench();break; case 'mktab':MK.tab=id;MK.sel=null;renderTrench();$('#sheetBody').scrollTop=0;break;
     case 'mtf':MK.tf=+id;renderTrench();break;
     case 'mopen':MK.sel=+id;renderTrench();$('#sheetBody').scrollTop=0;break; case 'mback':MK.sel=null;renderTrench();break;
@@ -2365,7 +2421,20 @@ const Room=(()=>{
       g.strokeStyle='rgba(180,170,160,.5)';g.lineWidth=1;for(let i=0;i<=w;i+=128){g.beginPath();g.moveTo(i,0);g.lineTo(i,h);g.stroke();g.beginPath();g.moveTo(0,i);g.lineTo(w,i);g.stroke()}}).t;
     anim.marble.wrapS=anim.marble.wrapT=THREE.RepeatWrapping;anim.marble.repeat.set(3,3);
   }
+  function buildRig(){
+    const g=new THREE.Group();g.position.set(1.32,0,-2.3);S.add(g);anim.rig=g;g.visible=false;
+    const case_=std(0x14151c,{metalness:.5,roughness:.35});
+    const small=new THREE.Group();g.add(small);anim.rigSmall=small;box(.3,.5,.4,case_,0,.25,0,small);
+    const glass=new THREE.Mesh(new THREE.PlaneGeometry(.26,.42),new THREE.MeshBasicMaterial({color:0x26a69a,transparent:true,opacity:.25,toneMapped:false}));glass.position.set(0,.27,.201);small.add(glass);
+    const rack=new THREE.Group();g.add(rack);anim.rigRack=rack;box(.5,1.05,.5,case_,0,.525,0,rack);
+    for(let i=0;i<6;i++) box(.44,.12,.02,std(0x22242e,{metalness:.4,roughness:.4}),0,.12+i*.15,.255,rack);
+    anim.rigLeds=[];const ledM=()=>new THREE.MeshBasicMaterial({color:0x39ff88,toneMapped:false});
+    for(let i=0;i<4;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.012,6,6),ledM());m.position.set(-.1+i*.06,.42,.205);small.add(m);anim.rigLeds.push(m)}
+    for(let r=0;r<6;r++) for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.011,6,6),ledM());m.position.set(-.17+i*.05,.12+r*.15,.268);rack.add(m);anim.rigLeds.push(m)}
+    anim.rigGlow=glow(0x39ff88,.9,0,.5,.3,.25,g);
+  }
   function applyTiers(){
+    if(anim.rig){const lv=typeof mineLevel==='function'?mineLevel():0;anim.rig.visible=lv>0;anim.rigSmall.visible=lv>0&&lv<4;anim.rigRack.visible=lv>=4;anim.rig.scale.setScalar(lv>=6?1.2:1)}
     tierGroups.forEach(o=>{const t=tierOf(o.key);o.g.visible=t>=o.min&&t<=o.max});
     const T=tierOf;
     if(anim.plant) anim.plant.visible=false;
@@ -2616,7 +2685,7 @@ const Room=(()=>{
     glow(0x4fe0ff,.9,2.05,.33,-2.04,.35,gr);
     // penthouse handled via skyline redraw
     buildModern();
-    buildTiers();
+    buildTiers(); buildRig();
     S.traverse(o=>{if(o.material)[].concat(o.material).forEach(m=>{if(m.isMeshStandardMaterial) m.envMapIntensity=m.metalness>.4?1.15:.35})});
     // more space: everything along the left wall (wall, bed, shelves, sofa, art...) moves 0.7 m further out
     {const bb=new THREE.Box3(),c=new THREE.Vector3();const shift=o=>{if(o===anim.plantAnchor||o===anim.fridgeAnchor) return;bb.setFromObject(o);if(bb.isEmpty()) return;bb.getCenter(c);if(c.x<-2.2&&c.z>-2.55) o.position.x-=.7};
@@ -2723,6 +2792,7 @@ const Room=(()=>{
     if(flashT>0){flashT-=dt;L.flash.color.set(flashC);L.flash.intensity=Math.max(0,flashT)*4.5}else L.flash.intensity=0;
     // rug pull animation
     if(rugAnim){rugAnim.t+=dt;const k=Math.min(1,rugAnim.t/.9),e=k*k*(3-2*k);anim.rug.position.x=-.5+e*7;anim.rug.rotation.z=e*1.2;if(k>=1) rugAnim=null}
+    if(anim.rig&&anim.rig.visible) anim.rigLeds.forEach((m,i)=>{m.visible=Math.sin(t*(6+i%5)+i*1.7)>-.3});
     // tier animations
     if(anim.rotor&&modernOn>=5){anim.rotor.rotation.y+=dt*28;anim.heli.position.y=2.5+Math.sin(t*1.1)*.12;anim.heli.position.x=1.8+Math.sin(t*.25)*.8;anim.heli.rotation.y=Math.sin(t*.25)*.25;anim.heliLight.material.opacity=Math.sin(t*6)>0?.9:.1}
     if(anim.reels&&tierOf('vinyl')>=4) anim.reels.forEach((r,i)=>r.rotation.x+=dt*(i?2.2:1.6));
@@ -2780,7 +2850,7 @@ function loop(t){
    - "claude": inside claude.ai, the viewer's Claude sign-in + the artifact's own database
    - "web":    self-hosted (Cloudflare Pages Functions + D1) at /api/*, username + password
    - "local":  neither available, progress stays on this device */
-const PKEYS=['cash','peakCash','heat','trust','alias','aliasN','lifetime','shame','profile','blacklisted','diff','owned','done','stats','trades','savedAt'];
+const PKEYS=['cash','peakCash','heat','trust','alias','aliasN','lifetime','shame','profile','blacklisted','diff','owned','done','stats','trades','mine','savedAt'];
 const LB_TABS=[['peak','Richest',v=>fmtUSD(v)],['extracted','Extracted',v=>fmtUSD(v)],['peakMc','Biggest coin',v=>fmtUSD(v)],['rugs','Rugs',v=>Math.round(v).toLocaleString('en-GB')],['tiers','Room',v=>Math.round(v)+'/'+TOTAL_T()]];
 let lbTab='peak', obOpen=false;
 var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,lastSync:0,status:'local',token:null,webUser:null,_t:null,_chain:Promise.resolve(),_poll:null,
@@ -3032,6 +3102,8 @@ news('Markets quiet. Somewhere a dev is choosing a frog name.');
 syncLayoutVars();
 
 loadRun(); renderAll(true); syncSoundBtn();
+setInterval(()=>{if(!document.hidden&&G.profile){mineTick();if(curSheet==='mine'&&!pressing) renderMine()}},1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&G.profile) setTimeout(mineTick,600)});
 const cloudReady=Cloud.init().catch(()=>{}).then(()=>{renderTitle();checkResetLink()});
 function renderTitle(){
   if(!titleOn) return;
