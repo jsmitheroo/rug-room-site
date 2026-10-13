@@ -1568,7 +1568,7 @@ function advance(r,quiet){
   if(r.mc>MC_SOFT) ch-=Math.log(r.mc/MC_SOFT)*.18+.015;
   // whales: big wallets ape in or dump, and everyone notices
   if(!quiet&&r.age>2){const wb=Math.random()<(r.grad?.012:.02),wd=!wb&&r.mc>15000&&Math.random()<.008;
-    if(wb||wd){const pct=wb?rnd(.25,.9):-rnd(.2,.45),usd=r.mc*Math.abs(pct)*.8;ch+=Math.log(1+pct);
+    if(wb||wd){let pct=wb?rnd(.25,.9):-rnd(.2,.45),usd=r.mc*Math.abs(pct)*.8;if(wb&&usd>1e6){usd=rnd(4e5,1e6);pct=usd/(r.mc*.8)}ch+=Math.log(1+pct);
       const msg=(wb?'🐋 Whale aped '+fmtUSD(usd)+' into $':'🐋 Whale dumped '+fmtUSD(usd)+' of $')+r.ticker+' ('+(wb?'+':'')+Math.round(pct*100)+'%)';
       coinChat(r,wb?'whale_watch':'whale_watch',wb?'big wallet just bought. something is up 👀':'whale exit spotted. careful',wb?'up':'down');
       const top=MK.sel===r.id||r.units>0||(TR.coins.length&&mkList('trend').slice(0,5).includes(r));
