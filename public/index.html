@@ -1398,6 +1398,17 @@ const RIGS=[
   {k:'hydro',n:'Hydro data centre',e:'🌊',price:1000000000,rate:15000000,d:'Cheap power from a dam. Printing.'},
 ];
 const OFFLINE_RATE=.15, OFFLINE_CAP=24*3600*1000;
+// welcome-back box: mining first, copy trading underneath, shown together
+const WB={mine:null,copy:null,t:0};
+function wbAdd(k,part){WB[k]=part;clearTimeout(WB.t);WB.t=setTimeout(wbShow,1200)}
+function wbShow(){const m=WB.mine,c=WB.copy;WB.mine=WB.copy=null;if(!m&&!c) return;
+  const total=(m?m.earn:0)+(c?c.total:0);
+  const html=`<div class="kick">WELCOME BACK</div><h3>You made ${total>=0?'+':''}${fmtUSD(total)} while away</h3><p>You were away ${(m||c).away}.</p>`+
+    (m?`<div class="sec">⛏️ Mining</div><div class="mlist"><div class="hrow"><span class="hs">RIGS</span><span class="mr-n"><b>Offline mining</b><span>${Math.round(OFFLINE_RATE*100)}% of normal speed${m.capped?' · capped at 24h':''}</span></span><span class="mr-p"><b class="up">+${fmtUSD(m.earn)}</b></span></div></div>`:'')+
+    (c?`<div class="sec">📋 Copy trading</div><div class="mlist">${c.lines.join('')}</div>`:'')+
+    `<div class="acts"><button class="btn primary" data-act="ok">Nice</button></div>`;
+  if($('#overlay').hidden&&!obOpen) openModal(html); else toast('While away: '+(total>=0?'+':'')+fmtUSD(total),total>=0?'good':'bad',7000)}
+const awayStr=gap=>{const hrs=gap/3600000;return hrs>=1?(hrs>=24?'over a day':Math.floor(hrs)+'h '+Math.round((hrs%1)*60)+'m'):Math.round(gap/60000)+' min'};
 const MINE_UPS=[
   {k:'oc',n:'Overclock',e:'⚡',per:.10,price:40000,d:'Push every chip harder.'},
   {k:'cool',n:'Liquid cooling',e:'❄️',per:.15,price:250000,d:'Cooler rigs run faster for longer.'},
@@ -1432,9 +1443,7 @@ function mineTick(){
   if(gap>30000){ // you were away: offline rate, capped
     const earn=mineRate(true)/60000*Math.min(gap,OFFLINE_CAP)*OFFLINE_RATE;
     if(earn>=1){G.cash+=earn;m.total+=earn;st('mined',earn);save();
-      const hrs=gap/3600000, away=hrs>=1?(hrs>=24?'over a day':Math.floor(hrs)+'h '+Math.round((hrs%1)*60)+'m'):Math.round(gap/60000)+' min';
-      if($('#overlay').hidden&&!obOpen) openModal(`<div class="kick">WELCOME BACK</div><h3>Your rigs mined ${fmtUSD(earn)}</h3><p>You were away ${away}. Rigs keep mining at ${Math.round(OFFLINE_RATE*100)}% of their normal rate while you're gone${gap>OFFLINE_CAP?' (up to 24 hours)':''}.</p><div class="acts"><button class="btn primary" data-act="ok">Nice</button></div>`);
-      else toast('Your rigs mined '+fmtUSD(earn)+' while you were away','good',6000)}
+      wbAdd('mine',{earn,away:awayStr(gap),capped:gap>OFFLINE_CAP})}
     return}
   const earn=rate/60000*gap; G.cash+=earn; m.total+=earn; st('mined',earn);
   if(now-mineSaveAt>30000){mineSaveAt=now;save()}
@@ -1496,9 +1505,7 @@ function copyOffline(){
       if(!Array.isArray(G.trades)) G.trades=[]; G.trades.unshift({at:now,side:'copied',id:-1,tk:b.n,nm:b.n,m:'',usd:Math.round(amt*n),pnl:Math.round(pnl),mc:0,away:n});
       lines.push(`<div class="hrow"><span class="hs">${b.e}</span><span class="mr-n"><b>${b.n}</b><span>${n} trade${n>1?'s':''} · ${w} win${w==1?'':'s'}</span></span><span class="mr-p"><b class="${pnl>=0?'up':'down'}">${pnl>=0?'+':''}${fmtUSD(pnl)}</b></span></div>`)}}
   if(!lines.length) return; save();
-  const hrs=gap/3600000, away=hrs>=1?Math.floor(hrs)+'h '+Math.round((hrs%1)*60)+'m':Math.round(gap/60000)+' min';
-  const html=`<div class="kick">COPY TRADING</div><h3>Your traders made ${total>=0?'+':''}${fmtUSD(total)}</h3><p>While you were away (${away}) the traders you follow kept trading with your money.</p><div class="mlist">${lines.join('')}</div><div class="acts"><button class="btn primary" data-act="ok">Nice</button></div>`;
-  if($('#overlay').hidden&&!obOpen) openModal(html); else toast('Copy trading while away: '+(total>=0?'+':'')+fmtUSD(total),total>=0?'good':'bad',7000);
+  wbAdd('copy',{total,lines,away:awayStr(gap)});
 }
 const COPY_FEE=.25, COPY_MAX=Infinity;
 function botsTick(){
