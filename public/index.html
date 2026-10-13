@@ -232,6 +232,9 @@ button.chip:hover{border-color:rgba(255,79,163,.4)}
 .bottom{display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
 .bottom>*{pointer-events:auto}
 .news{display:flex;align-items:center;gap:10px;padding:6px 12px 6px 6px;border-radius:999px;max-width:min(680px,100%);min-width:0;box-sizing:border-box}
+.news.link{cursor:pointer}.news.link .head{text-decoration:underline;text-decoration-color:rgba(255,255,255,.25);text-underline-offset:3px}
+.news.good .head{color:#7ef0c4}.news.bad .head{color:#ff9a98}.news.warn .head{color:#ffd27a}
+.news.good,.news.bad,.news.warn,.news.info{animation:nflash .9s ease}@keyframes nflash{0%{box-shadow:0 0 0 0 rgba(255,79,163,.55)}100%{box-shadow:0 0 0 12px rgba(255,79,163,0)}}
 .news .badge{font:700 9.5px var(--f-mono);letter-spacing:.14em;background:var(--down);color:#fff;padding:3px 8px;border-radius:999px;flex:none}
 .news .head{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;animation:slide .4s ease}
 .dock{display:flex;gap:2px;padding:6px;border-radius:20px;max-width:100%;box-sizing:border-box}
@@ -251,6 +254,8 @@ button.chip:hover{border-color:rgba(255,79,163,.4)}
 .sheet.open{transform:none;opacity:1;visibility:visible;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s ease,visibility 0s,width .28s ease}
 .sheet.wide{width:min(880px,calc(100% - 32px))}
 .sheet-h{display:flex;align-items:center;gap:10px;padding:12px 12px 12px 16px;border-bottom:1px solid var(--line);flex:none}
+.snews{margin:8px 12px 0;padding:5px 10px 5px 5px;background:rgba(255,255,255,.04);border:1px solid var(--line);max-width:none;flex:none}
+@media(min-width:761px){.snews{display:none}}
 .sheet-h h3{margin:0;font-size:15px;letter-spacing:.02em}
 .sheet-h p{margin:0;font-size:11.5px;color:var(--muted)}
 .sheet-h .x{margin-left:auto;width:32px;height:32px;border-radius:9px;border:1px solid var(--line2);background:rgba(255,255,255,.04);color:var(--fg);cursor:pointer;font-size:16px;line-height:1;flex:none}
@@ -552,6 +557,7 @@ body.flash-red .vignette{animation:redflash .9s ease}
 <aside class="sheet" id="sheet" aria-hidden="true">
   <div class="grab"></div>
   <div class="sheet-h"><div><h3 id="sheetTitle">Chart</h3><p id="sheetSub"></p></div><button class="x" id="sheetClose" aria-label="Close menu">✕</button></div>
+  <div class="news snews" id="sheetNewsBar"><span class="badge">BREAKING</span><span class="head" id="sheetNews"></span></div>
   <div class="devnav" id="devnav" hidden>
     <button data-go="launch">Launch</button><button data-go="chart">Chart</button><button data-go="promote">Promote</button><button data-go="pump">Pump</button><button data-go="exit">Exit</button>
   </div>
@@ -851,12 +857,20 @@ function chat(who,msg,cls,color){
 }
 const sys=(m)=>chat('SYSTEM',m,'sys','#f5b041');
 let newsQ=[], newsTimer=0;
-function news(h){newsQ.unshift(h);newsQ=newsQ.slice(0,10);showNews(h)}
-function showNews(h){const el=$('#news');el.style.animation='none';void el.offsetWidth;el.style.animation='';el.textContent=h}
-setInterval(()=>{if(newsQ.length>1){newsTimer=(newsTimer+1)%newsQ.length;showNews(newsQ[newsTimer])}},7000);
+// every notification goes through the BREAKING bar. Tap it to jump to the coin it mentions.
+let newsHold=0;
+function news(h,kind){const it={h,kind:kind||''};if(newsQ.length&&newsQ[0].h===h){newsQ[0].n=(newsQ[0].n||1)+1}else{newsQ.unshift(it);newsQ=newsQ.slice(0,12)}newsTimer=0;newsHold=Date.now()+(kind?6000:0);showNews(newsQ[0])}
+function newsCoin(h){const m=String(h).match(/\$([A-Z0-9]{2,12})\b/g);if(!m) return null;for(const x of m){const tk=x.slice(1),r=TR.coins.find(c=>c.ticker===tk);if(r) return {r};if(typeof coin!=='undefined'&&coin&&coin.ticker===tk) return {dev:true}}return null}
+function showNews(it){if(typeof it==='string') it={h:it};const el=$('#news'),bar=el.closest('.news');el.style.animation='none';void el.offsetWidth;el.style.animation='';
+  const txt=it.h+(it.n>1?'  ×'+it.n:''), c=newsCoin(it.h); el.textContent=txt; bar.className='news glass '+(it.kind||''); bar.classList.toggle('link',!!c);
+  const se=$('#sheetNews'); if(se){se.textContent=txt;const sb=se.parentNode;sb.className='news snews '+(it.kind||'');sb.classList.toggle('link',!!c)}}
+setInterval(()=>{if(newsQ.length>1&&Date.now()>newsHold){newsTimer=(newsTimer+1)%newsQ.length;showNews(newsQ[newsTimer])}},7000);
+document.addEventListener('click',e=>{const bar=e.target.closest('.news');if(!bar) return;const it=newsQ[newsTimer]||newsQ[0];if(!it) return;const c=newsCoin(it.h);if(!c) return;
+  if(c.dev){openSheet('chart');return} MK.sel=c.r.id; if(curSheet==='trench'){renderTrench();$('#sheetBody').scrollTop=0}else openSheet('trench')});
 // toasts: repeats merge into one with a ×N count, and at most 3 show at once (oldest drops off)
 const TOAST_MAX=3;
 function toast(msg,kind,ms){
+  news(msg,kind||'info'); return;
   const box=$('#toasts'); if(!box) return; const life=ms||3800, key=(kind||'')+'|'+msg;
   const same=[...box.children].find(t=>t._key===key);
   if(same){same._n=(same._n||1)+1;same.querySelector('.tn').textContent='×'+same._n;same.querySelector('.tn').hidden=false;
