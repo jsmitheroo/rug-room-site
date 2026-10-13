@@ -1471,7 +1471,7 @@ function renderMine(){
 /* ---- Copy trading: pro trader bots; follow one and your account mirrors its buys and sells ---- */
 const BOTS=[
   {k:'sniper',n:'Sniper Sam',e:'🎯',d:'Snipes brand-new launches in their first minutes. Sells at 2× or cuts at −45%.',pick:r=>!r.grad&&r.age<4,tp:2,sl:.55,skill:.55},
-  {k:'grad',n:'Grad Hunter',e:'🎓',d:'Buys coins that are 60–90% bonded and sells soon after they graduate.',pick:r=>!r.grad&&r.mc>41000&&r.mc<62000,tp:2.5,sl:.6,gradExit:true,skill:.45},
+  {k:'grad',n:'Grad Hunter',e:'👑',d:'The best trader on the platform. Has a nose for coins about to graduate, rides them a bit longer and only takes a 10% cut.',pick:r=>!r.grad&&r.mc>41000&&r.mc<62000,tp:3,sl:.65,gradExit:true,skill:.8,op:true},
   {k:'safe',n:'Safe Sally',e:'🛡️',d:'Only graduated coins with momentum. Small wins, rare losses.',pick:r=>r.grad&&chg(r,6)>4,tp:1.3,sl:.8,skill:.6},
   {k:'degen',n:'Degen Dave',e:'🎲',d:'Apes into whatever is trending. Huge wins, huge losses.',pick:r=>chg(r,6)>20,tp:2.5,sl:.5,skill:.4},
 ];
@@ -1481,7 +1481,7 @@ function copyState(){if(!G.copy||typeof G.copy!=='object') G.copy={bots:[],amts:
   return c}
 const COPY_SLOTS=2;
 // while you're away the traders keep trading for you (up to 24h). Each trader has a typical pace, hit rate and rug risk.
-const COPY_OFF={sniper:{tph:6,pw:.45,pr:.10},grad:{tph:3,pw:.35,pr:.05},safe:{tph:4,pw:.62,pr:.02},degen:{tph:5,pw:.36,pr:.15}};
+const COPY_OFF={sniper:{tph:6,pw:.45,pr:.10},grad:{tph:3,pw:.5,pr:.03,fee:.1},safe:{tph:4,pw:.62,pr:.02},degen:{tph:5,pw:.36,pr:.15}};
 let copyChecked=false;
 function copyOffline(){
   const cp=copyState(), now=Date.now(), last=cp.last||now; cp.last=now; copyChecked=true;
@@ -1490,7 +1490,7 @@ function copyOffline(){
   for(const k of cp.bots){const b=BOTS.find(x=>x.k===k),o=COPY_OFF[k];if(!b||!o) continue; const amt=cp.amts[k]||MK.qb;
     let n=0,w=0,pnl=0,acc=gap/3600000*o.tph; while(acc>=1||(acc>0&&Math.random()<acc)){acc-=1; if(G.cash<amt) break; n++;
       const u=Math.random(); let d;
-      if(u<o.pw){d=amt*(b.tp-1)*rnd(.7,1.15)*(1-COPY_FEE);w++} else if(u<o.pw+o.pr) d=-amt; else d=-amt*(1-b.sl)*rnd(.8,1.1);
+      if(u<o.pw){d=amt*(b.tp-1)*rnd(.7,1.15)*(1-(o.fee!=null?o.fee:COPY_FEE));w++} else if(u<o.pw+o.pr) d=-amt; else d=-amt*(1-b.sl)*rnd(.8,1.1);
       G.cash+=d; pnl+=d}
     if(n){total+=pnl; TR.pnl+=pnl; st('tradePnl',pnl); st('trades',n); if(w) st('trenchWins',w);
       if(!Array.isArray(G.trades)) G.trades=[]; G.trades.unshift({at:now,side:'copied',id:-1,tk:b.n,nm:b.n,m:'',usd:Math.round(amt*n),pnl:Math.round(pnl),mc:0,away:n});
@@ -1506,17 +1506,17 @@ function botsTick(){
   // copied orders land one tick after the trader's, so you get a slightly worse price than they did
   const q=Array.isArray(cp.q)?cp.q:[]; cp.q=[];
   for(const o of q){const r=TR.coins.find(x=>x.id===o.id);
-    if(o.a==='buy'){if(r&&r.alive&&cp.bots.includes(o.b)&&!(r.units>0)){const amt=Math.min(cp.amts[o.b]||MK.qb,COPY_MAX);if(G.cash>=amt){cp.pos[r.id]=o.b;r.copyFee=1;trenchBuy(r.id,amt);toast('📋 Copied '+o.n+': bought '+fmtUSD(amt)+' of $'+r.ticker,'good')}}}
+    if(o.a==='buy'){if(r&&r.alive&&cp.bots.includes(o.b)&&!(r.units>0)){const amt=Math.min(cp.amts[o.b]||MK.qb,COPY_MAX);if(G.cash>=amt){cp.pos[r.id]=o.b;r.copyFee=o.b==='grad'?.4:1;trenchBuy(r.id,amt);toast('📋 Copied '+o.n+': bought '+fmtUSD(amt)+' of $'+r.ticker,'good')}}}
     else if(r&&r.alive&&r.units>0){trenchSell(r.id,1);toast('📋 Copied '+o.n+': sold $'+r.ticker,'')}}
   for(const b of BOTS){const st=BOTST[b.k];
     for(const id in st.pos){const r=TR.coins.find(x=>x.id===+id), e=st.pos[id];let close=false;
       if(!r||!r.alive){close=true;st.ret+=-1}
-      else{const x=r.mc/e.mc;if(x>=b.tp||x<=b.sl||(b.gradExit&&r.grad&&G.tick-(r.gradAt||0)>=2*SUBS)){close=true;st.ret+=x-1;if(x>1) st.wins++}}
+      else{const x=r.mc/e.mc;if(x>=b.tp||x<=b.sl||(b.gradExit&&r.grad&&G.tick-(r.gradAt||0)>=(b.op?5:2)*SUBS)){close=true;st.ret+=x-1;if(x>1) st.wins++}}
       if(close){st.trades++;delete st.pos[id];
         if(cp.pos[id]===b.k){delete cp.pos[id];if(r&&r.alive&&r.units>0) cp.q.push({a:'sell',id:r.id,b:b.k,n:b.n})}}}
     if(Object.keys(st.pos).length<6&&Math.random()<.3){
       const smart=Math.random()<b.skill, cands=TR.coins.filter(r=>r.alive&&!st.pos[r.id]&&(smart?b.pick(r):!r.grad||Math.random()<.3));
-      if(cands.length){const r=pick(cands);st.pos[r.id]={mc:r.mc,at:G.tick};
+      if(cands.length){const r=pick(cands);st.pos[r.id]={mc:r.mc,at:G.tick};if(b.op) r.gh=10
         if(cp.bots.includes(b.k)&&!cp.pos[r.id]&&!cp.q.some(o=>o.id===r.id)) cp.q.push({a:'buy',id:r.id,b:b.k,n:b.n})}}
   }
 }
@@ -1552,7 +1552,7 @@ function newCoin(warm){
 }
 function advance(r,quiet){
   r.age++;
-  let d=r.drift; if(r.boost>0){d+=.02*tierOf('neon');r.boost--} if(r.units>0&&!r.grad) d+=.01*tierOf('lava');
+  let d=r.drift; if(r.boost>0){d+=.02*tierOf('neon');r.boost--} if(r.gh>0){d+=.02;r.gh--} if(r.units>0&&!r.grad) d+=.01*tierOf('lava');
   let ch=d*Math.min(1.6,G.mood)+gauss()*(r.grad?.05:.09);
   if(Math.random()<(r.grad?.02:.04)){ch+=rnd(.3,.9);if(!quiet){const pct=Math.round((Math.exp(ch)-1)*100);if(r.units>0){toast('$'+r.ticker+' is pumping +'+pct+'%','good');pip('bags',true)}else if(Math.random()<.3) news('$'+r.ticker+' rips '+pct+'% as a streamer shills it.')}}
   if(!r.grad) r.drift-=.0011;
@@ -1569,8 +1569,8 @@ function advance(r,quiet){
   if(!r.grad&&r.mc>=GRAD_MC){r.grad=true;r.gradAt=G.tick;r.locked=true;r.risk*=.12;r.drift=rnd(-.006,.035);
     if(!quiet){news('$'+r.ticker+' graduates at '+fmtUSD(r.mc)+'. Liquidity locked, the big money arrives.');if(r.units>0){st('grads');toast('$'+r.ticker+' graduated! You were early.','good');Snd.fx('mission')}}}
   if(r.rugIn>0){if(--r.rugIn===0) doRug(r,quiet);return}
-  if(!r.grad&&r.age>12&&r.mc<1400){r.alive=false;r.fizzled=true;if(!quiet&&r.units>0){lostOn(r,'$'+r.ticker+' died. Nobody is buying.')}return}
-  const rugP=r.risk*(r.locked&&r.age<35?.25:1)*(r.age<4?.3:1);
+  if(!r.grad&&!(r.gh>0)&&r.age>12&&r.mc<1400){r.alive=false;r.fizzled=true;if(!quiet&&r.units>0){lostOn(r,'$'+r.ticker+' died. Nobody is buying.')}return}
+  const rugP=r.gh>0?0:r.risk*(r.locked&&r.age<35?.25:1)*(r.age<4?.3:1);
   if(Math.random()<rugP){
     if(!quiet&&r.units>0&&Math.random()<.15*tierOf('monitor3')){r.rugIn=1;toast('Rug radar: the dev wallet on $'+r.ticker+' is moving. Get out now!','warn');Snd.fx('alarm');return}
     doRug(r,quiet)}
@@ -1635,7 +1635,7 @@ function trenchSell(id,frac){
   const r=TR.coins.find(x=>x.id===id); if(!r||!r.alive||r.units<=0) return; frac=Math.min(1,frac||1);
   const u=r.units*frac, q=poolSell(r,u), after=Math.max(200,q.mc); r.px=q.px;
   let val=q.out; const costPart=r.cost*frac; let pnl=val-costPart;
-  if(pnl>0&&r.copyFee){const fee=pnl*COPY_FEE;val-=fee;pnl-=fee;st('copyFees',fee)}
+  if(pnl>0&&r.copyFee){const fee=pnl*COPY_FEE*r.copyFee;val-=fee;pnl-=fee;st('copyFees',fee)}
   if(pnl>0){const bonus=pnl*(.02*tierOf('trophy')+.04*tierOf('mansion')+(r.grad?.04*tierOf('chair'):0)+.03*tierOf('led')+.02*tierOf('vinyl')+(r.snipe?.04*tierOf('fridge'):0));val+=bonus;pnl+=bonus}
   G.cash+=val; TR.pnl+=pnl; st('tradePnl',pnl); st('trades'); if(pnl>0) st('trenchWins'); logTrade(frac<1?'sell '+Math.round(frac*100)+'%':'sell',r,val,pnl);
   if(costPart>0){const x=val/costPart;if(x>(G.stats.bestX||0)) G.stats.bestX=x}
