@@ -2330,7 +2330,12 @@ var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,l
   },
   async webMe(){try{const j=await this.api('GET','/api/me');this.webUser=j.user;this.uid=String(j.user.id);this.who=j.user.username;await this.pull();return true}catch(e){if(e.status===401){try{localStorage.removeItem('rugroom.token')}catch(_){}}return false}},
   async auth(kind,username,password){
-    const j=await this.api('POST','/api/'+kind,{email:username,password});
+    return this.useSession(await this.api('POST','/api/'+kind,{email:username,password}));
+  },
+  async resetPw(token,password){
+    return this.useSession(await this.api('POST','/api/reset',{token,password}));
+  },
+  async useSession(j){
     this.token=j.token; try{localStorage.setItem('rugroom.token',j.token)}catch(e){}
     this.webUser=j.user; this.uid=String(j.user.id); this.who=j.user.username; this.status='syncing';
     const res=await this.pull(); this.status='synced'; this.refreshBoard(); renderAll(true); return res;
@@ -2435,9 +2440,10 @@ function authModal(kind){
     <div class="ob-err" id="authErr"></div>
     <div class="acts"><button type="button" class="btn" data-act="ok">Cancel</button><button type="submit" class="btn primary" id="authGo">${reg?'Create account':'Sign in'}</button></div>
   </form>
-  <p style="font-size:12px">${reg?'Already have one? <a href="#" id="authSwap">Sign in</a>':'New here? <a href="#" id="authSwap">Create an account</a>'}</p>`);
+  <p style="font-size:12px">${reg?'Already have one? <a href="#" id="authSwap">Sign in</a>':'New here? <a href="#" id="authSwap">Create an account</a> · <a href="#" id="authForgot">Forgot password?</a>'}</p>`);
   const u=$('#authUser'); u.value=''; u.focus();
   $('#authSwap').addEventListener('click',e=>{e.preventDefault();authModal(reg?'login':'register')});
+  const fg=$('#authForgot'); if(fg) fg.addEventListener('click',e=>{e.preventDefault();forgotModal(u.value.trim())});
   $('#authForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const un=u.value.trim(), pw=$('#authPass').value, err=$('#authErr'), go=$('#authGo');
@@ -2448,6 +2454,54 @@ function authModal(kind){
       if(res!=='loaded'){if(!G.profile){onboarding()} else toast(reg?'Account created. Your progress is now synced.':'Signed in. This device’s progress is now synced.','good')}}
     catch(ex){err.textContent=ex.message||'Something went wrong. Try again.';go.disabled=false;go.textContent=reg?'Create account':'Sign in'}
   });
+}
+
+function forgotModal(prefill){
+  openModal(`<div class="kick">RESET PASSWORD</div><h3>Forgot your password?</h3>
+  <p>Enter your account email and we’ll send you a link to choose a new one. It works for an hour.</p>
+  <form id="fgForm" class="field" style="gap:10px">
+    <div class="field"><label for="fgEmail">Email</label><input type="email" id="fgEmail" maxlength="120" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false"></div>
+    <div class="ob-err" id="fgErr"></div>
+    <div class="acts"><button type="button" class="btn" id="fgBack">Back</button><button type="submit" class="btn primary" id="fgGo">Send reset link</button></div>
+  </form>`);
+  const em=$('#fgEmail'); em.value=prefill||''; em.focus();
+  $('#fgBack').addEventListener('click',()=>authModal('login'));
+  $('#fgForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const v=em.value.trim(), err=$('#fgErr'), go=$('#fgGo');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)){err.textContent='Enter a valid email address.';return}
+    go.disabled=true; go.textContent='Sending…'; err.textContent='';
+    try{await Cloud.api('POST','/api/forgot',{email:v});
+      openModal(`<div class="kick">CHECK YOUR EMAIL</div><h3>Link on its way</h3><p>If <b>${esc(v)}</b> has a Rug Room account, a reset link is heading to it now. Check your spam folder if it doesn’t show up in a couple of minutes.</p><div class="acts"><button class="btn primary" data-act="ok">OK</button></div>`)}
+    catch(ex){err.textContent=ex.message||'Something went wrong. Try again.';go.disabled=false;go.textContent='Send reset link'}
+  });
+}
+function resetModal(token){
+  openModal(`<div class="kick">RESET PASSWORD</div><h3>Choose a new password</h3>
+  <p>You’ll be signed in straight after.</p>
+  <form id="rsForm" class="field" style="gap:10px" autocomplete="on">
+    <div class="field"><label for="rsPass">New password</label><input type="password" id="rsPass" maxlength="64" autocomplete="new-password"></div>
+    <div class="field"><label for="rsPass2">Type it again</label><input type="password" id="rsPass2" maxlength="64" autocomplete="new-password"></div>
+    <div class="ob-err" id="rsErr"></div>
+    <div class="acts"><button type="button" class="btn" data-act="ok">Cancel</button><button type="submit" class="btn primary" id="rsGo">Save and sign in</button></div>
+  </form>`);
+  $('#rsPass').focus();
+  $('#rsForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const p1=$('#rsPass').value, p2=$('#rsPass2').value, err=$('#rsErr'), go=$('#rsGo');
+    if(p1.length<6){err.textContent='Password needs at least 6 characters.';return}
+    if(p1!==p2){err.textContent='Those passwords don’t match.';return}
+    go.disabled=true; go.textContent='Saving…'; err.textContent='';
+    try{const res=await Cloud.resetPw(token,p1); closeModal();
+      toast('Password changed. You’re signed in.','good'); if(typeof renderTitle==='function') renderTitle()}
+    catch(ex){err.textContent=ex.message||'Something went wrong. Try again.';go.disabled=false;go.textContent='Save and sign in'}
+  });
+}
+function checkResetLink(){
+  const m=(location.hash||'').match(/^#reset-([a-f0-9]{48})$/i); if(!m) return;
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  if(Cloud.mode!=='web'){toast('Password reset isn’t available here.','warn');return}
+  resetModal(m[1]);
 }
 
 /* block long-press menus, drag ghosts and stray selections on touch devices */
@@ -2467,7 +2521,7 @@ news('Markets quiet. Somewhere a dev is choosing a frog name.');
 syncLayoutVars();
 
 loadRun(); renderAll(true); syncSoundBtn();
-const cloudReady=Cloud.init().catch(()=>{}).then(()=>renderTitle());
+const cloudReady=Cloud.init().catch(()=>{}).then(()=>{renderTitle();checkResetLink()});
 function renderTitle(){
   if(!titleOn) return;
   $('#tVer').textContent='v'+VERSION;

@@ -29,6 +29,10 @@ async function ensureSchema(db) {
       peak REAL DEFAULT 0, cash REAL DEFAULT 0, extracted REAL DEFAULT 0,
       rugs INTEGER DEFAULT 0, peakMc REAL DEFAULT 0, tiers INTEGER DEFAULT 0,
       updated_at INTEGER NOT NULL)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS resets (
+      hash TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL)`),
   ]);
   schemaReady = true;
 }
@@ -57,6 +61,11 @@ function safeEqual(a, b) {
   for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return d === 0;
 }
+
+async function sha256(text) {
+  return toHex(await crypto.subtle.digest('SHA-256', enc.encode(text)));
+}
+const escHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const cleanEmail = (e) => String(e || '').trim().toLowerCase();
@@ -119,6 +128,59 @@ export async function handleApi(request, env) {
       if (!user || !safeEqual(hash, user.pass_hash)) return fail('Wrong email or password.', 401);
       // tidy old sessions for this user
       await db.prepare('DELETE FROM sessions WHERE user_id = ? AND expires_at < ?').bind(user.id, Date.now()).run();
+      const token = await newSession(db, user.id);
+      return json({ token, user: { id: user.id, username: user.email, email: user.email } });
+    }
+
+    // Password reset, same approach as Torque Index: Resend sends a one-hour link to /#reset-<token>.
+    // Needs a RESEND_KEY secret on the Worker; MAIL_FROM is optional.
+    if (path === '/forgot' && method === 'POST') {
+      const key = env.RESEND_KEY;
+      if (!key) return fail("Password reset isn't switched on yet.", 503);
+      const email = cleanEmail((await readBody(request)).email);
+      if (!EMAIL_RE.test(email)) return fail('Enter a valid email address.');
+      const user = await db.prepare('SELECT id, email FROM users WHERE email = ?').bind(email).first();
+      if (user) {
+        const recent = await db.prepare('SELECT COUNT(*) AS n FROM resets WHERE user_id = ? AND expires_at > ?')
+          .bind(user.id, Date.now() + 3600e3 - 15 * 60e3).first();
+        if (!recent || recent.n < 3) {
+          await db.prepare('DELETE FROM resets WHERE expires_at < ?').bind(Date.now()).run();
+          const token = randomHex(24);
+          await db.prepare('INSERT INTO resets (hash, user_id, expires_at) VALUES (?, ?, ?)')
+            .bind(await sha256(token), user.id, Date.now() + 3600e3).run();
+          const link = new URL(request.url).origin + '/#reset-' + token;
+          const from = env.MAIL_FROM || 'Rug Room <onboarding@resend.dev>';
+          try {
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { authorization: 'Bearer ' + key, 'content-type': 'application/json' },
+              body: JSON.stringify({
+                from, to: [user.email], subject: 'Reset your Rug Room password',
+                html: `<p>Hi,</p><p>Someone asked to reset your Rug Room password. If it was you, open this link within an hour:</p><p><a href="${escHtml(link)}">${escHtml(link)}</a></p><p>If it wasn't you, ignore this email. Your password won't change.</p>`,
+              }),
+            });
+          } catch {}
+        }
+      }
+      // same answer either way, so nobody can test which emails have accounts
+      return json({ ok: true });
+    }
+
+    if (path === '/reset' && method === 'POST') {
+      const body = await readBody(request);
+      const password = String(body.password || '');
+      if (password.length < 6 || password.length > 128) return fail('Password needs at least 6 characters.');
+      const row = await db.prepare('SELECT user_id, expires_at FROM resets WHERE hash = ?')
+        .bind(await sha256(String(body.token || ''))).first();
+      if (!row || row.expires_at < Date.now()) return fail('That reset link has expired. Ask for a new one.');
+      const user = await db.prepare('SELECT id, email FROM users WHERE id = ?').bind(row.user_id).first();
+      if (!user) return fail('That reset link has expired. Ask for a new one.');
+      const salt = randomHex(16);
+      await db.batch([
+        db.prepare('UPDATE users SET pass_hash = ?, salt = ? WHERE id = ?').bind(await hashPassword(password, salt), salt, user.id),
+        db.prepare('DELETE FROM resets WHERE user_id = ?').bind(user.id),
+        db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(user.id),
+      ]);
       const token = await newSession(db, user.id);
       return json({ token, user: { id: user.id, username: user.email, email: user.email } });
     }
