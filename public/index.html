@@ -1558,12 +1558,14 @@ function newCoin(warm){
   else if(warm){const n=Math.floor(rnd(2,70));r.born=G.tick-n*SUBS;for(let i=0;i<n&&r.alive;i++) advance(r,true)}
   return r;
 }
+const MC_SOFT=2e8, MC_HARD=3e9; // memecoins don't go to the moon forever
 function advance(r,quiet){
   r.age++;
   let d=r.drift; if(r.boost>0){d+=.02*tierOf('neon');r.boost--} if(r.gh>0){d+=.02;r.gh--} if(r.units>0&&!r.grad) d+=.01*tierOf('lava');
   let ch=d*Math.min(1.6,G.mood)+gauss()*(r.grad?.05:.09);
   if(Math.random()<(r.grad?.02:.04)){ch+=rnd(.3,.9);if(!quiet){const pct=Math.round((Math.exp(ch)-1)*100);if(r.units>0){toast('$'+r.ticker+' is pumping +'+pct+'%','good');pip('bags',true)}else if(Math.random()<.3) news('$'+r.ticker+' rips '+pct+'% as a streamer shills it.')}}
-  if(!r.grad) r.drift-=.0011;
+  if(!r.grad) r.drift-=.0011; else r.drift+=(-.003-r.drift)*.012;
+  if(r.mc>MC_SOFT) ch-=Math.log(r.mc/MC_SOFT)*.18+.015;
   // whales: big wallets ape in or dump, and everyone notices
   if(!quiet&&r.age>2){const wb=Math.random()<(r.grad?.012:.02),wd=!wb&&r.mc>15000&&Math.random()<.008;
     if(wb||wd){const pct=wb?rnd(.25,.9):-rnd(.2,.45),usd=r.mc*Math.abs(pct)*.8;ch+=Math.log(1+pct);
@@ -1609,7 +1611,7 @@ function logTrade(side,r,usd,pnl){if(!Array.isArray(G.trades)) G.trades=[];G.tra
 function posVal(r){return r.alive&&r.units>0?poolSell(r,r.units).out:0}
 function bagValue(){return TR.coins.reduce((a,r)=>a+posVal(r),0)}
 function candlesFromHist(r){const c=[];for(let i=1;i<r.hist.length;i++){const o=r.hist[i-1],cl=r.hist[i],w=Math.abs(gauss())*(r.grad?.02:.045);c.push({o,c:cl,h:Math.max(o,cl)*(1+w),l:Math.min(o,cl)*(1-w*.8)})}return c}
-function normCoins(){TR.coins.forEach(r=>{if(!r.c||!r.c.length) r.c=candlesFromHist(r);if(r.born==null) r.born=G.tick-(r.age||0)*SUBS;if(!r.ath) r.ath=r.mc;if(r.vol==null) r.vol=0;if(!r.boost) r.boost=0;if(!r.rugIn) r.rugIn=0;if(r.grad==null) r.grad=false})}
+function normCoins(){TR.coins.forEach(r=>{if(r.alive&&(r.mc>MC_HARD||!isFinite(r.mc))){r.mc=Math.min(r.mc,MC_HARD)||MC_HARD;news('$'+r.ticker+' flew too close to the sun. The dev pulled everything at '+fmtUSD(r.mc)+'.');doRug(r,false);return}if(!r.c||!r.c.length) r.c=candlesFromHist(r);if(r.born==null) r.born=G.tick-(r.age||0)*SUBS;if(!r.ath) r.ath=r.mc;if(r.vol==null) r.vol=0;if(!r.boost) r.boost=0;if(!r.rugIn) r.rugIn=0;if(r.grad==null) r.grad=false})}
 function trenchTick(){
   normCoins();
   if(!TR.coins.length) for(let i=0;i<mkCap();i++) TR.coins.push(newCoin(true));
@@ -1634,7 +1636,8 @@ function trenchBuy(id,amt){
   if(G.cash<amt) return toast('Not enough cash','bad');
   const net=amt*(1-feeRate()), mult=1; if(!r.grad&&r.age<5) r.snipe=true;
   // constant-product pool: price impact is real, but buying then selling straight away gives your money back
-  const q=poolBuy(r,net); G.cash-=amt; r.units+=q.units*mult; r.cost+=amt; r.mc=q.mc; r.px=q.px; r.hist[r.hist.length-1]=r.mc; if(r.mc>r.ath) r.ath=r.mc; liveCandle(r);
+  const q=poolBuy(r,net); if(q.mc>MC_HARD*.4) return toast('Order too big. That would push $'+r.ticker+' past '+fmtUSD(MC_HARD*.4)+'. Try a smaller amount.','bad');
+  G.cash-=amt; r.units+=q.units*mult; r.cost+=amt; r.mc=q.mc; r.px=q.px; r.hist[r.hist.length-1]=r.mc; if(r.mc>r.ath) r.ath=r.mc; liveCandle(r);
   if(tierOf('neon')) r.boost=4;
   logTrade('buy',r,amt,null);
   st('trades'); toast('Bought '+fmtUSD(amt)+' of $'+r.ticker,'good'); Snd.fx('buy'); saveRun(); renderAll();
