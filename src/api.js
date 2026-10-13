@@ -37,24 +37,39 @@ async function ensureSchema(db) {
   schemaReady = true;
 }
 
-// One owner account, created on first use if it doesn't exist yet: $100M on Chill.
-const SEED_EMAIL = 'admin@gmail.com';
-const SEED_PASSWORD = 'admin';
+// One-time wipe of every account (requested 13 Oct 2026), then the owner account is created
+// with $100M on Chill. Only a salted PBKDF2 hash of the owner's password is stored here.
+const WIPE_ID = 'wipe-2026-10-13';
+const OWNER = {
+  email: 'jamesmsmith555@gmail.com',
+  salt: '7685f921600862656271f6d419b3d015',
+  hash: '821c22492d5eb0c36148d25aa701988596b382f2e27d2d91ed8411830b8a4fb8',
+};
 let seeded = false;
 async function ensureSeed(db) {
   if (seeded) return;
-  const exists = await db.prepare('SELECT id FROM users WHERE email = ?').bind(SEED_EMAIL).first();
+  await db.prepare('CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT)').run();
+  const wiped = await db.prepare('SELECT v FROM meta WHERE k = ?').bind(WIPE_ID).first();
+  if (!wiped) {
+    await db.batch([
+      db.prepare('DELETE FROM sessions'),
+      db.prepare('DELETE FROM saves'),
+      db.prepare('DELETE FROM scores'),
+      db.prepare('DELETE FROM resets'),
+      db.prepare('DELETE FROM users'),
+      db.prepare('INSERT OR IGNORE INTO meta (k, v) VALUES (?, ?)').bind(WIPE_ID, String(Date.now())),
+    ]);
+  }
+  const exists = await db.prepare('SELECT id FROM users WHERE email = ?').bind(OWNER.email).first();
   if (!exists) {
     const now = Date.now();
-    const salt = randomHex(16);
-    // OR IGNORE: if two first requests race, only one account is made and neither errors
     await db.prepare('INSERT OR IGNORE INTO users (email, pass_hash, salt, created_at) VALUES (?, ?, ?, ?)')
-      .bind(SEED_EMAIL, await hashPassword(SEED_PASSWORD, salt), salt, now).run();
-    const { id } = await db.prepare('SELECT id FROM users WHERE email = ?').bind(SEED_EMAIL).first();
+      .bind(OWNER.email, OWNER.hash, OWNER.salt, now).run();
+    const { id } = await db.prepare('SELECT id FROM users WHERE email = ?').bind(OWNER.email).first();
     const state = {
-      cash: 100000000, peakCash: 100000000, heat: 0, trust: 60, alias: 'admin', aliasN: 1,
+      cash: 100000000, peakCash: 100000000, heat: 0, trust: 60, alias: 'james', aliasN: 1,
       lifetime: { launched: 0, rugs: 0, extracted: 0, victims: 0, lost: 0 }, shame: [],
-      profile: { name: 'admin', avatar: '👑', wallet: '0xAD01N0000000000000000000000000000000BEEF', created: now },
+      profile: { name: 'james', avatar: '👑', wallet: '0x7A3E5000000000000000000000000000000BEEF', created: now },
       blacklisted: false, diff: 'easy', owned: {}, done: {}, stats: {}, savedAt: now,
     };
     await db.prepare('INSERT OR IGNORE INTO saves (user_id, state, updated_at) VALUES (?, ?, ?)').bind(id, JSON.stringify(state), now).run();

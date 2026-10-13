@@ -2345,18 +2345,19 @@ var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,l
   },
   async webMe(){try{const j=await this.api('GET','/api/me');this.webUser=j.user;this.uid=String(j.user.id);this.who=j.user.username;await this.pull();return true}catch(e){if(e.status===401){try{localStorage.removeItem('rugroom.token')}catch(_){}}return false}},
   async auth(kind,username,password){
-    return this.useSession(await this.api('POST','/api/'+kind,{email:username,password}));
+    // signing in: the account's progress wins. Creating an account: this device's progress moves into it.
+    return this.useSession(await this.api('POST','/api/'+kind,{email:username,password}),kind==='login');
   },
   async resetPw(token,password){
-    return this.useSession(await this.api('POST','/api/reset',{token,password}));
+    return this.useSession(await this.api('POST','/api/reset',{token,password}),true);
   },
-  async useSession(j){
+  async useSession(j,accountWins){
     this.token=j.token; try{localStorage.setItem('rugroom.token',j.token)}catch(e){}
     this.webUser=j.user; this.uid=String(j.user.id); this.who=j.user.username; this.status='syncing';
-    const res=await this.pull(); this.status='synced'; this.refreshBoard(); renderAll(true); return res;
+    const res=await this.pull(!!accountWins); this.status='synced'; this.refreshBoard(); renderAll(true); return res;
   },
   async signOut(){try{await this.api('POST','/api/logout')}catch(e){} this.token=null;this.webUser=null;this.uid=null;this.who='';this.status='signedout';try{localStorage.removeItem('rugroom.token')}catch(e){} renderAll(); toast('Signed out. Progress stays on this device.')},
-  async pull(){
+  async pull(accountWins){
     let data=null;
     try{
       if(this.mode==='claude'){const s=await this.db.doc('data/users/'+this.uid+'/save').get(); if(s.exists) data=s.data()}
@@ -2364,7 +2365,7 @@ var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,l
     }catch(e){this.status='error';renderAccountLite();return 'error'}
     if(data&&data.state){
       let st=null; try{st=typeof data.state==='string'?JSON.parse(data.state):data.state}catch(e){}
-      if(st&&st.profile&&(!G.profile||(st.savedAt||0)>(G.savedAt||0))){applyCloud(st);this.status='synced';this.lastSync=Date.now();renderAccountLite();return 'loaded'}
+      if(st&&st.profile&&(accountWins||!G.profile||(st.savedAt||0)>(G.savedAt||0))){applyCloud(st);this.status='synced';this.lastSync=Date.now();renderAccountLite();return 'loaded'}
     }
     this.status='synced'; if(G.profile) this.push(); renderAccountLite(); return 'pushed';
   },
@@ -2408,7 +2409,8 @@ function scoreDoc(){
     extracted:Math.round(G.lifetime.extracted||0),rugs:G.lifetime.rugs|0,peakMc:Math.round(G.stats.peakMc||0),tiers:SHOP.reduce((a,x)=>a+tierOf(x.k),0),updatedAt:Date.now()};
 }
 function applyCloud(st){
-  const run=st.run&&typeof st.run==='object'?st.run:null;
+  // no run saved on the account means no live coin there: don't let this device's coin leak into it
+  const run=st.run&&typeof st.run==='object'?st.run:{v:1,coin:null,tr:{coins:[],pnl:0},aid:0};
   if(run){
     const localUid=coin&&coin.alive?(coin.uid||coin.ticker):null;
     try{localStorage.setItem('rugroom.run',JSON.stringify(run))}catch(e){}
@@ -2417,8 +2419,8 @@ function applyCloud(st){
       switching=true; clearTimeout(Cloud._t); coin=null;
       PKEYS.forEach(k=>{if(k in st) G[k]=st[k]}); writeLocal(); location.reload(); return;
     }
-    if(!localUid) loadRun(run);
-    else if(run.tr&&Array.isArray(run.tr.coins)){TR.coins=run.tr.coins;TR.pnl=run.tr.pnl||0}
+    TR.coins=(run.tr&&Array.isArray(run.tr.coins))?run.tr.coins:[]; TR.pnl=(run.tr&&run.tr.pnl)||0;
+    loadRun(run);
   }
   PKEYS.forEach(k=>{if(k in st) G[k]=st[k]});
   if(!G.owned) G.owned={}; for(const k in G.owned) if(G.owned[k]===true) G.owned[k]=1;
