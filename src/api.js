@@ -1,5 +1,5 @@
-// Rug Room accounts API — Cloudflare Pages Functions + D1.
-// Needs one D1 database bound to this Pages project with the variable name DB.
+// Rug Room accounts API — runs inside the Cloudflare Worker, stores data in D1.
+// Needs one D1 database bound with the variable name DB (see wrangler.jsonc).
 // Tables are created automatically on first use.
 
 const SESSION_DAYS = 60;
@@ -84,9 +84,9 @@ async function currentUser(db, request) {
 
 const num = (v) => (Number.isFinite(+v) ? +v : 0);
 
-export async function onRequest({ request, env, params }) {
+export async function handleApi(request, env) {
   const db = env.DB;
-  const path = '/' + [].concat(params.path || []).join('/');
+  const path = new URL(request.url).pathname.replace(/^\/api/, '').replace(/\/+$/, '') || '/';
   const method = request.method;
 
   if (!db) return fail('Accounts are not set up yet (no database bound).', 503);
