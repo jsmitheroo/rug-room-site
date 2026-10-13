@@ -410,6 +410,24 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + var(--dockH) + 64px);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none;width:min(380px,calc(100% - 32px))}
 .toast{background:var(--glass-solid);backdrop-filter:blur(12px);border:1px solid var(--line2);border-left:3px solid var(--accent);border-radius:10px;padding:9px 12px;font-size:12.5px;animation:slide .25s ease;box-shadow:0 10px 30px rgba(0,0,0,.4);width:100%;box-sizing:border-box}
 .toast{display:flex;align-items:center;gap:8px}.toast>span{flex:1;min-width:0}.toast .tn{font:700 11px var(--f-mono);color:var(--accent);background:rgba(255,79,163,.14);padding:2px 6px;border-radius:999px;flex:none}
+.qbrow{display:flex;gap:5px;align-items:center;flex-wrap:wrap}.qbrow>span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.chipb{font:600 11.5px var(--f-mono);padding:6px 9px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted);cursor:pointer}
+.chipb.on{background:rgba(255,79,163,.18);border-color:rgba(255,79,163,.55);color:#ffd1e8}.chipb:disabled{opacity:.35}
+.mtabs{margin-top:2px}.mlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:rgba(20,24,40,.8)}
+.mrow{display:grid;grid-template-columns:36px 1fr auto auto;gap:10px;align-items:center;padding:9px 10px;border-top:1px solid rgba(255,255,255,.045);cursor:pointer}
+.mrow:first-child{border-top:0}.mrow:hover{background:rgba(255,255,255,.03)}.mrow.held{background:rgba(255,79,163,.07)}
+.mrow .lc-m{width:34px;height:34px;font-size:18px;border-radius:9px}
+.mr-n{display:flex;flex-direction:column;gap:3px;min-width:0}.mr-n b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-n>span{font:500 10.5px var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mr-n em{font-style:normal;color:var(--accent)}
+.mr-p{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.mr-p b{font:700 12.5px var(--f-mono)}.mr-p span{font:600 11px var(--f-mono)}
+.mbuy{padding:7px 12px;font-size:12px}
+.bond{display:block;height:4px;border-radius:2px;background:var(--raise);overflow:hidden;width:100%;max-width:140px}.bond i{display:block;height:100%;background:linear-gradient(90deg,#26a69a,#ffd36b)}
+.bond.big{max-width:none;height:7px;flex:1}.bondrow{display:flex;align-items:center;gap:10px;font:500 11.5px var(--f-mono);color:var(--muted)}.bondrow b{color:var(--fg)}
+.gradb{display:inline-block;font:700 9.5px var(--f-mono);letter-spacing:.12em;color:#1a1405;background:#ffd36b;padding:2px 6px;border-radius:4px;width:max-content}
+.bigc{width:100%;height:140px;display:block}.mback{align-self:flex-start;padding:6px 11px;font-size:12px}
+.devnav{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;flex:none}
+.devnav button{flex:none;font:600 11.5px var(--f-ui);letter-spacing:.06em;text-transform:uppercase;padding:6px 11px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted);cursor:pointer}
+.devnav button.on{background:rgba(255,79,163,.16);border-color:rgba(255,79,163,.5);color:#ffd1e8}
 .toast.bad{border-left-color:var(--down)} .toast.good{border-left-color:var(--up)} .toast.warn{border-left-color:var(--warn)}
 body.flash-red .vignette{animation:redflash .9s ease}
 @keyframes redflash{0%{box-shadow:inset 0 0 0 9999px rgba(239,83,80,.25)}100%{box-shadow:inset 0 0 0 9999px rgba(239,83,80,0)}}
@@ -459,9 +477,10 @@ body.flash-red .vignette{animation:redflash .9s ease}
     <button class="alias" id="aliasBox" aria-label="Your wallet"><span class="av" id="av">🦊</span><span class="who"><b id="aliasName">anon_dev</b><small id="aliasAddr">no wallet</small></span><span class="sync dim" id="syncDot"></span></button>
     <div class="stats">
       <div class="stat"><label>Cash</label><b id="cash">$2,000</b></div>
+      <div class="stat"><label>Bags</label><b id="bagsV">$0</b></div>
       <div class="stat best"><label>Best</label><b id="peak" class="muted">$2,000</b></div>
-      <div class="stat"><label>Heat</label><div class="meter-row"><div class="meter"><i id="heatBar"></i></div><span id="heatN">0</span></div></div>
-      <div class="stat"><label id="trustLbl">Trust</label><div class="meter-row"><div class="meter"><i id="trustBar"></i></div><span id="trustN">60</span></div></div>
+      <div class="stat devstat"><label>Heat</label><div class="meter-row"><div class="meter"><i id="heatBar"></i></div><span id="heatN">0</span></div></div>
+      <div class="stat devstat"><label id="trustLbl">Trust</label><div class="meter-row"><div class="meter"><i id="trustBar"></i></div><span id="trustN">60</span></div></div>
       <div class="stat mood"><label>Market</label><b id="moodTxt" class="muted">Calm</b></div>
     </div>
     <div class="ctrls">
@@ -503,12 +522,9 @@ body.flash-red .vignette{animation:redflash .9s ease}
   <div class="bottom">
     <div class="news glass"><span class="badge">BREAKING</span><span class="head" id="news">Markets quiet. Somewhere a dev is choosing a frog name.</span></div>
     <nav class="dock glass" id="dock" aria-label="Menus">
-      <button class="dk" data-sheet="chart" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M7 16V9M7 9h0"/><rect x="5.5" y="10" width="3" height="5" rx=".5"/><path d="M12 6v12"/><rect x="10.5" y="8" width="3" height="6" rx=".5"/><path d="M17 4v10"/><rect x="15.5" y="5.5" width="3" height="5" rx=".5"/></svg>Chart</button>
-      <button class="dk" data-sheet="launch" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 2.5c3 2 4.6 5.6 4.6 9.5l-2 3.5H9.4l-2-3.5c0-3.9 1.6-7.5 4.6-9.5z"/><circle cx="12" cy="9.5" r="1.6"/><path d="M9.4 15.5 7 19.5l3-1M14.6 15.5 17 19.5l-3-1M12 17v4"/></svg>Launch</button>
-      <button class="dk" data-sheet="promote" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 10.5v3l12 5V5.5z"/><path d="M15 9h2.5a2.5 2.5 0 0 1 0 6H15"/><path d="M6.5 15l1.2 5h3l-1.2-4"/></svg>Promote</button>
-      <button class="dk" data-sheet="pump" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M13 2 4.5 13.5h6.5L10 22l9-12h-6.5z"/></svg>Pump</button>
-      <button class="dk hot" data-sheet="exit" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M9 16l-4-4 4-4"/><path d="M5 12h10"/></svg>Exit</button>
-      <button class="dk" data-sheet="trench" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="2.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>Trenches</button>
+      <button class="dk" data-sheet="trench" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><rect x="5.5" y="10" width="3" height="5" rx=".5"/><path d="M7 8v2M7 15v2"/><rect x="10.5" y="6" width="3" height="7" rx=".5"/><path d="M12 4v2M12 13v3"/><rect x="15.5" y="8" width="3" height="4" rx=".5"/><path d="M17 6v2M17 12v3"/></svg>Market</button>
+      <button class="dk" data-sheet="bags" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2.5"/><path d="M16 13h2"/><path d="M3 10h18"/><path d="M7 6V4.5h10V6"/></svg>Bags</button>
+      <button class="dk" data-sheet="dev" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 2.5c3 2 4.6 5.6 4.6 9.5l-2 3.5H9.4l-2-3.5c0-3.9 1.6-7.5 4.6-9.5z"/><circle cx="12" cy="9.5" r="1.6"/><path d="M9.4 15.5 7 19.5l3-1M14.6 15.5 17 19.5l-3-1M12 17v4"/></svg>Dev</button>
       <button class="dk" data-sheet="room" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 11V8a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v3"/><path d="M3 11h18v5H3z"/><path d="M5 16v3M19 16v3"/></svg>Room</button>
       <button class="dk" data-sheet="shame" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M6 21V10a6 6 0 0 1 12 0v11z"/><path d="M4 21h16M12 8.5v6M9.5 11h5"/></svg>Career</button>
     </nav>
@@ -518,6 +534,9 @@ body.flash-red .vignette{animation:redflash .9s ease}
 <aside class="sheet" id="sheet" aria-hidden="true">
   <div class="grab"></div>
   <div class="sheet-h"><div><h3 id="sheetTitle">Chart</h3><p id="sheetSub"></p></div><button class="x" id="sheetClose" aria-label="Close menu">✕</button></div>
+  <div class="devnav" id="devnav" hidden>
+    <button data-go="launch">Launch</button><button data-go="chart">Chart</button><button data-go="promote">Promote</button><button data-go="pump">Pump</button><button data-go="exit">Exit</button>
+  </div>
   <div class="sheet-body" id="sheetBody">
     <section data-pane="chart" hidden>
       <div class="tokbar">
@@ -570,6 +589,7 @@ body.flash-red .vignette{animation:redflash .9s ease}
       </div>
     </section>
     <section data-pane="trench" hidden><div class="deckbody" id="trenchPane"></div></section>
+    <section data-pane="bags" hidden><div class="deckbody" id="bagsPane"></div></section>
     <section data-pane="launch" hidden><div class="deckbody" id="launchPane"></div></section>
     <section data-pane="promote" hidden><div class="deckbody" id="promotePane"></div></section>
     <section data-pane="pump" hidden><div class="deckbody" id="pumpPane"></div></section>
@@ -583,9 +603,9 @@ body.flash-red .vignette{animation:redflash .9s ease}
 
 <div class="title" id="title">
   <div class="t-inner">
-    <div class="t-kick">a lofi memecoin simulator</div>
+    <div class="t-kick">a lofi memecoin trading sim</div>
     <h1 class="t-logo">RUG ROOM</h1>
-    <p class="t-tag">Launch it. Pump it. Pull it.</p>
+    <p class="t-tag">Ape in. Ride it. Get out.</p>
     <div class="t-card" id="tCard" hidden></div>
     <div class="t-btns">
       <button class="btn primary big" id="tPlay">Play</button>
@@ -653,20 +673,20 @@ const TYPES={
   airdrop:{label:'Airdrop farmers',color:'#8b93ad'},
 };
 const SHOP=[
-  {k:'plant',name:'Houseplant',price:400,tiers:['Monstera','Fiddle-leaf fig','Indoor palm','Bonsai garden','Living wall'],p:t=>'Heat cools '+(15*t)+'% faster',desc:'Greenery by the window. Studies show sleuths find plants calming.'},
-  {k:'beanbag',name:'Bean bag',price:600,tiers:['Teal','Velvet purple','Hot pink','Gold leather','Black diamond'],p:t=>'Lying low cools '+(5*t)+' extra heat',desc:'Somewhere to sink into while the timeline forgets you.'},
-  {k:'fairy',name:'Fairy lights',price:800,tiers:['Warm string','Double string','Festival','Starfield','Aurora'],p:t=>'+'+(3*t)+' looks-legit on launches',desc:'Lights over the window. Your launch screenshots look wholesome now.'},
-  {k:'fridge',name:'Energy drink fridge',price:1000,tiers:['Mini fridge','Glass door','Neon cooler','Smart fridge','Champagne vault'],p:t=>'Wash-trade bots cost '+Math.round(fridgeCut(t)*100)+'% less',desc:'Glowing fridge full of cans. The bots run on caffeine, apparently.'},
-  {k:'led',name:'LED desk strip',price:1200,tiers:['Purple','Cyan','Sunset','Matrix green','Rainbow'],p:t=>'Paid promos '+(10*t)+'% stronger',desc:'Underglow along the desk. Every streamer can see it on camera.'},
-  {k:'monitor2',name:'Second monitor',price:1500,tiers:['1080p','1440p','4K','OLED','Ultrawide'],p:t=>'+'+(10*t)+'% buyers',desc:'A vertical screen with the live trade feed. You spot every entry.'},
-  {k:'vinyl',name:'Record player',price:2000,tiers:['Thrift deck','Hi-fi deck','DJ deck','Vintage reel','Studio rig'],p:t=>'Lying low gives +'+(3*t)+' extra trust',desc:'Spinning lofi on the shelf. Very calming for a serial rugger.'},
-  {k:'lava',name:'Lava lamp',price:2500,tiers:['Orange','Blue','Green','Pink','Gold'],p:t=>'+'+(5*t)+'% buyers',desc:'Blobs on the desk. Degens trust anyone with a lava lamp.'},
-  {k:'neon',name:'Neon ticker sign',price:3000,tiers:['Pink','Cyan','Purple','Gold','Rainbow'],p:t=>'+'+(6*t)+' meme score on launches',desc:'Your current ticker glowing on the wall in neon.'},
-  {k:'monitor3',name:'Third monitor',price:6000,tiers:['Basic','Curved','Dual-feed','Trading wall','Command centre'],p:t=>'Sleuths '+Math.round((1-sleuthCut(t))*100)+'% less likely to find you',desc:'A heat and trust dashboard so you see investigators coming.'},
-  {k:'chair',name:'Gaming chair',price:15000,tiers:['Gold','Rose gold','Platinum','Diamond','Black gold'],p:t=>'Whales '+(30*t)+'% more likely',desc:'Whales respect the throne.'},
-  {k:'trophy',name:'Trophy shelf',price:25000,tiers:['Bronze cup','Silver cup','Gold cup','Platinum cup','Crystal cup'],p:t=>'+'+(5*t)+' trust (applied on each upgrade)',desc:'"Community Builder of the Year". You gave it to yourself.'},
-  {k:'penthouse',name:'Penthouse view',price:60000,tiers:['40th floor','60th floor','80th floor','Sky lounge','Top of the city'],p:t=>'Heat cools '+(25*t)+'% faster',desc:'Move up. The skyline outside gets brighter every tier.'},
-  {k:'mansion',name:'Modern penthouse',price:10000000,tiers:['Glass penthouse','Infinity pool','Bar & lights','Gold & marble','Sky palace'],p:t=>'Heat cools '+(20*t)+'% faster, +'+(5*t)+' trust',desc:'Move out of the bedroom. Full glass wall, a balcony over the city and a proper modern setup.'},
+  {k:'plant',name:'Houseplant',price:400,tiers:['Monstera','Fiddle-leaf fig','Indoor palm','Bonsai garden','Living wall'],p:t=>'Trading fees −'+(15*t)+'%',desc:'Greenery by the window. A calm trader pays less to trade.'},
+  {k:'beanbag',name:'Bean bag',price:600,tiers:['Teal','Velvet purple','Hot pink','Gold leather','Black diamond'],p:t=>'Rug insurance: '+(6*t)+'% back when you get rugged',desc:'Somewhere soft to land when a coin goes to zero.'},
+  {k:'fairy',name:'Fairy lights',price:800,tiers:['Warm string','Double string','Festival','Starfield','Aurora'],p:t=>'+'+(4*t)+' more coins on the market',desc:'Lights over the window. More launches find their way to you.'},
+  {k:'fridge',name:'Energy drink fridge',price:1000,tiers:['Mini fridge','Glass door','Neon cooler','Smart fridge','Champagne vault'],p:t=>'Sniper: +'+(4*t)+'% tokens on coins under 5 minutes old',desc:'Caffeine for the first-block snipes.'},
+  {k:'led',name:'LED desk strip',price:1200,tiers:['Purple','Cyan','Sunset','Matrix green','Rainbow'],p:t=>'+'+(3*t)+'% tokens on every buy',desc:'Underglow on the desk. Better entries, somehow.'},
+  {k:'monitor2',name:'Second monitor',price:1500,tiers:['1080p','1440p','4K','OLED','Ultrawide'],p:t=>'Sell slippage −'+(8*t)+'%',desc:'A live trade feed so you time your exits.'},
+  {k:'vinyl',name:'Record player',price:2000,tiers:['Thrift deck','Hi-fi deck','DJ deck','Vintage reel','Studio rig'],p:t=>'Coin sell taxes −'+(10*t)+'%',desc:'Lofi on the shelf. Diamond hands, cheaper exits.'},
+  {k:'lava',name:'Lava lamp',price:2500,tiers:['Orange','Blue','Green','Pink','Gold'],p:t=>'Coins you hold climb faster toward graduation',desc:'Blobs on the desk. Good vibes for your bags.'},
+  {k:'neon',name:'Neon ticker sign',price:3000,tiers:['Pink','Cyan','Purple','Gold','Rainbow'],p:t=>'Your buys spark +'+(2*t)+'% momentum',desc:'Your ticker in neon. When you ape, others follow.'},
+  {k:'monitor3',name:'Third monitor',price:6000,tiers:['Basic','Curved','Dual-feed','Trading wall','Command centre'],p:t=>'Rug radar: '+(15*t)+'% chance to get warned before a rug',desc:'A dashboard that watches dev wallets for you.'},
+  {k:'chair',name:'Gaming chair',price:15000,tiers:['Gold','Rose gold','Platinum','Diamond','Black gold'],p:t=>'+'+(4*t)+'% profit on graduated coins',desc:'Whales respect the throne.'},
+  {k:'trophy',name:'Trophy shelf',price:25000,tiers:['Bronze cup','Silver cup','Gold cup','Platinum cup','Crystal cup'],p:t=>'+'+(2*t)+'% bonus on winning trades',desc:'Trader of the Year. You gave it to yourself.'},
+  {k:'penthouse',name:'Penthouse view',price:60000,tiers:['40th floor','60th floor','80th floor','Sky lounge','Top of the city'],p:t=>'Earn '+(.05*t).toFixed(2)+'% of your bags every minute',desc:'Move up. The skyline outside gets brighter every tier.'},
+  {k:'mansion',name:'Modern penthouse',price:10000000,tiers:['Glass penthouse','Infinity pool','Bar & lights','Gold & marble','Sky palace'],p:t=>'+'+(4*t)+'% bonus on winning trades',desc:'Move out of the bedroom. Full glass wall, a balcony over the city and a proper modern setup.'},
 ];
 const TIER_MULT=[0,1,5,25,120,600], MAXT=5, ROMAN=['','I','II','III','IV','V'];
 const maxT=it=>it.max||MAXT, TOTAL_T=()=>SHOP.reduce((a,x)=>a+maxT(x),0);
@@ -1284,24 +1304,22 @@ function renderRoomShop(){
   setHTML($('#roomPane'),h);
 }
 const MISSIONS=[
-  {id:'m1',t:'Launch your first coin',r:250,c:()=>G.lifetime.launched>=1},
-  {id:'m2',t:'Hire a streamer',r:300,c:()=>(G.stats.streamers||0)>=1},
-  {id:'m3',t:'Get 25 holders on one coin',r:400,c:()=>(G.stats.maxHold||0)>=25},
-  {id:'m4',t:'Pull your first rug',r:500,c:()=>G.lifetime.rugs>=1},
-  {id:'m5',t:'Hit a $25K market cap',r:750,c:()=>(G.stats.peakMc||0)>=25000},
-  {id:'m6',t:'Own 3 room items',r:500,c:()=>ownedCount()>=3},
-  {id:'m7',t:'Book a KOL call',r:500,c:()=>(G.stats.kols||0)>=1},
-  {id:'m8',t:'Win a trade in the Trenches',r:750,c:()=>(G.stats.trenchWins||0)>=1},
-  {id:'m9',t:'Walk away honestly once',r:600,c:()=>(G.stats.legit||0)>=1},
-  {id:'m10',t:'Hit a $100K market cap',r:2000,c:()=>(G.stats.peakMc||0)>=1e5},
-  {id:'m11',t:'Get 150 holders on one coin',r:2000,c:()=>(G.stats.maxHold||0)>=150},
-  {id:'m12',t:'Extract $50K in total',r:3000,c:()=>G.lifetime.extracted>=5e4},
-  {id:'m13',t:'Own 8 room items',r:2500,c:()=>ownedCount()>=8},
-  {id:'m14',t:'Hit a $1M market cap',r:10000,c:()=>(G.stats.peakMc||0)>=1e6},
-  {id:'m15',t:'Extract $500K in total',r:25000,c:()=>G.lifetime.extracted>=5e5},
-  {id:'m16',t:'Own every room item',r:50000,c:()=>ownedCount()>=SHOP.length},
-  {id:'m17',t:'Max out any room item',r:100000,c:()=>SHOP.some(x=>(x.max||MAXT)>1&&tierOf(x.k)>=maxT(x))},
-  {id:'m18',t:'Max out every room item',r:5000000,c:()=>SHOP.every(x=>tierOf(x.k)>=maxT(x))},
+  {id:'x1',t:'Make your first trade',r:250,c:()=>(G.stats.trades||0)>=1},
+  {id:'x2',t:'Win a trade',r:500,c:()=>(G.stats.trenchWins||0)>=1},
+  {id:'x3',t:'Own 3 room items',r:500,c:()=>ownedCount()>=3},
+  {id:'x4',t:'Hold a coin as it graduates',r:1500,c:()=>(G.stats.grads||0)>=1},
+  {id:'x5',t:'Make 25 trades',r:1500,c:()=>(G.stats.trades||0)>=25},
+  {id:'x6',t:'Make $10K trading profit',r:2500,c:()=>(G.stats.tradePnl||0)>=1e4},
+  {id:'x7',t:'Hit a 5× on one trade',r:4000,c:()=>(G.stats.bestX||0)>=5},
+  {id:'x8',t:'Launch your own coin (Dev tab)',r:1000,c:()=>G.lifetime.launched>=1},
+  {id:'x9',t:'Make $100K trading profit',r:10000,c:()=>(G.stats.tradePnl||0)>=1e5},
+  {id:'x10',t:'Catch 5 graduations',r:20000,c:()=>(G.stats.grads||0)>=5},
+  {id:'x11',t:'Hit a 20× on one trade',r:25000,c:()=>(G.stats.bestX||0)>=20},
+  {id:'x12',t:'Own every room item',r:50000,c:()=>ownedCount()>=SHOP.length},
+  {id:'x13',t:'Make $1M trading profit',r:100000,c:()=>(G.stats.tradePnl||0)>=1e6},
+  {id:'x14',t:'Max out any room item',r:100000,c:()=>SHOP.some(x=>tierOf(x.k)>=maxT(x))},
+  {id:'x15',t:'Make $100M trading profit',r:5000000,c:()=>(G.stats.tradePnl||0)>=1e8},
+  {id:'x16',t:'Max out every room item',r:5000000,c:()=>SHOP.every(x=>tierOf(x.k)>=maxT(x))},
 ];
 function nextMission(){return MISSIONS.find(m=>!G.done[m.id])}
 function checkMissions(){
@@ -1311,43 +1329,90 @@ function checkMissions(){
 }
 function pip(name,on){const b=document.querySelector('.dk[data-sheet="'+name+'"]');if(!b) return;let p=b.querySelector('.pip');if(on&&!p){p=document.createElement('i');p.className='pip';b.appendChild(p)}else if(!on&&p) p.remove()}
 
-/* ---- Trenches: rival devs' coins you can trade ---- */
+/* ---- Market: lots of memecoins; fresh launches, trending, and ones that graduate at $69K ---- */
 const TR={coins:[],pnl:0};
+const GRAD_MC=69000;
+const MK={tab:'trend',sel:null,qb:1000};
 function gauss(){return (Math.random()+Math.random()+Math.random()+Math.random()-2)/1.15}
-function newRival(warm){
+const mkCap=()=>30+4*tierOf('fairy');
+const feeRate=()=>Math.max(.002,.01*(1-.15*tierOf('plant')));
+function newCoin(warm){
   const m=pick(MASCOTS)[0], a=pick(ANI[m]);
   const name=((Math.random()<.6?pick(PRE)+' ':'')+a+pick(SUF)).replace(/\s+/g,' ').trim();
   const dev=Math.round(rnd(1,32)), locked=Math.random()<.42, tax=Math.random()<.16?Math.round(rnd(15,30)):Math.round(rnd(0,5));
-  const r={id:++aid,name,ticker:(a.replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,3)+pick(['','X','AI','2','Z'])).slice(0,5),mascot:m,dev,locked,tax,
-    risk:.008+dev/700+(locked?0:.03)+(tax>=15?.035:0),drift:rnd(-.012,.04),mc:logU(3000,40000),hist:[],alive:true,age:0,units:0,cost:0,deadFor:0,devName:handle('degen').replace(/_\d+$/,'')+'_dev'};
-  const n=warm?Math.floor(rnd(8,30)):1; for(let i=0;i<n;i++){r.mc*=Math.exp(r.drift*.5+gauss()*.07);r.hist.push(r.mc)}
+  const r={id:++aid,name,ticker:(a.replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,3)+pick(['','X','AI','2','Z','69','GPT'])).slice(0,6),mascot:m,dev,locked,tax,
+    risk:.004+dev/1400+(locked?0:.015)+(tax>=15?.02:0),drift:rnd(-.02,.05),mc:logU(2500,7000),hist:[],alive:true,age:0,units:0,cost:0,deadFor:0,
+    devName:handle('degen').replace(/_\d+$/,'')+'_dev',born:G.tick,grad:false,ath:0,vol:0,boost:0,rugIn:0};
+  r.hist.push(r.mc);
+  if(warm&&Math.random()<.3){ // an established coin that already graduated
+    r.grad=true;r.locked=true;r.risk*=.12;r.drift=rnd(-.004,.03);const end=logU(9e4,4e6),n=Math.floor(rnd(80,400));r.age=n;r.born=G.tick-n*SUBS;
+    let v=end*rnd(.4,.9);r.hist=[];for(let i=0;i<40;i++){v*=Math.exp(gauss()*.05+Math.log(end/v)/(40-i));r.hist.push(v)}r.mc=r.hist[r.hist.length-1];r.ath=Math.max(...r.hist)*rnd(1,1.6);r.vol=r.mc*.03}
+  else if(warm){const n=Math.floor(rnd(2,70));r.born=G.tick-n*SUBS;for(let i=0;i<n&&r.alive;i++) advance(r,true)}
   return r;
 }
-function riskOf(r){const sc=(r.dev>15?2:r.dev>8?1:0)+(r.locked?0:2)+(r.tax>=15?3:r.tax>5?1:0);return sc>=4?['HIGH RISK','hi']:sc>=2?['MEDIUM','md']:['LOW RISK','lo']}
+function advance(r,quiet){
+  r.age++;
+  let d=r.drift; if(r.boost>0){d+=.02*tierOf('neon');r.boost--} if(r.units>0&&!r.grad) d+=.01*tierOf('lava');
+  let ch=d*Math.min(1.6,G.mood)+gauss()*(r.grad?.05:.09);
+  if(Math.random()<(r.grad?.02:.04)){ch+=rnd(.3,.9);if(!quiet){const pct=Math.round((Math.exp(ch)-1)*100);if(r.units>0){toast('$'+r.ticker+' is pumping +'+pct+'%','good');pip('bags',true)}else if(Math.random()<.3) news('$'+r.ticker+' rips '+pct+'% as a streamer shills it.')}}
+  if(!r.grad) r.drift-=.0011;
+  r.mc=Math.max(500,r.mc*Math.exp(ch)); r.vol=r.vol*.8+Math.abs(ch)*r.mc*.25;
+  r.hist.push(r.mc); if(r.hist.length>60) r.hist.shift(); if(r.mc>r.ath) r.ath=r.mc;
+  if(!r.grad&&r.mc>=GRAD_MC){r.grad=true;r.gradAt=G.tick;r.locked=true;r.risk*=.12;r.drift=rnd(-.006,.035);
+    if(!quiet){news('$'+r.ticker+' graduates at '+fmtUSD(r.mc)+'. Liquidity locked, the big money arrives.');if(r.units>0){st('grads');toast('$'+r.ticker+' graduated! You were early.','good');Snd.fx('mission')}}}
+  if(r.rugIn>0){if(--r.rugIn===0) doRug(r,quiet);return}
+  if(!r.grad&&r.age>12&&r.mc<1400){r.alive=false;r.fizzled=true;if(!quiet&&r.units>0){lostOn(r,'$'+r.ticker+' died. Nobody is buying.')}return}
+  const rugP=r.risk*(r.locked&&r.age<35?.25:1)*(r.age<4?.3:1);
+  if(Math.random()<rugP){
+    if(!quiet&&r.units>0&&Math.random()<.15*tierOf('monitor3')){r.rugIn=1;toast('Rug radar: the dev wallet on $'+r.ticker+' is moving. Get out now!','warn');Snd.fx('alarm');return}
+    doRug(r,quiet)}
+}
+function lostOn(r,msg){const refund=r.cost*.06*tierOf('beanbag');G.cash+=refund;TR.pnl-=(r.cost-refund);st('tradePnl',-(r.cost-refund));
+  toast(msg+' Lost '+fmtUSD(r.cost-refund)+(refund?' (insurance paid '+fmtUSD(refund)+')':'')+'.','bad');pip('bags',true);Room.flash(0xef5350);r.units=0;r.cost=0}
+function doRug(r,quiet){
+  r.alive=false; r.mc*=.015; r.hist.push(r.mc);
+  if(quiet) return;
+  if(Math.random()<.4) news(r.devName+' rugs $'+r.ticker+'. Liquidity gone.');
+  if(r.units>0){st('rugged');Snd.fx('alarm');lostOn(r,'You got rugged on $'+r.ticker+'.')}
+}
+function bagValue(){return TR.coins.reduce((a,r)=>a+(r.alive&&r.units>0?r.units*r.mc:0),0)}
+function normCoins(){TR.coins.forEach(r=>{if(r.born==null) r.born=G.tick-(r.age||0)*SUBS;if(!r.ath) r.ath=r.mc;if(r.vol==null) r.vol=0;if(!r.boost) r.boost=0;if(!r.rugIn) r.rugIn=0;if(r.grad==null) r.grad=false})}
 function trenchTick(){
-  if(!TR.coins.length) for(let i=0;i<5;i++) TR.coins.push(newRival(true));
-  TR.coins.forEach((r,i)=>{
-    if(!r.alive){if(++r.deadFor>8) TR.coins[i]=newRival(false);return}
-    r.age++;
-    let ch=r.drift*Math.min(1.6,G.mood)+gauss()*.085;
-    if(Math.random()<.035){ch+=rnd(.35,.8);news('A streamer shills $'+r.ticker+'. It jumps '+Math.round((Math.exp(ch)-1)*100)+'%.');if(r.units>0){toast('$'+r.ticker+' is pumping','good');pip('trench',true)}}
-    r.mc=Math.max(800,r.mc*Math.exp(ch)); r.hist.push(r.mc); if(r.hist.length>48) r.hist.shift();
-    const rug=r.risk*(r.locked&&r.age<35?.25:1)*(r.age<4?.3:1);
-    if(Math.random()<rug){
-      const lost=r.units*r.mc; r.alive=false; r.mc*=.015; r.hist.push(r.mc);
-      news(r.devName+' rugs $'+r.ticker+'. Liquidity gone. Holders left with nothing.');
-      chat('rug_tracker','$'+r.ticker+' by '+r.devName+' just rugged in the Trenches.','sleuth','#f5b041');
-      if(r.units>0){TR.pnl-=r.cost;st('rugged');toast('You got rugged on $'+r.ticker+'. Lost '+fmtUSD(r.cost)+'.','bad');pip('trench',true);Room.flash(0xef5350);Snd.fx('alarm');r.units=0;r.cost=0}
-    }
-  });
+  normCoins();
+  if(!TR.coins.length) for(let i=0;i<mkCap();i++) TR.coins.push(newCoin(true));
+  TR.coins.forEach(r=>{if(r.alive) advance(r,false); else r.deadFor++});
+  // clear out the dead and the forgotten (never anything you still hold)
+  TR.coins=TR.coins.filter(r=>r.units>0||(r.alive?!(r.grad?false:(r.age>150&&r.mc<6000)):r.deadFor<=6));
+  const grads=TR.coins.filter(r=>r.alive&&r.grad).sort((a,b)=>a.mc-b.mc);
+  while(grads.length>18){const g=grads.shift();if(g.units>0) continue;TR.coins.splice(TR.coins.indexOf(g),1)}
+  const live=TR.coins.filter(r=>r.alive).length; let add=Math.max(0,mkCap()-live); if(Math.random()<.5) add++;
+  for(let i=0;i<add;i++) TR.coins.push(newCoin(false));
+  const pt=tierOf('penthouse'); if(pt){const inc=bagValue()*.0005*pt;if(inc>0) G.cash+=inc}
+  if(MK.sel&&!TR.coins.some(r=>r.id===MK.sel)) MK.sel=null;
 }
 function trenchBuy(id,amt){
   const r=TR.coins.find(x=>x.id===id); if(!r||!r.alive) return;
+  amt=Math.floor(amt); if(!(amt>=1)) return;
   if(G.cash<amt) return toast('Not enough cash','bad');
-  // fill at the price after your own buy moves it, so you can't buy and instantly sell your own pump
-  G.cash-=amt; r.units+=amt/(r.mc+amt*1.2); r.cost+=amt; r.mc+=amt*1.2; r.hist[r.hist.length-1]=r.mc;
-  toast('Bought '+fmtUSD(amt)+' of $'+r.ticker,'good'); Snd.fx('buy'); saveRun(); renderAll();
+  const net=amt*(1-feeRate()), mult=1+.03*tierOf('led')+(!r.grad&&r.age<5?.04*tierOf('fridge'):0);
+  // fill at the price after your own buy moves it
+  G.cash-=amt; r.units+=net/(r.mc+net*1.2)*mult; r.cost+=amt; r.mc+=net*1.2; r.hist[r.hist.length-1]=r.mc; if(r.mc>r.ath) r.ath=r.mc;
+  if(tierOf('neon')) r.boost=4;
+  st('trades'); toast('Bought '+fmtUSD(amt)+' of $'+r.ticker,'good'); Snd.fx('buy'); saveRun(); renderAll();
 }
+function trenchSell(id,frac){
+  const r=TR.coins.find(x=>x.id===id); if(!r||!r.alive||r.units<=0) return; frac=Math.min(1,frac||1);
+  const u=r.units*frac, gross=u*r.mc, after=Math.max(500,r.mc-gross*.8*(1-.08*tierOf('monitor2'))), fill=u*(r.mc+after)/2;
+  const tax=r.tax*(1-.1*tierOf('vinyl'));
+  let val=fill*(1-tax/100)*(1-feeRate()); const costPart=r.cost*frac; let pnl=val-costPart;
+  if(pnl>0){const bonus=pnl*(.02*tierOf('trophy')+.04*tierOf('mansion')+(r.grad?.04*tierOf('chair'):0));val+=bonus;pnl+=bonus}
+  G.cash+=val; TR.pnl+=pnl; st('tradePnl',pnl); st('trades'); if(pnl>0) st('trenchWins');
+  if(costPart>0){const x=val/costPart;if(x>(G.stats.bestX||0)) G.stats.bestX=x}
+  r.mc=after; r.units-=u; r.cost-=costPart; if(frac>=1||r.units*r.mc<.5){r.units=0;r.cost=0}
+  toast('Sold '+(frac<1?Math.round(frac*100)+'% of ':'')+'$'+r.ticker+' for '+fmtUSD(val)+'. '+(pnl>=0?'+':'')+fmtUSD(pnl),pnl>=0?'good':'bad');
+  save(); saveRun(); renderAll();
+}
+function riskOf(r){const sc=(r.dev>15?2:r.dev>8?1:0)+(r.locked?0:2)+(r.tax>=15?3:r.tax>5?1:0);return sc>=4?['HIGH RISK','hi']:sc>=2?['MEDIUM','md']:['LOW RISK','lo']}
 function parseAmt(v){
   v=String(v||'').trim().toLowerCase().replace(/[$,£\s]/g,''); const m=v.match(/^(\d*\.?\d+)([kmb]?)$/); if(!m) return NaN;
   return parseFloat(m[1])*({'':1,k:1e3,m:1e6,b:1e9}[m[2]]);
@@ -1376,14 +1441,6 @@ function trenchCustom(id){
     closeModal(); trenchBuy(id,a);
   });
 }
-function trenchSell(id){
-  const r=TR.coins.find(x=>x.id===id); if(!r||!r.alive||r.units<=0) return;
-  // selling pushes the price down as it fills: you get the average of before and after
-  const gross=r.units*r.mc, after=Math.max(800,r.mc-gross*.8), fill=r.units*(r.mc+after)/2, val=fill*(1-r.tax/100), pnl=val-r.cost;
-  G.cash+=val; TR.pnl+=pnl; if(pnl>0) st('trenchWins'); r.mc=after; r.units=0; r.cost=0;
-  toast('Sold $'+r.ticker+' for '+fmtUSD(val)+(r.tax?' after '+r.tax+'% tax':'')+'. '+(pnl>=0?'+':'')+fmtUSD(pnl),pnl>=0?'good':'bad');
-  save(); saveRun(); renderAll();
-}
 function sparkSVG(pts,dead){
   if(pts.length<2) return '<svg viewBox="0 0 200 34"></svg>';
   let lo=Math.min(...pts),hi=Math.max(...pts);if(hi-lo<1) hi=lo+1;
@@ -1392,23 +1449,74 @@ function sparkSVG(pts,dead){
   const up=pts[pts.length-1]>=pts[0]&&!dead, col=up?'#26a69a':'#ef5350';
   return `<svg viewBox="0 0 200 34" preserveAspectRatio="none"><path d="${d} L198 34 L2 34Z" fill="${up?'rgba(38,166,154,.16)':'rgba(239,83,80,.16)'}"/><path d="${d}" fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
 }
+const fmtAge=t=>{const m=Math.max(0,Math.round(t));return m<60?m+'m':Math.floor(m/60)+'h'};
+function chg(r,n){const h=r.hist;if(h.length<2) return 0;const a=h[Math.max(0,h.length-1-n)];return (h[h.length-1]-a)/a*100}
+function bigChart(pts,dead){
+  if(pts.length<2) return '<svg viewBox="0 0 300 120"></svg>';
+  let lo=Math.min(...pts),hi=Math.max(...pts);if(hi-lo<1) hi=lo+1;
+  const X=i=>i/(pts.length-1)*296+2, Y=v=>114-(v-lo)/(hi-lo)*104;
+  const d=pts.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+  const up=pts[pts.length-1]>=pts[0]&&!dead, col=up?'#26a69a':'#ef5350';
+  const gy=Y(GRAD_MC); const gl=(GRAD_MC>lo&&GRAD_MC<hi)?`<line x1="0" x2="300" y1="${gy}" y2="${gy}" stroke="#ffd36b" stroke-dasharray="4 4" stroke-width="1" opacity=".6"/>`:'';
+  return `<svg viewBox="0 0 300 120" preserveAspectRatio="none" class="bigc">${gl}<path d="${d} L298 120 L2 120Z" fill="${up?'rgba(38,166,154,.14)':'rgba(239,83,80,.14)'}"/><path d="${d}" fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+const QB=[100,1000,10000,100000,1000000,10000000];
+function mkList(tab){
+  normCoins(); const live=TR.coins.filter(r=>r.alive);
+  if(tab==='new') return live.filter(r=>!r.grad).sort((a,b)=>b.born-a.born).slice(0,30);
+  if(tab==='grad') return live.filter(r=>r.grad).sort((a,b)=>b.mc-a.mc);
+  return live.slice().sort((a,b)=>(chg(b,6)*Math.log10(b.vol+10))-(chg(a,6)*Math.log10(a.vol+10))).slice(0,25);
+}
+function mkRow(r){
+  const c=chg(r,6), held=r.units>0, prog=Math.min(100,r.mc/GRAD_MC*100);
+  return `<div class="mrow ${held?'held':''}" data-act="mopen" data-id="${r.id}">
+    <span class="lc-m">${MASCOT_EMOJI[r.mascot]}</span>
+    <span class="mr-n"><b>${esc(r.name)}</b><span>$${r.ticker} · ${fmtAge(r.age)}${held?' · <em>HOLDING</em>':''}</span>
+      ${r.grad?'<span class="gradb">GRADUATED</span>':`<span class="bond"><i style="width:${prog.toFixed(0)}%"></i></span>`}</span>
+    <span class="mr-p"><b>${fmtUSD(r.mc)}</b><span class="${c>=0?'up':'down'}">${c>=0?'+':''}${Math.round(c)}%</span></span>
+    <button class="btn mbuy" data-act="tbuy" data-id="${r.id}" data-amt="${MK.qb}" ${G.cash<MK.qb?'disabled':''}>Buy</button>
+  </div>`;
+}
 function renderTrench(){
   if(!TR.coins.length) trenchTick();
-  const port=TR.coins.reduce((a,r)=>a+(r.alive?r.units*r.mc:0),0);
-  let h=`<div class="pos"><div class="kpi"><label>Your bags</label><b>${fmtUSD(port)}</b></div><div class="kpi"><label>Trench P/L</label><b class="${TR.pnl>=0?'up':'down'}">${TR.pnl>=0?'+':''}${fmtUSD(TR.pnl)}</b></div></div>
-  <div class="caught">Other devs' coins. Buy in, sell before they rug. <b>Read the flags</b>: high dev share, unlocked LP and big sell taxes are how you spot a rug coming.</div>`;
-  h+=TR.coins.map(r=>{
-    const first=r.hist[0]||r.mc, ch=(r.mc-first)/first*100, [rk,rc]=riskOf(r), val=r.units*r.mc, pl=val-r.cost;
-    return `<div class="tr ${r.alive?'':'dead'}">
-      <div class="tr-h"><span class="lc-m">${MASCOT_EMOJI[r.mascot]}</span><span class="tr-n"><b>${esc(r.name)}</b><span>$${r.ticker} · by ${esc(r.devName)}</span></span>
-      <span class="tr-p"><b>${fmtUSD(r.mc)}</b><span class="${Math.round(ch)>=0&&r.alive?'up':'down'}">${Math.round(ch)>=0?'+':''}${Math.round(ch)}%</span></span></div>
-      ${sparkSVG(r.hist,!r.alive)}
-      ${r.alive?'':'<span class="stamp">RUGGED</span>'}
+  const r=MK.sel&&TR.coins.find(x=>x.id===MK.sel);
+  let h=`<div class="qbrow"><span>Quick buy</span>${QB.map(a=>`<button class="chipb ${MK.qb===a?'on':''}" data-act="qb" data-id="${a}" ${G.cash<a?'disabled':''}>${fmtUSD(a).replace(/\.0+(?=[KMB])/,'')}</button>`).join('')}</div>`;
+  if(r){
+    const first=r.hist[0]||r.mc, c=(r.mc-first)/first*100, [rk,rc]=riskOf(r), val=r.units*r.mc, pl=val-r.cost, prog=Math.min(100,r.mc/GRAD_MC*100);
+    h+=`<button class="btn mback" data-act="mback">← Back to market</button>
+    <div class="tr ${r.alive?'':'dead'}">
+      <div class="tr-h"><span class="lc-m">${MASCOT_EMOJI[r.mascot]}</span><span class="tr-n"><b>${esc(r.name)}</b><span>$${r.ticker} · by ${esc(r.devName)} · ${fmtAge(r.age)} old</span></span>
+      <span class="tr-p"><b>${fmtUSD(r.mc)}</b><span class="${c>=0?'up':'down'}">${c>=0?'+':''}${Math.round(c)}%</span></span></div>
+      ${bigChart(r.hist,!r.alive)}
+      ${r.alive?'':'<span class="stamp">'+(r.fizzled?'DEAD':'RUGGED')+'</span>'}
+      ${r.grad?`<div class="caught"><b class="gradb">GRADUATED</b> Bonded at $69K. Liquidity locked, calmer and much safer.</div>`:`<div class="bondrow"><span>Bonding curve</span><span class="bond big"><i style="width:${prog.toFixed(0)}%"></i></span><b>${prog.toFixed(0)}%</b></div>`}
+      <div class="sumgrid"><div class="kpi"><label>ATH</label><b>${fmtUSD(r.ath)}</b></div><div class="kpi"><label>Vol</label><b>${fmtUSD(r.vol)}</b></div></div>
       <div class="tags"><span class="risk ${rc}">${rk}</span><span class="tag ${r.dev>15?'heat':''}">dev ${r.dev}%</span><span class="tag ${r.locked?'good':'heat'}">LP ${r.locked?'locked':'unlocked'}</span><span class="tag ${r.tax>=15?'heat':''}">tax ${r.tax}%</span></div>
       ${r.units>0?`<div class="tr-pos"><span>Holding <b>${fmtUSD(val)}</b></span><span>cost ${fmtUSD(r.cost)}</span><span class="${pl>=0?'up':'down'}">${pl>=0?'+':''}${fmtUSD(pl)} (${(pl/r.cost*100).toFixed(0)}%)</span></div>`:''}
-      ${r.alive?`<div class="tr-b"><button class="btn" data-act="tbuy" data-id="${r.id}" data-amt="100" ${G.cash<100?'disabled':''}>Buy $100</button><button class="btn" data-act="tbuy" data-id="${r.id}" data-amt="500" ${G.cash<500?'disabled':''}>$500</button><button class="btn" data-act="tbuy" data-id="${r.id}" data-amt="2000" ${G.cash<2000?'disabled':''}>$2K</button><button class="btn" data-act="tcustom" data-id="${r.id}" ${G.cash<1?'disabled':''}>Custom</button>${r.units>0?`<button class="btn primary" data-act="tsell" data-id="${r.id}">Sell all</button>`:''}</div>`:'<div class="caught">A new coin takes this slot soon.</div>'}
-    </div>`}).join('');
+      ${r.alive?`<div class="tr-b"><button class="btn primary" data-act="tbuy" data-id="${r.id}" data-amt="${MK.qb}" ${G.cash<MK.qb?'disabled':''}>Buy ${fmtUSD(MK.qb)}</button><button class="btn" data-act="tcustom" data-id="${r.id}">Custom</button>
+        ${r.units>0?`<button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".25">Sell 25%</button><button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".5">50%</button><button class="btn danger" data-act="tsellp" data-id="${r.id}" data-f="1">Sell all</button>`:''}</div>`:''}
+      <div class="caught">Fee ${(feeRate()*100).toFixed(2)}% per trade.${r.tax?' Coin sell tax '+r.tax+'%.':''}</div>
+    </div>`;
+  } else {
+    const tabs=[['trend','Trending'],['new','New'],['grad','Graduated']];
+    h+=`<div class="lbtabs mtabs">${tabs.map(([k,l])=>`<button data-act="mktab" data-id="${k}" class="${MK.tab===k?'on':''}">${l}</button>`).join('')}</div>`;
+    const list=mkList(MK.tab);
+    h+=list.length?'<div class="mlist">'+list.map(mkRow).join('')+'</div>':'<div class="caught">Nothing here yet. Give it a minute.</div>';
+    h+=`<div class="disc">Coins bond toward $69K. Hit it and they graduate: locked liquidity, far fewer rugs. Read the flags before you ape.</div>`;
+  }
   setHTML($('#trenchPane'),h);
+}
+function renderBags(){
+  const held=TR.coins.filter(r=>r.units>0), val=held.reduce((a,r)=>a+(r.alive?r.units*r.mc:0),0), cost=held.reduce((a,r)=>a+r.cost,0), un=val-cost;
+  let h=`<div class="pos"><div class="kpi"><label>Bags value</label><b>${fmtUSD(val)}</b></div><div class="kpi"><label>Unrealised</label><b class="${un>=0?'up':'down'}">${un>=0?'+':''}${fmtUSD(un)}</b></div>
+    <div class="kpi"><label>Realised P/L</label><b class="${TR.pnl>=0?'up':'down'}">${TR.pnl>=0?'+':''}${fmtUSD(TR.pnl)}</b></div><div class="kpi"><label>Best trade</label><b>${(G.stats.bestX||0).toFixed(1)}×</b></div></div>`;
+  if(!held.length) h+=`<div class="caught">No bags yet. Find something in the Market.</div><button class="btn primary big" data-go="trench">Open the market</button>`;
+  else h+='<div class="mlist">'+held.sort((a,b)=>b.units*b.mc-a.units*a.mc).map(r=>{const v=r.units*r.mc,p=v-r.cost;
+    return `<div class="mrow held" data-act="bagopen" data-id="${r.id}"><span class="lc-m">${MASCOT_EMOJI[r.mascot]}</span>
+      <span class="mr-n"><b>${esc(r.name)}</b><span>$${r.ticker} · mc ${fmtUSD(r.mc)}${r.grad?' · GRAD':''}</span></span>
+      <span class="mr-p"><b>${fmtUSD(v)}</b><span class="${p>=0?'up':'down'}">${p>=0?'+':''}${(p/r.cost*100).toFixed(0)}%</span></span>
+      <button class="btn mbuy" data-act="tsellp" data-id="${r.id}" data-f="1">Sell</button></div>`}).join('')+'</div>';
+  setHTML($('#bagsPane'),h);
 }
 
 function checkStates(){
@@ -1596,24 +1704,28 @@ function step(){
 
 /* ================= UI ================= */
 /* --- sheets (menus over the room) --- */
-const SHEETS={settings:['Settings','Sound, graphics and your data'],help:['How to play','The whole game in two minutes'],room:['Room shop','Spend your profits on the setup. Every item has a perk'],chart:['Market','Live chart, chat, trades and holders'],trench:['Trenches','Trade other devs\' coins. Spot the rug before it happens'],launch:['Launch','Make a coin. The AI panel rates it as you type'],promote:['Promote','Streamers, KOLs and fake ads'],
+const SHEETS={settings:['Settings','Sound, graphics and your data'],help:['How to play','The whole game in two minutes'],room:['Room shop','Spend your profits on the setup. Every item has a perk'],chart:['Market','Live chart, chat, trades and holders'],trench:['Market','Trending, new launches and graduated coins'],bags:['Bags','Your positions and P/L'],launch:['Dev · Launch','Side hustle: make your own coin'],promote:['Promote','Streamers, KOLs and fake ads'],
   pump:['Pump','Manufacture the hype'],exit:['Exit','Cash out before the sleuths find you'],shame:['Career','Missions, stats and the graveyard']};
 let curSheet=null, feedTab='chat';
+const DEV=['launch','chart','promote','pump','exit']; let lastDev='launch';
 function openSheet(name){
+  if(name==='dev'){if(DEV.includes(curSheet)&&$('#sheet').classList.contains('open')) return closeSheet();name=coin&&coin.alive?(DEV.includes(lastDev)&&lastDev!=='launch'?lastDev:'chart'):'launch'}
   if(name==null||(name===curSheet&&$('#sheet').classList.contains('open'))) return closeSheet();
+  if(DEV.includes(name)) lastDev=name;
+  {const dn=$('#devnav');dn.hidden=!DEV.includes(name);dn.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.go===name))}
   curSheet=name; const sh=$('#sheet'); pip(name,false); if(name==='shame') Cloud.refreshBoard();
   sh.querySelectorAll('[data-pane]').forEach(p=>p.hidden=p.dataset.pane!==name);
   $('#sheetTitle').textContent=SHEETS[name][0]; $('#sheetSub').textContent=SHEETS[name][1];
   sh.classList.toggle('wide',name==='chart'); sh.classList.add('open'); sh.setAttribute('aria-hidden','false');
   $('#sheetBody').scrollTop=0;
-  document.querySelectorAll('.dk').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sheet===name?'true':'false'));
+  document.querySelectorAll('.dk').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.sheet===name||(b.dataset.sheet==='dev'&&DEV.includes(name)))?'true':'false'));
   if(name==='launch') $('#launchPane').dataset.mode='';
   renderAll(name==='launch');
   Room.setShift(window.innerWidth>760?sh.getBoundingClientRect().width:0);
   if(name==='chart'&&chart&&coin) setTimeout(()=>chart.timeScale().scrollToRealTime(),60);
 }
 function closeSheet(){
-  curSheet=null; const sh=$('#sheet'); sh.classList.remove('open'); sh.setAttribute('aria-hidden','true');
+  curSheet=null; const sh=$('#sheet'); sh.classList.remove('open'); $('#devnav').hidden=true; sh.setAttribute('aria-hidden','true');
   document.querySelectorAll('.dk').forEach(b=>b.setAttribute('aria-pressed','false')); Room.setShift(0);
 }
 function selectTab(group,name){
@@ -1628,7 +1740,7 @@ $('#dock').addEventListener('click',e=>{const b=e.target.closest('.dk');if(b) op
 $('#sheetClose').addEventListener('click',closeSheet);
 $('#aliasBox').addEventListener('click',()=>openSheet('shame'));
 document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>openSheet(b.dataset.open)));
-$('#livecard').addEventListener('click',()=>openSheet(coin?'chart':'launch'));
+$('#livecard').addEventListener('click',()=>{if(coin&&coin.alive) return openSheet('chart');const t=+$('#livecard').dataset.tid;if(t) MK.sel=t;openSheet('trench')});
 const activeTab=g=>g==='feed'?(curSheet==='chart'?feedTab:null):curSheet;
 function syncLayoutVars(){const r=document.documentElement.style;r.setProperty('--hudH',$('#hud').offsetHeight+'px');r.setProperty('--dockH',$('#dock').offsetHeight+'px');
   if(curSheet) Room.setShift(window.innerWidth>760?$('#sheet').getBoundingClientRect().width:0)}
@@ -1660,7 +1772,11 @@ function renderGoal(){const m=nextMission(),g=$('#goalChip');if(!g) return;const
 })();
 function renderLive(){
   const c=coin;
-  if(!c){$('#lcM').textContent='·';$('#lcName').textContent='No coin live';$('#lcSub').textContent='Tap Launch to start';$('#lcMc').textContent='—';$('#lcChg').textContent='';return}
+  if(!c||!c.alive){const t=TR.coins.length?mkList('trend')[0]:null;
+    if(!t){$('#lcM').textContent='·';$('#lcName').textContent='Market warming up';$('#lcSub').textContent='Tap to open the market';$('#lcMc').textContent='—';$('#lcChg').textContent='';return}
+    const ch6=chg(t,6);$('#lcM').textContent=MASCOT_EMOJI[t.mascot];$('#lcName').textContent=t.name;$('#lcSub').textContent='#1 trending · $'+t.ticker+(t.grad?' · graduated':' · '+Math.round(t.mc/GRAD_MC*100)+'% bonded');
+    $('#lcMc').textContent=fmtUSD(t.mc);const lc=$('#lcChg');lc.textContent=(ch6>=0?'+':'')+ch6.toFixed(1)+'%';lc.className=ch6>=0?'up':'down';$('#livecard').dataset.tid=t.id;return}
+  $('#livecard').dataset.tid='';
   const m=mcapOf(c), first=c.candles.length?c.candles[0].open:c.cur.open, ch=first>0?(m-first)/first*100:0;
   $('#lcM').textContent=MASCOT_EMOJI[c.mascot]; $('#lcName').textContent=c.name;
   $('#lcSub').textContent='$'+c.ticker+' · '+c.holders.length+' holders · '+(c.alive?(c.pulled?'pulled':isLocked(c)?'LP locked':'LP unlocked'):'dead');
@@ -1686,6 +1802,7 @@ function renderTop(){
   if(G.cash>G.peakCash) G.peakCash=G.cash;
   Room.hud();
   $('#peak').textContent=fmtCash(G.peakCash);
+  {const bv=bagValue(),el=$('#bagsV');el.textContent=fmtCash(bv);const devOn=!!(coin&&coin.alive)||G.heat>=1;document.querySelectorAll('.devstat').forEach(x=>x.hidden=!devOn)}
   const h=Math.round(G.heat), tr=Math.round(G.trust);
   $('#heatBar').style.width=h+'%'; $('#heatBar').style.background=meterColor(h); $('#heatN').textContent=h;
   $('#trustBar').style.width=tr+'%'; $('#trustBar').style.background=meterColor(tr,true); $('#trustN').textContent=tr;
@@ -1865,26 +1982,23 @@ function renderSettings(){
 }
 function renderHelp(){
   const steps=[
-    ['Launch','Name your coin, pick a mascot and set the tokenomics. The AI buyer panel scores how memeable and how legit it looks as you type. More starting liquidity means more room to pump.'],
-    ['Promote','Spend cash to bring in buyers. Streamers bring waves of sheep, KOLs bring hype chasers (but buy first and dump on them), and ads keep a steady drip coming.'],
-    ['Pump','Manufacture hype: pump groups, fake partnerships, fake celebrity posts and wash-trading bots. The shadier it is, the more heat it adds.'],
-    ['Exit','Hold the red button to pull the liquidity, or dump your bag, slow rug, fake a hack, or walk away honestly. Then spend the profit and go again.'],
+    ['Find a coin','Open the Market. Trending shows what is moving, New shows fresh launches, Graduated shows coins that bonded past $69K.'],
+    ['Ape in','Pick a quick-buy amount at the top and tap Buy, or open a coin to see its chart and use Custom. Every buy moves the price a little.'],
+    ['Read the flags','High dev share, unlocked liquidity and big sell taxes are how rugs happen. Graduated coins have locked liquidity and rarely rug.'],
+    ['Get out','Sell 25%, half or all from the coin page or from Bags. Take profit, spend it on the room, go again.'],
   ];
   let h=`<div class="sec">The loop</div>`+steps.map((s,i)=>`<div class="help-step"><span class="n">${i+1}</span><div><h4>${s[0]}</h4><p>${s[1]}</p></div></div>`).join('');
-  h+=`<div class="sec">Things to watch</div><div class="gl">
-   <div><b>Heat</b><p>How close investigators are. Rugs and shady promos raise it, time cools it. At 100 you get doxxed and start a new wallet.</p></div>
-   <div><b>Trust</b><p>How willing AI buyers are to touch your coins. Rugs drain it. At 0 you are blacklisted and almost nobody buys.</p></div>
-   <div><b>Sleuths</b><p>Bundled wallets, fake partners, edited screenshots and dev selling can all get exposed mid-pump, which crashes the chart.</p></div>
-   <div><b>LP lock, dev share, sell tax</b><p>Locking liquidity and keeping a small dev share makes buyers trust you. High taxes earn more per sell but scream honeypot.</p></div>
-  </div>
-  <div class="sec">Everything else</div><div class="gl">
-   <div><b>Trenches</b><p>Trade other devs' coins. Read their flags and sell before they rug you.</p></div>
-   <div><b>Room</b><p>Thirteen upgrades with five tiers each. Every tier boosts a perk and changes how it looks.</p></div>
+  h+=`<div class="sec">Good to know</div><div class="gl">
+   <div><b>Bonding and graduating</b><p>New coins bond toward $69K. If they get there they graduate, lock their liquidity and calm down. Buying before graduation is where the big multiples are.</p></div>
+   <div><b>Fees and slippage</b><p>Each trade costs a small fee, and big orders move the price against you. Room upgrades cut both.</p></div>
+   <div><b>Room</b><p>Every upgrade is a trading perk: lower fees, rug insurance, sniper bonuses, rug radar, profit bonuses and more. Every tier also changes how it looks.</p></div>
+   <div><b>Dev (side mode)</b><p>Fancy being the dev? Launch your own coin, promote it, and rug it if you dare. That is where Heat and Trust come in.</p></div>
    <div><b>Career</b><p>Missions pay cash rewards. Sign in to sync your save and climb the leaderboard.</p></div>
   </div>
-  <button class="btn primary big" data-go="launch">Launch a coin</button>`;
+  <button class="btn primary big" data-go="trench">Open the market</button>`;
   setHTML($('#helpPane'),h);
 }
+
 function renderShame(){
   const L=G.lifetime;
   const nm=nextMission(), doneN=MISSIONS.filter(m=>G.done[m.id]).length;
@@ -1921,6 +2035,7 @@ function renderAll(full){
   else if(d==='shame') renderShame();
   else if(d==='room') renderRoomShop();
   else if(d==='trench') renderTrench();
+  else if(d==='bags') renderBags();
   else if(d==='settings') renderSettings();
   else if(d==='help') renderHelp();
   renderMix(); renderQuick(); renderGoal();
@@ -1933,7 +2048,7 @@ function uiTick(){
   if(now-lastSlow>700){lastSlow=now;renderMix();drawSpark();const f=activeTab('feed');if(f==='trades') renderTrades();else if(f==='holders') renderHolders();
     const d=activeTab('deck');
     const ae=document.activeElement, typing=ae&&(ae.tagName==='INPUT'||ae.tagName==='TEXTAREA'||ae.tagName==='SELECT');
-    if(!typing&&!pressing){if(d==='promote') renderPromote();else if(d==='pump') renderPump();else if(d==='exit') renderExit();else if(d==='room') renderRoomShop();else if(d==='trench') renderTrench();else if(d==='shame') renderShame()}
+    if(!typing&&!pressing){if(d==='promote') renderPromote();else if(d==='pump') renderPump();else if(d==='exit') renderExit();else if(d==='room') renderRoomShop();else if(d==='trench') renderTrench();else if(d==='bags') renderBags();else if(d==='shame') renderShame()}
     renderGoal();
   }
 }
@@ -1953,7 +2068,11 @@ $('#sheet').addEventListener('click',e=>{
     case 'setsw':SET[id]=!SET[id];saveSet();if(id==='music') {Snd.setMusic(SET.music);syncSoundBtn()} if(id==='tips'&&SET.tips) SET.seen={}; renderSettings();break;
     case 'setq':SET.quality=id;saveSet();Room.setQuality(id);renderSettings();break;
     case 'brag':shareCareer();break;
-    case 'tbuy':trenchBuy(+id,+b.dataset.amt);break; case 'tcustom':trenchCustom(+id);break; case 'tsell':trenchSell(+id);break;
+    case 'tbuy':trenchBuy(+id,+b.dataset.amt);break; case 'tcustom':trenchCustom(+id);break; case 'tsell':trenchSell(+id,1);break;
+    case 'tsellp':trenchSell(+id,+b.dataset.f);break;
+    case 'qb':MK.qb=+id;renderTrench();break; case 'mktab':MK.tab=id;MK.sel=null;renderTrench();$('#sheetBody').scrollTop=0;break;
+    case 'mopen':MK.sel=+id;renderTrench();$('#sheetBody').scrollTop=0;break; case 'mback':MK.sel=null;renderTrench();break;
+    case 'bagopen':MK.sel=+id;openSheet('trench');break;
     case 'lielow':lieLow();break; case 'alias':aliasModal();break;
     case 'lbtab':lbTab=id;renderShame();break;
     case 'syncnow':Cloud.push();toast('Syncing…');break;
@@ -2891,7 +3010,7 @@ function startGame(then){
   if(!titleOn) return; titleOn=false; Snd.ensure(); if(SET.music) Snd.setMusic(true);
   $('#title').classList.add('gone'); document.body.classList.remove('at-title'); Room.setTitle(false);
   let done=false; const go=()=>{if(done) return; done=true;
-    if(!G.profile){if(!obOpen) onboarding()} else if(then) openSheet(then); else if(!(coin&&coin.alive)&&!G.lifetime.launched) openSheet('launch');
+    if(!G.profile){if(!obOpen) onboarding()} else if(then) openSheet(then); else if(!(coin&&coin.alive)) openSheet('trench');
     if(then&&!G.profile) setTimeout(()=>openSheet(then),50)};
   Promise.race([cloudReady,new Promise(r=>setTimeout(r,3000))]).then(go);
 }
