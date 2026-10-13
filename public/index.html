@@ -1412,7 +1412,7 @@ const RIGS=[
   {k:'farm',n:'Mining farm',e:'🏭',price:150000000,rate:2000000,d:'A warehouse of machines out of town.'},
   {k:'hydro',n:'Hydro data centre',e:'🌊',price:1000000000,rate:15000000,d:'Cheap power from a dam. Printing.'},
 ];
-const OFFLINE_RATE=.15, OFFLINE_CAP=24*3600*1000;
+const OFFLINE_RATE=.01, OFFLINE_CAP=24*3600*1000;
 // welcome-back box: mining first, copy trading underneath, shown together
 const WB={mine:null,copy:null,t:0};
 function wbAdd(k,part){WB[k]=part;clearTimeout(WB.t);WB.t=setTimeout(wbShow,1200)}
@@ -1512,7 +1512,7 @@ function copyOffline(){
   const gap=Math.min(now-last,OFFLINE_CAP); if(!cp.bots.length||gap<60000) return;
   const lines=[]; let total=0;
   for(const k of cp.bots){const b=BOTS.find(x=>x.k===k),o=COPY_OFF[k];if(!b||!o) continue; const amt=cp.amts[k]||MK.qb;
-    let n=0,w=0,pnl=0,acc=gap/3600000*o.tph; while(acc>=1||(acc>0&&Math.random()<acc)){acc-=1; if(G.cash<amt) break; n++;
+    let n=0,w=0,pnl=0,acc=gap/3600000*o.tph*OFFLINE_RATE; while(acc>=1||(acc>0&&Math.random()<acc)){acc-=1; if(G.cash<amt) break; n++;
       const u=Math.random(); let d;
       if(u<o.pw){d=amt*(b.tp-1)*rnd(.7,1.15)*(1-(o.fee!=null?o.fee:COPY_FEE));w++} else if(u<o.pw+o.pr) d=-amt; else d=-amt*(1-b.sl)*rnd(.8,1.1);
       G.cash+=d; pnl+=d}
@@ -1544,7 +1544,7 @@ function botsTick(){
 }
 function renderCopy(){
   const cp=copyState();
-  let h=`<div class="caught">Follow up to 2 traders and your account copies their buys (each one uses the quick-buy amount you had when you followed them, now <b>${fmtUSD(MK.qb)}</b>) and sells. Copies land a moment after the trader's, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. Traders keep trading for you while you're away, for up to 24 hours. Stats are since you opened the game.</div>`;
+  let h=`<div class="caught">Follow up to 2 traders and your account copies their buys (each one uses the quick-buy amount you had when you followed them, now <b>${fmtUSD(MK.qb)}</b>) and sells. Copies land a moment after the trader's, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. While you're away they keep trading at ${Math.round(OFFLINE_RATE*100)}% of their normal pace, for up to 24 hours. Stats are since you opened the game.</div>`;
   h+=BOTS.map(b=>{const st=BOTST[b.k],on=cp.bots.includes(b.k),full=!on&&cp.bots.length>=COPY_SLOTS,wr=st.trades?Math.round(st.wins/st.trades*100):null,avg=st.trades?st.ret/st.trades*100:null,open=Object.keys(st.pos).length;
     return card({title:`${b.e} ${b.n}${on?' <span class="tier">FOLLOWING · '+fmtUSD(cp.amts[b.k]||MK.qb)+'</span>':''}`,cost:wr==null?'new':wr+'% wins',desc:b.d,
       tags:[`<span class="tag">${st.trades} trades</span>`,avg==null?'':`<span class="tag ${avg>=0?'good':'heat'}">avg ${avg>=0?'+':''}${avg.toFixed(0)}%</span>`,`<span class="tag">${open} open</span>`],
