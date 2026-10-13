@@ -409,6 +409,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .modal .acts{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + var(--dockH) + 64px);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:60;pointer-events:none;width:min(380px,calc(100% - 32px))}
 .toast{background:var(--glass-solid);backdrop-filter:blur(12px);border:1px solid var(--line2);border-left:3px solid var(--accent);border-radius:10px;padding:9px 12px;font-size:12.5px;animation:slide .25s ease;box-shadow:0 10px 30px rgba(0,0,0,.4);width:100%;box-sizing:border-box}
+.toast{display:flex;align-items:center;gap:8px}.toast>span{flex:1;min-width:0}.toast .tn{font:700 11px var(--f-mono);color:var(--accent);background:rgba(255,79,163,.14);padding:2px 6px;border-radius:999px;flex:none}
 .toast.bad{border-left-color:var(--down)} .toast.good{border-left-color:var(--up)} .toast.warn{border-left-color:var(--warn)}
 body.flash-red .vignette{animation:redflash .9s ease}
 @keyframes redflash{0%{box-shadow:inset 0 0 0 9999px rgba(239,83,80,.25)}100%{box-shadow:inset 0 0 0 9999px rgba(239,83,80,0)}}
@@ -814,7 +815,18 @@ let newsQ=[], newsTimer=0;
 function news(h){newsQ.unshift(h);newsQ=newsQ.slice(0,10);showNews(h)}
 function showNews(h){const el=$('#news');el.style.animation='none';void el.offsetWidth;el.style.animation='';el.textContent=h}
 setInterval(()=>{if(newsQ.length>1){newsTimer=(newsTimer+1)%newsQ.length;showNews(newsQ[newsTimer])}},7000);
-function toast(msg,kind,ms){const t=document.createElement('div');t.className='toast '+(kind||'');t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),ms||3800)}
+// toasts: repeats merge into one with a ×N count, and at most 3 show at once (oldest drops off)
+const TOAST_MAX=3;
+function toast(msg,kind,ms){
+  const box=$('#toasts'); if(!box) return; const life=ms||3800, key=(kind||'')+'|'+msg;
+  const same=[...box.children].find(t=>t._key===key);
+  if(same){same._n=(same._n||1)+1;same.querySelector('.tn').textContent='×'+same._n;same.querySelector('.tn').hidden=false;
+    clearTimeout(same._tm);same._tm=setTimeout(()=>same.remove(),life);box.appendChild(same);return}
+  const t=document.createElement('div');t.className='toast '+(kind||'');t._key=key;t._n=1;
+  const m=document.createElement('span');m.textContent=msg;const n=document.createElement('b');n.className='tn';n.hidden=true;
+  t.append(m,n);box.appendChild(t);t._tm=setTimeout(()=>t.remove(),life);
+  while(box.children.length>TOAST_MAX){const old=box.firstElementChild;clearTimeout(old._tm);old.remove()}
+}
 const tipQ=[];let tipBusy=false;
 function tip(id,msg){if(!SET.tips||SET.seen[id]||tipQ.some(x=>x[0]===id)) return;SET.seen[id]=1;saveSet();tipQ.push([id,msg]);if(!tipBusy) nextTip()}
 function nextTip(){const t=tipQ.shift();if(!t){tipBusy=false;return}tipBusy=true;setTimeout(()=>{toast(t[1],'tip',7500);setTimeout(nextTip,8500)},500)}
