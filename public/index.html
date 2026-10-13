@@ -709,7 +709,8 @@ const SHOP=[
 const TIER_MULT=[0,1,5,25,120,600], MAXT=5, ROMAN=['','I','II','III','IV','V'];
 const maxT=it=>it.max||MAXT, TOTAL_T=()=>SHOP.reduce((a,x)=>a+maxT(x),0);
 const fridgeCut=t=>Math.min(.8,.15+.15*t), sleuthCut=t=>Math.max(.3,1-.15*t);
-const priceFor=(it,t)=>Math.round(it.price*TIER_MULT[t]);
+const roomScale=()=>1+.3*tierOf('mansion');
+const priceFor=(it,t)=>Math.round(it.price*TIER_MULT[t]*(it.k==='mansion'?1:roomScale()));
 const tierOf=k=>{const v=G.owned&&G.owned[k];return v===true?1:(v|0)};
 const own=k=>tierOf(k)>0;
 
@@ -1328,7 +1329,7 @@ function renderRoomShop(){
   const n=SHOP.filter(x=>own(x.k)).length, maxed=SHOP.filter(x=>tierOf(x.k)>=maxT(x)).length, val=SHOP.reduce((a,x)=>a+itemSpent(x),0);
   let h=`<div class="pos"><div class="kpi"><label>Items owned</label><b>${n} / ${SHOP.length}</b></div><div class="kpi"><label>Room value</label><b>${fmtUSD(val)}</b></div>
     <div class="kpi"><label>Maxed out</label><b>${maxed} / ${SHOP.length}</b></div><div class="kpi"><label>Total tiers</label><b>${SHOP.reduce((a,x)=>a+tierOf(x.k),0)} / ${TOTAL_T()}</b></div></div>
-    <div class="caught">Most items have 5 tiers. Each tier costs 5× more and makes the perk stronger. Tier V costs 600× the first.</div>`;
+    <div class="caught">Most items have 5 tiers. Each tier costs 5× more and makes the perk stronger. Tier V costs 600× the first.${tierOf('mansion')?` Items cost <b>${Math.round((roomScale()-1)*100)}% more</b> at this room level (+30% per penthouse level).`:''}</div>`;
   const cu=custom();
   h+=`<div class="sec">Style</div><div class="stylebox">
     <div class="srow"><span>Walls</span><div class="sw8">${swatch('wall',WALLS,'#2b2646')}${picker('wall',WALLS)}</div></div>
