@@ -665,8 +665,10 @@ const SHOP=[
   {k:'chair',name:'Gaming chair',price:15000,tiers:['Gold','Rose gold','Platinum','Diamond','Black gold'],p:t=>'Whales '+(30*t)+'% more likely',desc:'Whales respect the throne.'},
   {k:'trophy',name:'Trophy shelf',price:25000,tiers:['Bronze cup','Silver cup','Gold cup','Platinum cup','Crystal cup'],p:t=>'+'+(5*t)+' trust (applied on each upgrade)',desc:'"Community Builder of the Year". You gave it to yourself.'},
   {k:'penthouse',name:'Penthouse view',price:60000,tiers:['40th floor','60th floor','80th floor','Sky lounge','Top of the city'],p:t=>'Heat cools '+(25*t)+'% faster',desc:'Move up. The skyline outside gets brighter every tier.'},
+  {k:'mansion',name:'Modern penthouse',price:10000000,max:1,tiers:['Glass penthouse'],p:()=>'Heat cools 50% faster, +10 trust',desc:'Move out of the bedroom. Full glass wall, a balcony over the city and a proper modern setup. One tier, no upgrades.'},
 ];
 const TIER_MULT=[0,1,5,25,120,600], MAXT=5, ROMAN=['','I','II','III','IV','V'];
+const maxT=it=>it.max||MAXT, TOTAL_T=()=>SHOP.reduce((a,x)=>a+maxT(x),0);
 const fridgeCut=t=>Math.min(.8,.15+.15*t), sleuthCut=t=>Math.max(.3,1-.15*t);
 const priceFor=(it,t)=>Math.round(it.price*TIER_MULT[t]);
 const tierOf=k=>{const v=G.owned&&G.owned[k];return v===true?1:(v|0)};
@@ -1240,11 +1242,12 @@ function newAccount(){
   onboarding();
 }
 function buyItem(k){
-  const it=SHOP.find(x=>x.k===k); if(!it) return; const t=tierOf(k); if(t>=MAXT) return;
+  const it=SHOP.find(x=>x.k===k); if(!it) return; const t=tierOf(k); if(t>=maxT(it)) return;
   const cost=priceFor(it,t+1);
   if(G.cash<cost) return toast('Not enough cash for '+it.name.toLowerCase()+' tier '+ROMAN[t+1],'bad');
   G.cash-=cost; G.owned[k]=t+1;
   if(k==='trophy') G.trust=Math.min(100,G.trust+5*(t+1));
+  if(k==='mansion') G.trust=Math.min(100,G.trust+10);
   save(); Room.apply(k); Snd.fx('buy');
   const tn=it.tiers[t];
   toast((t?it.name+' upgraded to '+tn:it.name+' installed')+'. '+it.p(t+1)+'.','good');
@@ -1253,19 +1256,19 @@ function buyItem(k){
 }
 function itemSpent(it){let v=0;for(let i=1;i<=tierOf(it.k);i++) v+=priceFor(it,i);return v}
 function renderRoomShop(){
-  const n=SHOP.filter(x=>own(x.k)).length, maxed=SHOP.filter(x=>tierOf(x.k)>=MAXT).length, val=SHOP.reduce((a,x)=>a+itemSpent(x),0);
+  const n=SHOP.filter(x=>own(x.k)).length, maxed=SHOP.filter(x=>tierOf(x.k)>=maxT(x)).length, val=SHOP.reduce((a,x)=>a+itemSpent(x),0);
   let h=`<div class="pos"><div class="kpi"><label>Items owned</label><b>${n} / ${SHOP.length}</b></div><div class="kpi"><label>Room value</label><b>${fmtUSD(val)}</b></div>
-    <div class="kpi"><label>Maxed out</label><b>${maxed} / ${SHOP.length}</b></div><div class="kpi"><label>Total tiers</label><b>${SHOP.reduce((a,x)=>a+tierOf(x.k),0)} / ${SHOP.length*MAXT}</b></div></div>
-    <div class="caught">Every item has 5 tiers. Each tier costs 5× more and makes the perk stronger. Tier V costs 600× the first.</div>`;
+    <div class="kpi"><label>Maxed out</label><b>${maxed} / ${SHOP.length}</b></div><div class="kpi"><label>Total tiers</label><b>${SHOP.reduce((a,x)=>a+tierOf(x.k),0)} / ${TOTAL_T()}</b></div></div>
+    <div class="caught">Most items have 5 tiers. Each tier costs 5× more and makes the perk stronger. Tier V costs 600× the first.</div>`;
   h+=`<div class="sec">Upgrades</div>`;
-  h+=SHOP.map(it=>{const t=tierOf(it.k), next=t<MAXT?priceFor(it,t+1):0, can=t<MAXT&&G.cash>=next;
-    const pips='<span class="pips">'+[1,2,3,4,5].map(i=>`<i class="${i<=t?'on':''}"></i>`).join('')+'</span>';
-    const title=`${it.name}${t?` <span class="tier">${ROMAN[t]} · ${esc(it.tiers[t-1])}</span>`:''}`;
+  h+=SHOP.map(it=>{const mt=maxT(it), t=tierOf(it.k), next=t<mt?priceFor(it,t+1):0, can=t<mt&&G.cash>=next;
+    const pips='<span class="pips">'+Array.from({length:mt},(_,i)=>`<i class="${i<t?'on':''}"></i>`).join('')+'</span>';
+    const title=`${it.name}${t?` <span class="tier">${mt>1?ROMAN[t]+' · ':''}${esc(it.tiers[t-1])}</span>`:''}`;
     const tags=[pips];
     if(t) tags.push('<span class="tag good">'+it.p(t)+'</span>');
-    if(t<MAXT) tags.push('<span class="tag">'+(t?'Next: ':'')+it.p(t+1)+'</span>');
-    return card({title,cost:t>=MAXT?'MAX':fmtCash(next),desc:t<MAXT?it.desc+(t?' Next tier: '+it.tiers[t]+'.':''):it.desc,tags,
-      btn:t>=MAXT?'<span class="tag good">Maxed</span>':`<button class="btn ${can?'primary':''}" data-act="buy" data-id="${it.k}" ${can?'':'disabled'}>${t?'Upgrade to '+ROMAN[t+1]:'Buy'}</button>`})}).join('');
+    if(t<mt) tags.push('<span class="tag">'+(t?'Next: ':'')+it.p(t+1)+'</span>');
+    return card({title,cost:t>=mt?(mt>1?'MAX':'OWNED'):fmtCash(next),desc:t<mt?it.desc+(t?' Next tier: '+it.tiers[t]+'.':''):it.desc,tags,
+      btn:t>=mt?'<span class="tag good">'+(mt>1?'Maxed':'Owned')+'</span>':`<button class="btn ${can?'primary':''}" data-act="buy" data-id="${it.k}" ${can?'':'disabled'}>${t?'Upgrade to '+ROMAN[t+1]:'Buy'}</button>`})}).join('');
   setHTML($('#roomPane'),h);
 }
 const MISSIONS=[
@@ -1285,8 +1288,8 @@ const MISSIONS=[
   {id:'m14',t:'Hit a $1M market cap',r:10000,c:()=>(G.stats.peakMc||0)>=1e6},
   {id:'m15',t:'Extract $500K in total',r:25000,c:()=>G.lifetime.extracted>=5e5},
   {id:'m16',t:'Own every room item',r:50000,c:()=>ownedCount()>=SHOP.length},
-  {id:'m17',t:'Max out any room item',r:100000,c:()=>SHOP.some(x=>tierOf(x.k)>=MAXT)},
-  {id:'m18',t:'Max out every room item',r:5000000,c:()=>SHOP.every(x=>tierOf(x.k)>=MAXT)},
+  {id:'m17',t:'Max out any room item',r:100000,c:()=>SHOP.some(x=>(x.max||MAXT)>1&&tierOf(x.k)>=maxT(x))},
+  {id:'m18',t:'Max out every room item',r:5000000,c:()=>SHOP.every(x=>tierOf(x.k)>=maxT(x))},
 ];
 function nextMission(){return MISSIONS.find(m=>!G.done[m.id])}
 function checkMissions(){
@@ -1508,7 +1511,7 @@ function closeCandle(){
 }
 function step(){
   G.tick++;
-  G.heat=Math.max(0,G.heat-D().decay*(1+.15*tierOf('plant'))*(1+.25*tierOf('penthouse')));
+  G.heat=Math.max(0,G.heat-D().decay*(1+.15*tierOf('plant'))*(1+.25*tierOf('penthouse'))*(own('mansion')?1.5:1));
   G.mood=1; G.events=G.events.filter(e=>{e.remain--;G.mood*=e.mood;return e.remain>0});
   if(G.tick%SUBS===0) trenchTick();
   if(!coin||!coin.alive) return;
@@ -1984,7 +1987,8 @@ const Snd={ctx:null,on:false,timer:null,out:null,crk:null,
 /* ================= 3D room ================= */
 const Room=(()=>{
   const ok=!!window.THREE; let qEff='high',lowered=false,fpsAcc=0,fpsN=0,fpsT=0,bootT=performance.now(),titleT=0,titleC=0; let R,S,C,canvas,visible=true,shiftT=0,shiftC=0,flashC=null,flashT=0,rugAnim=null,bust=false;
-  const scr={}, L={}, groups=[], anim={};
+  const scr={}, L={}, groups=[], anim={}, oldRoom=[]; let modern=null, modernOn=null;
+  const tagOld=n0=>{for(let i=n0;i<S.children.length;i++) oldRoom.push(S.children[i])};
   const mouse={x:0,y:0};
   function ctex(w,h,draw){const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');if(draw) draw(g,w,h);const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return{t,cv,g}}
   const glowTex=()=>ctex(128,128,(g,w,h)=>{const gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(.25,'rgba(255,255,255,.45)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,h)}).t;
@@ -2024,6 +2028,64 @@ const Room=(()=>{
     return {g,tex};
   }
 
+  /* ---- Modern penthouse ($10M, one tier): glass wall, balcony, modern interior ---- */
+  function lightWoodTex(){return ctex(512,512,(g,w,h)=>{g.fillStyle='#b9936a';g.fillRect(0,0,w,h);const ph=48;for(let y=0;y<h;y+=ph){const off=(y/ph%3)*150;for(let x=-off;x<w;x+=420){const c=rnd(.9,1.08);g.fillStyle=`rgb(${190*c|0},${152*c|0},${110*c|0})`;g.fillRect(x+1,y+1,418,ph-2);
+    for(let i=0;i<6;i++){g.strokeStyle='rgba(90,60,30,'+rnd(.06,.16)+')';g.lineWidth=rnd(.5,1.2);g.beginPath();const yy=y+rnd(4,ph-4);g.moveTo(x,yy);g.bezierCurveTo(x+140,yy+rnd(-3,3),x+280,yy+rnd(-3,3),x+420,yy);g.stroke()}}}}).t}
+  function artTex(){return ctex(480,320,(g,w,h)=>{g.fillStyle='#efe9df';g.fillRect(0,0,w,h);
+    const blobs=[['#ff4fa3',.28,.42,.26],['#1d2a52',.62,.55,.34],['#ffb36b',.75,.28,.14],['#26a69a',.42,.75,.12]];
+    for(const [c,x,y,r] of blobs){g.fillStyle=c;g.globalAlpha=.92;g.beginPath();g.arc(x*w,y*h,r*h,0,Math.PI*2);g.fill()}
+    g.globalAlpha=1;g.strokeStyle='#14151c';g.lineWidth=5;g.beginPath();g.moveTo(w*.08,h*.82);g.bezierCurveTo(w*.35,h*.2,w*.6,h*.95,w*.92,h*.3);g.stroke()})}
+  function buildModern(){
+    modern=new THREE.Group();modern.visible=false;S.add(modern);const M=modern;
+    anim.lightWood=lightWoodTex();anim.lightWood.wrapS=anim.lightWood.wrapT=THREE.RepeatWrapping;anim.lightWood.repeat.set(2,2);
+    const black=std(0x16171d,{metalness:.7,roughness:.3});
+    // city far below: a big skyline backdrop past the balcony
+    const big=ctex(2048,1024,(g,w,h)=>drawSkyline(g,w,h,6));
+    const city=new THREE.Mesh(new THREE.PlaneGeometry(34,15),new THREE.MeshBasicMaterial({map:big.t,toneMapped:false,fog:false}));city.position.set(.5,2.2,-15);M.add(city);
+    glow(0xff8fc8,9,6,6.5,-14.8,.18,M);
+    // full-height glass wall with slim black mullions
+    const glassWall=new THREE.Mesh(new THREE.PlaneGeometry(8.6,4.4),new THREE.MeshStandardMaterial({color:0xb8c8ff,transparent:true,opacity:.09,roughness:.04,metalness:.95,depthWrite:false}));glassWall.position.set(.9,2.2,-2.6);M.add(glassWall);
+    for(let x=-3.2;x<=5.2;x+=1.2) box(.045,4.4,.07,black,x,2.2,-2.6,M);
+    box(8.6,.06,.12,black,.9,.03,-2.6,M);box(8.6,.08,.12,black,.9,4.36,-2.6,M);
+    // balcony: deck, glass balustrade, loungers, planter
+    box(8.6,.14,2.4,std(0x6f6f76,{roughness:.9}),.9,-.08,-3.85,M);
+    for(let i=0;i<14;i++) box(8.5,.02,.15,std(i%2?0x7a5536:0x6b4a2f,{roughness:.7}),.9,.005,-2.75-i*.165,M);
+    const bal=new THREE.Mesh(new THREE.BoxGeometry(8.6,1.0,.02),new THREE.MeshStandardMaterial({color:0xcfe0ff,transparent:true,opacity:.16,roughness:.05,metalness:.6,depthWrite:false}));bal.position.set(.9,.5,-5.0);M.add(bal);
+    box(8.6,.045,.06,std(0xc9ccd6,{metalness:.9,roughness:.2}),.9,1.02,-5.0,M);
+    for(let x=-3.2;x<=5.2;x+=1.4) box(.03,1.0,.03,std(0xc9ccd6,{metalness:.9,roughness:.2}),x,.5,-4.99,M);
+    const cushion=std(0xf1ede6,{roughness:.9}), frame=std(0x2a2a30,{metalness:.5,roughness:.4});
+    for(const lx of [1.3,2.4]){const lg=new THREE.Group();lg.position.set(lx,0,-3.95);M.add(lg);
+      box(.62,.18,1.5,frame,0,.12,0,lg);box(.56,.08,1.1,cushion,0,.25,.18,lg);
+      const bk=box(.56,.08,.55,cushion,0,.4,-.45,lg);bk.rotation.x=.75;}
+    box(.36,.36,.36,std(0x1e1f26,{roughness:.6}),1.85,.18,-3.3,M);
+    cyl(.02,.02,.002,new THREE.MeshBasicMaterial({color:0xffd7a0}),1.85,.37,-3.3,M);
+    box(.6,.55,.6,std(0x22232a,{roughness:.5}),-1.9,.28,-4.4,M);
+    const tree=std(0x2f6b45,{roughness:.8});for(let i=0;i<7;i++){const lf=new THREE.Mesh(new THREE.SphereGeometry(.28,12,10),tree);lf.position.set(-1.9+rnd(-.2,.2),.85+i*.16,-4.4+rnd(-.2,.2));lf.scale.set(1,.8,1);lf.castShadow=true;M.add(lf)}
+    for(let i=0;i<7;i++) glow(0xffd29a,.35,-2.6+i*1.2,.06,-4.9,.55,M);
+    L.deck=new THREE.PointLight(0xffd29a,0,5,2);L.deck.position.set(1.5,1.2,-3.8);M.add(L.deck);
+    // interior: wood-slat feature wall, low sofa, coffee table, art, pendants
+    const slat=std(0x9a6b45,{roughness:.6});for(let z=-.95;z<=1.5;z+=.16) box(.035,2.7,.07,slat,-3.165,1.35,z,M);
+    const fab=std(0xd6d1c8,{roughness:.95});
+    box(1.0,.3,2.4,fab,-2.62,.15,.25,M);box(.9,.13,1.15,fab,-2.6,.37,-.33,M);box(.9,.13,1.15,fab,-2.6,.37,.83,M);
+    box(.26,.55,2.4,fab,-3.0,.55,.25,M);box(1.0,.42,.2,fab,-2.62,.42,-.95,M);box(1.0,.42,.2,fab,-2.62,.42,1.45,M);
+    box(.12,.32,.32,std(0xff4fa3,{roughness:.9}),-2.84,.6,-.45,M).rotation.y=.2;box(.12,.32,.32,std(0x26a69a,{roughness:.9}),-2.84,.6,.95,M).rotation.y=-.2;
+    const marble=std(0xf2f0ec,{roughness:.25,metalness:.05});cyl(.38,.38,.04,marble,-1.72,.34,.5,M,40);cyl(.05,.12,.32,black,-1.72,.16,.5,M);
+    const art=new THREE.Mesh(new THREE.PlaneGeometry(1.35,.9),std(0xffffff,{map:artTex().t,roughness:.9}));art.rotation.y=Math.PI/2;art.position.set(-3.12,2.05,.25);M.add(art);
+    box(.03,.96,1.41,black,-3.135,2.05,.25,M);
+    for(const px of [-1.3,-.5,.3]){cyl(.004,.004,1.75,black,px,3.5,-1.95,M,6);
+      const gl=new THREE.Mesh(new THREE.SphereGeometry(.085,20,14),new THREE.MeshBasicMaterial({color:0xffe2b8,toneMapped:false}));gl.position.set(px,2.58,-1.95);M.add(gl);glow(0xffc77a,.9,px,2.58,-1.95,.45,M)}
+    L.pend=new THREE.PointLight(0xffd2a0,0,5,2);L.pend.position.set(-.5,2.4,-1.8);M.add(L.pend);
+  }
+  function applyModern(on){
+    if(!modern||on===modernOn) return; modernOn=on;
+    modern.visible=on; oldRoom.forEach(o=>o.visible=!on);
+    anim.floor.material.map=on?anim.lightWood:anim.woodMap; anim.floor.material.roughness=on?.4:.55; anim.floor.material.needsUpdate=true;
+    anim.leftMat.color.set(on?0x1f2127:0x241f3c);
+    anim.deskMat.color.set(on?0xece8e1:0x3b2a24); anim.drawerMat.color.set(on?0xdcd6cc:0x2f2420);
+    L.amb.color.set(on?0x8a90b8:0x3a3468); L.amb.intensity=on?.75:.55; L.hemi.intensity=on?.6:.45; L.moon.intensity=on?.7:.45;
+    L.pend.intensity=on?1.1:0; L.deck.intensity=on?.8:0;
+    S.background.set(on?0x0b0e1e:0x07080f); S.fog.color.set(on?0x0b0e1e:0x07080f); S.fog.far=on?40:20;
+  }
   function init(){
     if(!ok){document.body.style.background='radial-gradient(120% 90% at 40% 40%,#2b2646,#090b13)';return}
     canvas=$('#scene');
@@ -2045,13 +2107,14 @@ const Room=(()=>{
 
     // room shell
     const wt=woodTex();wt.wrapS=wt.wrapT=THREE.RepeatWrapping;wt.repeat.set(2.4,2.4);
-    const floor=new THREE.Mesh(new THREE.PlaneGeometry(10,10),std(0xffffff,{map:wt,roughness:.55}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;S.add(floor);
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(10,10),std(0xffffff,{map:wt,roughness:.55}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;S.add(floor);anim.floor=floor;anim.woodMap=wt;
     const wallMat=std(0x2b2646,{roughness:.95});
-    const back=new THREE.Mesh(new THREE.PlaneGeometry(10,4.4),wallMat);back.position.set(0,2.2,-2.6);back.receiveShadow=true;S.add(back);
-    const left=new THREE.Mesh(new THREE.PlaneGeometry(10,4.4),std(0x241f3c,{roughness:.95}));left.rotation.y=Math.PI/2;left.position.set(-3.2,2.2,0);left.receiveShadow=true;S.add(left);
-    box(10,.12,.03,std(0x1a1630),0,.06,-2.585);box(.03,.12,10,std(0x1a1630),-3.185,.06,0);
+    const back=new THREE.Mesh(new THREE.PlaneGeometry(10,4.4),wallMat);back.position.set(0,2.2,-2.6);back.receiveShadow=true;S.add(back);oldRoom.push(back);
+    const left=new THREE.Mesh(new THREE.PlaneGeometry(10,4.4),std(0x241f3c,{roughness:.95}));left.rotation.y=Math.PI/2;left.position.set(-3.2,2.2,0);left.receiveShadow=true;S.add(left);anim.leftMat=left.material;
+    oldRoom.push(box(10,.12,.03,std(0x1a1630),0,.06,-2.585));box(.03,.12,10,std(0x1a1630),-3.185,.06,0);
 
     // window
+    const nWin=S.children.length;
     const sk=ctex(1024,768,(g,w,h)=>drawSkyline(g,w,h,false));scr.sky=sk;
     const view=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.5),new THREE.MeshBasicMaterial({map:sk.t,toneMapped:false}));view.position.set(1.55,1.95,-2.592);S.add(view);
     const fm=std(0x3a3458,{roughness:.6});
@@ -2069,12 +2132,13 @@ const Room=(()=>{
     const cm=std(0x5a3f86,{roughness:.9,side:THREE.DoubleSide});
     for(const sx of [.38,2.72]){const cg=new THREE.PlaneGeometry(.42,2.1,24,1);const p=cg.attributes.position;for(let i=0;i<p.count;i++) p.setZ(i,Math.sin(p.getX(i)*38)*.035);cg.computeVertexNormals();const cu=new THREE.Mesh(cg,cm);cu.position.set(sx,1.9,-2.5);cu.castShadow=true;S.add(cu)}
     box(2.9,.03,.03,std(0x1a1630,{metalness:.6}),1.55,2.96,-2.5);
+    tagOld(nWin);
 
     // desk
-    const deskMat=std(0x3b2a24,{roughness:.55});const metal=std(0x111219,{metalness:.6,roughness:.4});
+    const deskMat=std(0x3b2a24,{roughness:.55});anim.deskMat=deskMat;const metal=std(0x111219,{metalness:.6,roughness:.4});
     box(2.6,.07,.95,deskMat,-.5,.92,-2.1);
     for(const [lx,lz] of [[-1.72,-2.5],[.72,-2.5],[-1.72,-1.7],[.72,-1.7]]) box(.06,.9,.06,metal,lx,.45,lz);
-    box(.5,.55,.8,std(0x2f2420,{roughness:.6}),.42,.6,-2.1);
+    anim.drawerMat=std(0x2f2420,{roughness:.6});box(.5,.55,.8,anim.drawerMat,.42,.6,-2.1);
     // mousepad + keyboard + mouse
     const pad=box(1.3,.006,.42,std(0x15121f,{roughness:.9}),-.45,.957,-1.86);
     box(1.3,.004,.005,new THREE.MeshBasicMaterial({color:0xff4fa3}),-.45,.958,-1.65);
@@ -2110,19 +2174,23 @@ const Room=(()=>{
     // the rug (literal)
     const rugM=new THREE.Mesh(new THREE.CircleGeometry(1.05,64),std(0xffffff,{map:rugTex(),roughness:1}));rugM.rotation.x=-Math.PI/2;rugM.position.set(-.5,.006,-1.05);rugM.receiveShadow=true;S.add(rugM);anim.rug=rugM;
     // bed
+    const nBed=S.children.length;
     box(1.15,.3,2.05,std(0x2a2236,{roughness:.7}),-2.55,.15,.25);
     box(1.08,.17,1.98,std(0xe5ddf0,{roughness:.9}),-2.55,.385,.25);
     box(1.1,.07,1.3,std(0x5b4a8a,{roughness:.95}),-2.55,.5,.58);
     box(.5,.11,.32,std(0xf4effa,{roughness:.95}),-2.55,.52,-.5);
     box(1.15,.7,.08,std(0x2a2236,{roughness:.7}),-2.55,.65,-.82);
+    tagOld(nBed);
     // shelves + books
     const sh=std(0x3b2a24,{roughness:.6});
     for(const y of [1.75,2.2]) box(.24,.03,1.3,sh,-3.07,y,-1.2);
     let z=-1.75;const bc=[0xff4fa3,0x5aa9ff,0xffb36b,0x8ee6b8,0xb06bff,0xe5ddf0,0x26a69a];
     while(z<-1.0){const hh=rnd(.14,.24),ww=rnd(.03,.06);box(.16,hh,ww,std(pick(bc),{roughness:.8}),-3.06,1.765+hh/2,z+ww/2);z+=ww+.006}
     // posters
+    const nPost=S.children.length;
     const p1=posterTex('HODL','since block 0','#3a1d5a','#ff4fa3');const pm1=new THREE.Mesh(new THREE.PlaneGeometry(.55,.77),std(0xffffff,{map:p1.t,roughness:.9}));pm1.rotation.y=Math.PI/2;pm1.position.set(-3.18,2.2,.3);S.add(pm1);
     const p2=posterTex('WAGMI','(we will not)','#0d2a3a','#5aa9ff');const pm2=new THREE.Mesh(new THREE.PlaneGeometry(.45,.63),std(0xffffff,{map:p2.t,roughness:.9}));pm2.rotation.y=Math.PI/2;pm2.position.set(-3.18,2.05,1.05);S.add(pm2);
+    tagOld(nPost);
     // dust
     const DN=160, dp=new Float32Array(DN*3);for(let i=0;i<DN;i++) dp.set([rnd(-1.6,1.4),rnd(.4,2.6),rnd(-2.4,-.4)],i*3);
     const dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.BufferAttribute(dp,3));
@@ -2174,6 +2242,7 @@ const Room=(()=>{
     for(let r=0;r<2;r++) for(let i=0;i<4;i++) cyl(.025,.025,.09,new THREE.MeshBasicMaterial({color:[0xff4fa3,0x8ee6b8,0xffb36b,0xb06bff][i],toneMapped:false}),1.92+i*.09,.18+r*.2,-2.1,gr,10);
     glow(0x4fe0ff,.9,2.05,.33,-2.04,.35,gr);
     // penthouse handled via skyline redraw
+    buildModern();
 
     // HUD interaction
     window.addEventListener('pointermove',e=>{if(e.pointerType==='touch') return;mouse.x=e.clientX/window.innerWidth-.5;mouse.y=e.clientY/window.innerHeight-.5});
@@ -2191,8 +2260,8 @@ const Room=(()=>{
   function resize(){if(!R) return;VW=Math.max(10,window.innerWidth);VH=Math.max(10,window.innerHeight);R.setSize(VW,VH,false);C.aspect=VW/VH;C.fov=VW/VH<.8?62:VW/VH<1.2?50:38;applyView()}
   function applyView(){if(Math.abs(shiftC)<.5) C.clearViewOffset(); else C.setViewOffset(VW,VH,shiftC,0,VW,VH);C.updateProjectionMatrix()}
   let skyRich=null;
-  function hud(){const n=SHOP.reduce((a,x)=>a+tierOf(x.k),0);$('#roomLevel').textContent='ROOM '+n+'/'+(SHOP.length*MAXT);
-    let nx=null,np=Infinity;SHOP.forEach(x=>{const t=tierOf(x.k);if(t<MAXT){const p=priceFor(x,t+1);if(p<np){np=p;nx=x}}});
+  function hud(){const n=SHOP.reduce((a,x)=>a+tierOf(x.k),0);$('#roomLevel').textContent='ROOM '+n+'/'+TOTAL_T();
+    let nx=null,np=Infinity;SHOP.forEach(x=>{const t=tierOf(x.k);if(t<maxT(x)){const p=priceFor(x,t+1);if(p<np){np=p;nx=x}}});
     $('#roomNext').textContent=nx?(G.cash>=np?'Can buy: ':'Next: ')+nx.name+(tierOf(nx.k)?' '+ROMAN[tierOf(nx.k)+1]:'')+' '+fmtUSD(np):'Room maxed out'}
   function apply(justBought){
     hud(); if(!ok||!S) return;
@@ -2208,6 +2277,7 @@ const Room=(()=>{
     anim.neonTier=T('neon'); drawNeon();
     if(justBought){flashC=0xffd36b;flashT=.7}
     if(anim.chairMat){if(own('chair')){anim.chairMat.color.set([0,0xc9a14a,0xd99a8a,0xd8dbe2,0xbfefff,0x1a1610][T('chair')]);anim.chairMat.metalness=.85;anim.chairMat.roughness=T('chair')>=4?.15:.28}else{anim.chairMat.color.set(0x2a2440);anim.chairMat.metalness=.05;anim.chairMat.roughness=.6}}
+    applyModern(own('mansion'));
     const rich=T('penthouse');if(scr.sky&&rich!==skyRich){skyRich=rich;drawSkyline(scr.sky.g,1024,768,rich);scr.sky.t.needsUpdate=true}
   }
   function drawNeon(){if(!scr.neon) return;const g=scr.neon.g,w=512,h=160;g.clearRect(0,0,w,h);const txt=coin&&coin.alive?'$'+coin.ticker:'RUG ROOM';
@@ -2316,7 +2386,7 @@ function loop(t){
    - "web":    self-hosted (Cloudflare Pages Functions + D1) at /api/*, username + password
    - "local":  neither available, progress stays on this device */
 const PKEYS=['cash','peakCash','heat','trust','alias','aliasN','lifetime','shame','profile','blacklisted','diff','owned','done','stats','savedAt'];
-const LB_TABS=[['peak','Richest',v=>fmtUSD(v)],['extracted','Extracted',v=>fmtUSD(v)],['peakMc','Biggest coin',v=>fmtUSD(v)],['rugs','Rugs',v=>Math.round(v).toLocaleString('en-GB')],['tiers','Room',v=>Math.round(v)+'/'+(SHOP.length*MAXT)]];
+const LB_TABS=[['peak','Richest',v=>fmtUSD(v)],['extracted','Extracted',v=>fmtUSD(v)],['peakMc','Biggest coin',v=>fmtUSD(v)],['rugs','Rugs',v=>Math.round(v).toLocaleString('en-GB')],['tiers','Room',v=>Math.round(v)+'/'+TOTAL_T()]];
 let lbTab='peak', obOpen=false;
 var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,lastSync:0,status:'local',token:null,webUser:null,_t:null,_chain:Promise.resolve(),_poll:null,
   async init(){
@@ -2573,7 +2643,7 @@ function renderTitle(){
   $('#tVer').textContent='v'+VERSION;
   const card=$('#tCard');
   if(G.profile){card.hidden=false;
-    card.innerHTML=`<span class="av">${esc((G.profile&&G.profile.avatar)||'🦊')}</span><div><b>${esc(G.alias)}</b><span>${fmtCash(G.cash)} · ${G.lifetime.launched} coins · room ${SHOP.reduce((a,x)=>a+tierOf(x.k),0)}/${SHOP.length*MAXT}${coin&&coin.alive?' · $'+esc(coin.ticker)+' live':''}</span></div>`;
+    card.innerHTML=`<span class="av">${esc((G.profile&&G.profile.avatar)||'🦊')}</span><div><b>${esc(G.alias)}</b><span>${fmtCash(G.cash)} · ${G.lifetime.launched} coins · room ${SHOP.reduce((a,x)=>a+tierOf(x.k),0)}/${TOTAL_T()}${coin&&coin.alive?' · $'+esc(coin.ticker)+' live':''}</span></div>`;
     $('#tPlay').textContent='Continue'}
   else {card.hidden=true;$('#tPlay').textContent='Play'}
   const [t]=syncLabel(); $('#tSync').textContent=Cloud.mode==='claude'||Cloud.mode==='web'?t:'';
