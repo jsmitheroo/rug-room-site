@@ -429,6 +429,16 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .tfrow{display:flex;gap:5px;align-items:center}.tfrow span{margin-left:auto;font:500 10.5px var(--f-mono);color:var(--muted)}
 .hrow{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-top:1px solid rgba(255,255,255,.045)}.hrow:first-child{border-top:0}
 .hs{font:700 9.5px var(--f-mono);letter-spacing:.06em;color:var(--muted)}
+.cchat{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:rgba(5,6,12,.35);max-height:210px;overflow:hidden}
+.cm{font-size:12px;line-height:1.35;display:flex;gap:6px;min-width:0}.cm b{color:#b9bfd6;font-weight:600;flex:none}.cm span{color:#c4c9da;overflow-wrap:anywhere}
+.cm.up span{color:#7fe0d4}.cm.down span{color:#ff9a98}.cm.warn span{color:#ffd08a}
+.mcoins{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mcoin{display:grid;grid-template-columns:auto 1fr auto;gap:2px 6px;align-items:center;text-align:left;padding:8px 10px;border-radius:10px;border:1px solid var(--line2);background:rgba(20,24,40,.8);color:var(--fg);cursor:pointer;font:inherit}
+.mcoin.on{border-color:rgba(255,79,163,.6);background:rgba(255,79,163,.12)}.mcoin b{font-size:12.5px}.mcoin>span:not(.mce){font:700 11.5px var(--f-mono)}
+.mcoin svg{grid-column:1/-1;width:100%;height:22px}.mcoin small{grid-column:1/-1;font-size:10.5px;color:var(--muted);line-height:1.3}
+.stylebox{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:rgba(20,24,40,.8)}
+.srow{display:flex;align-items:center;gap:10px}.srow>span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);width:44px;flex:none}
+.sw8{display:flex;gap:6px;flex-wrap:wrap}.swc{width:26px;height:26px;border-radius:50%;border:2px solid rgba(255,255,255,.15);cursor:pointer;padding:0}.swc.on{border-color:#fff}
 .devnav{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;flex:none}
 .devnav button{flex:none;font:600 11.5px var(--f-ui);letter-spacing:.06em;text-transform:uppercase;padding:6px 11px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted);cursor:pointer}
 .devnav button.on{background:rgba(255,79,163,.16);border-color:rgba(255,79,163,.5);color:#ffd1e8}
@@ -713,7 +723,7 @@ const ownedCount=()=>SHOP.filter(x=>own(x.k)).length;
 function runSnap(trim){
   let c=(coin&&coin.alive)?coin:null;
   if(c&&trim){c=Object.assign({},c,{candles:c.candles.slice(-trim),trades:(c.trades||[]).slice(-40),recent:(c.recent||[]).slice(-40),markers:(c.markers||[]).slice(-40)})}
-  return {v:1,coin:c,tr:{coins:TR.coins.map(r=>{const o=Object.assign({},r);delete o.c;return o}),pnl:TR.pnl},aid,at:G.savedAt||Date.now()};
+  return {v:1,coin:c,tr:{coins:TR.coins.map(r=>{const o=Object.assign({},r);delete o.c;delete o.chat;return o}),pnl:TR.pnl},aid,at:G.savedAt||Date.now()};
 }
 let switching=false; // true while reloading onto a newer save from another device: never write the old state back
 function saveRun(){
@@ -743,7 +753,7 @@ document.addEventListener('visibilitychange',()=>{
   // back after a while: grab anything newer from another device
   else if(hiddenAt&&Date.now()-hiddenAt>20000&&typeof Cloud!=='undefined'&&Cloud.canSync()) Cloud.pull();
 });
-function writeLocal(){try{localStorage.setItem('rugroom.v1',JSON.stringify({cash:G.cash,peakCash:G.peakCash,heat:G.heat,trust:G.trust,alias:G.alias,aliasN:G.aliasN,lifetime:G.lifetime,shame:G.shame,profile:G.profile,blacklisted:G.blacklisted,diff:G.diff,owned:G.owned,done:G.done,stats:G.stats,trades:G.trades,mine:G.mine,savedAt:G.savedAt}))}catch(e){}}
+function writeLocal(){try{localStorage.setItem('rugroom.v1',JSON.stringify({cash:G.cash,peakCash:G.peakCash,heat:G.heat,trust:G.trust,alias:G.alias,aliasN:G.aliasN,lifetime:G.lifetime,shame:G.shame,profile:G.profile,blacklisted:G.blacklisted,diff:G.diff,owned:G.owned,done:G.done,stats:G.stats,trades:G.trades,mine:G.mine,copy:G.copy,custom:G.custom,savedAt:G.savedAt}))}catch(e){}}
 function save(){if(switching) return;G.savedAt=Date.now();writeLocal();if(typeof Cloud!=='undefined') Cloud.queue()}
 let coin=null, aid=0, titleOn=true;
 
@@ -1293,11 +1303,22 @@ function buyItem(k){
   renderAll();
 }
 function itemSpent(it){let v=0;for(let i=1;i<=tierOf(it.k);i++) v+=priceFor(it,i);return v}
+const WALLS=[['Lofi purple','#2b2646'],['Midnight','#1c2333'],['Charcoal','#2a2b30'],['Forest','#1f3329'],['Burgundy','#3a1f28'],['Sand','#5a4a3c'],['Ice','#3c4a5c']];
+const FLOORS=[['Dark oak','wood'],['Light oak','light'],['Concrete','concrete'],['Black','black']];
+const NEONS=[['Pink','#ff4fa3'],['Cyan','#4fe0ff'],['Purple','#b06bff'],['Gold','#ffc93d'],['Green','#39ff88'],['Red','#ff4545']];
+function custom(){if(!G.custom||typeof G.custom!=='object') G.custom={};return G.custom}
+function setStyle(kind,v){custom()[kind]=v;save();Room.apply();renderRoomShop()}
 function renderRoomShop(){
   const n=SHOP.filter(x=>own(x.k)).length, maxed=SHOP.filter(x=>tierOf(x.k)>=maxT(x)).length, val=SHOP.reduce((a,x)=>a+itemSpent(x),0);
   let h=`<div class="pos"><div class="kpi"><label>Items owned</label><b>${n} / ${SHOP.length}</b></div><div class="kpi"><label>Room value</label><b>${fmtUSD(val)}</b></div>
     <div class="kpi"><label>Maxed out</label><b>${maxed} / ${SHOP.length}</b></div><div class="kpi"><label>Total tiers</label><b>${SHOP.reduce((a,x)=>a+tierOf(x.k),0)} / ${TOTAL_T()}</b></div></div>
     <div class="caught">Most items have 5 tiers. Each tier costs 5× more and makes the perk stronger. Tier V costs 600× the first.</div>`;
+  const cu=custom();
+  h+=`<div class="sec">Style</div><div class="stylebox">
+    <div class="srow"><span>Walls</span><div class="sw8">${WALLS.map(([n,c])=>`<button class="swc ${(cu.wall||'#2b2646')===c?'on':''}" style="background:${c}" title="${n}" data-act="style" data-id="wall" data-v="${c}"></button>`).join('')}</div></div>
+    <div class="srow"><span>Floor</span><div class="sw8">${FLOORS.map(([n,k])=>`<button class="chipb ${(cu.floor||'wood')===k?'on':''}" data-act="style" data-id="floor" data-v="${k}">${n}</button>`).join('')}</div></div>
+    <div class="srow"><span>Neon</span><div class="sw8">${NEONS.map(([n,c])=>`<button class="swc ${(cu.neon||'')===c?'on':''}" style="background:${c};box-shadow:0 0 8px ${c}" title="${n}" data-act="style" data-id="neon" data-v="${c}"></button>`).join('')}<button class="chipb ${!cu.neon?'on':''}" data-act="style" data-id="neon" data-v="">Auto</button></div></div>
+  </div><div class="caught">Wall and floor colours apply to the bedroom; the penthouse keeps its own finishes. Neon applies everywhere.</div>`;
   h+=`<div class="sec">Upgrades</div>`;
   h+=SHOP.map(it=>{const mt=maxT(it), t=tierOf(it.k), next=t<mt?priceFor(it,t+1):0, can=t<mt&&G.cash>=next;
     const pips='<span class="pips">'+Array.from({length:mt},(_,i)=>`<i class="${i<t?'on':''}"></i>`).join('')+'</span>';
@@ -1350,18 +1371,39 @@ const RIGS=[
   {k:'hydro',n:'Hydro data centre',e:'🌊',price:1000000000,rate:15000000,d:'Cheap power from a dam. Printing.'},
 ];
 const OFFLINE_RATE=.15, OFFLINE_CAP=24*3600*1000;
+const MINE_UPS=[
+  {k:'oc',n:'Overclock',e:'⚡',per:.10,price:40000,d:'Push every chip harder.'},
+  {k:'cool',n:'Liquid cooling',e:'❄️',per:.15,price:250000,d:'Cooler rigs run faster for longer.'},
+  {k:'power',n:'Cheap power deal',e:'🔌',per:.20,price:1500000,d:'Lock in a cheap electricity contract.'},
+];
+const MINE_COINS=[
+  {k:'btc',n:'Bitcoin',e:'🟠',base:1.0,vol:.03,d:'Steady.'},
+  {k:'eth',n:'Ethereum',e:'🔷',base:1.08,vol:.06,d:'A bit more swing.'},
+  {k:'doge',n:'Dogecoin',e:'🐶',base:1.15,vol:.14,d:'Wild swings.'},
+  {k:'rug',n:'RUGCOIN',e:'🟣',base:1.3,vol:.3,d:'Pays the most on average. Can also pay almost nothing.'},
+];
+const MC={}; MINE_COINS.forEach(c=>MC[c.k]={m:c.base,hist:Array.from({length:30},()=>c.base)});
+let mcTickAt=0;
+function mineCoinsTick(){const now=Date.now();if(now-mcTickAt<20000) return;mcTickAt=now;
+  MINE_COINS.forEach(c=>{const s=MC[c.k];s.m=Math.max(.05,s.m+(c.base-s.m)*.15+gauss()*c.vol*c.base);s.hist.push(s.m);if(s.hist.length>30) s.hist.shift()})}
+const upLvl=k=>(mineState().ups||{})[k]|0;
+const upPrice=u=>Math.round(u.price*Math.pow(4,upLvl(u.k)));
+const upMult=()=>MINE_UPS.reduce((a,u)=>a*(1+u.per*upLvl(u.k)),1);
+const mineCoin=()=>MINE_COINS.find(c=>c.k===(mineState().coin||'btc'))||MINE_COINS[0];
 function mineState(){if(!G.mine||typeof G.mine!=='object') G.mine={rigs:{},last:0,total:0};if(!G.mine.rigs) G.mine.rigs={};return G.mine}
 const rigCount=k=>mineState().rigs[k]|0;
 const rigPrice=r=>Math.round(r.price*Math.pow(1.15,rigCount(r.k)));
-function mineRate(){return RIGS.reduce((a,r)=>a+r.rate*rigCount(r.k),0)} // $ per minute online
+function baseRate(){return RIGS.reduce((a,r)=>a+r.rate*rigCount(r.k),0)}
+function mineRate(offline){const c=mineCoin();return baseRate()*upMult()*(offline?c.base:MC[c.k].m)} // $ per minute
 function mineLevel(){let lv=0;RIGS.forEach((r,i)=>{if(rigCount(r.k)) lv=i+1});return lv}
 let mineSaveAt=0;
 function mineTick(){
+  mineCoinsTick();
   const m=mineState(), now=Date.now(), rate=mineRate();
   if(!m.last||!rate){m.last=now;return}
   const gap=now-m.last; m.last=now; if(gap<=0) return;
   if(gap>30000){ // you were away: offline rate, capped
-    const earn=rate/60000*Math.min(gap,OFFLINE_CAP)*OFFLINE_RATE;
+    const earn=mineRate(true)/60000*Math.min(gap,OFFLINE_CAP)*OFFLINE_RATE;
     if(earn>=1){G.cash+=earn;m.total+=earn;st('mined',earn);save();
       const hrs=gap/3600000, away=hrs>=1?(hrs>=24?'over a day':Math.floor(hrs)+'h '+Math.round((hrs%1)*60)+'m'):Math.round(gap/60000)+' min';
       if($('#overlay').hidden&&!obOpen) openModal(`<div class="kick">WELCOME BACK</div><h3>Your rigs mined ${fmtUSD(earn)}</h3><p>You were away ${away}. Rigs keep mining at ${Math.round(OFFLINE_RATE*100)}% of their normal rate while you're gone${gap>OFFLINE_CAP?' (up to 24 hours)':''}.</p><div class="acts"><button class="btn primary" data-act="ok">Nice</button></div>`);
@@ -1370,6 +1412,9 @@ function mineTick(){
   const earn=rate/60000*gap; G.cash+=earn; m.total+=earn; st('mined',earn);
   if(now-mineSaveAt>30000){mineSaveAt=now;save()}
 }
+function buyUp(k){const u=MINE_UPS.find(x=>x.k===k);if(!u) return;const lv=upLvl(k);if(lv>=5) return;const price=upPrice(u);
+  if(G.cash<price) return toast('Not enough cash','bad');mineTick();G.cash-=price;const m=mineState();if(!m.ups) m.ups={};m.ups[k]=lv+1;save();Snd.fx('buy');toast(u.n+' level '+(lv+1)+'. Mining +'+Math.round(u.per*100)+'%','good');renderAll()}
+function setMineCoin(k){mineTick();mineState().coin=k;save();toast('Rigs now mining '+MINE_COINS.find(c=>c.k===k).n,'good');renderMine()}
 function buyRig(k){
   const r=RIGS.find(x=>x.k===k); if(!r) return; const price=rigPrice(r);
   if(G.cash<price) return toast('Not enough cash for a '+r.n.toLowerCase(),'bad');
@@ -1377,15 +1422,56 @@ function buyRig(k){
   save(); Room.apply(); Snd.fx('buy'); toast(r.n+' installed. +'+fmtUSD(r.rate)+'/min','good'); renderAll();
 }
 function renderMine(){
-  const m=mineState(), rate=mineRate();
-  let h=`<div class="pos"><div class="kpi"><label>Mining (playing)</label><b class="up">${fmtUSD(rate)}/min</b></div><div class="kpi"><label>While away (${Math.round(OFFLINE_RATE*100)}%)</label><b>${fmtUSD(rate*OFFLINE_RATE)}/min</b></div>
+  const m=mineState(), rate=mineRate(), mc=mineCoin();
+  let h=`<div class="pos"><div class="kpi"><label>Mining (playing)</label><b class="up">${fmtUSD(rate)}/min</b></div><div class="kpi"><label>While away (${Math.round(OFFLINE_RATE*100)}%)</label><b>${fmtUSD(mineRate(true)*OFFLINE_RATE)}/min</b></div>
     <div class="kpi"><label>Per hour</label><b>${fmtUSD(rate*60)}</b></div><div class="kpi"><label>Total mined</label><b>${fmtUSD(m.total||0)}</b></div></div>
-    <div class="caught">Rigs mine every second you play. Close the game and they keep going at ${Math.round(OFFLINE_RATE*100)}% speed for up to 24 hours. Each extra rig of the same kind costs 15% more.</div><div class="sec">Rigs</div>`;
+    <div class="caught">Rigs mine every second you play. Close the game and they keep going at ${Math.round(OFFLINE_RATE*100)}% speed for up to 24 hours. Each extra rig of the same kind costs 15% more.</div>
+    <div class="sec">What your rigs mine <span class="mono" style="letter-spacing:0">${mc.e} ${mc.n} ×${MC[mc.k].m.toFixed(2)}</span></div>
+    <div class="mcoins">${MINE_COINS.map(c=>{const st=MC[c.k],on=mc.k===c.k;return `<button class="mcoin ${on?'on':''}" data-act="mcoin" data-id="${c.k}"><span class="mce">${c.e}</span><b>${c.n}</b><span class="${st.m>=c.base?'up':'down'}">×${st.m.toFixed(2)}</span>${sparkSVG(st.hist,false)}<small>${c.d}</small></button>`}).join('')}</div>
+    <div class="caught">Payouts change every 20 seconds. Wilder coins pay more on average but swing harder. Offline earnings use each coin's average rate.</div>
+    <div class="sec">Upgrades <span class="mono" style="letter-spacing:0">×${upMult().toFixed(2)} output</span></div>`;
+  h+=MINE_UPS.map(u=>{const lv=upLvl(u.k),price=upPrice(u),can=lv<5&&G.cash>=price;
+    return card({title:`${u.e} ${u.n}${lv?` <span class="tier">Lv ${lv}</span>`:''}`,cost:lv>=5?'MAX':fmtCash(price),desc:u.d,
+      tags:['<span class="pips">'+[1,2,3,4,5].map(i=>`<i class="${i<=lv?'on':''}"></i>`).join('')+'</span>',`<span class="tag good">+${Math.round(u.per*100)}% per level</span>`],
+      btn:lv>=5?'<span class="tag good">Maxed</span>':`<button class="btn ${can?'primary':''}" data-act="mup" data-id="${u.k}" ${can?'':'disabled'}>${lv?'Upgrade':'Buy'}</button>`})}).join('');
+  h+=`<div class="sec">Rigs</div>`;
   h+=RIGS.map(r=>{const n=rigCount(r.k),price=rigPrice(r),can=G.cash>=price;
     return card({title:`${r.e} ${r.n}${n?` <span class="tier">×${n}</span>`:''}`,cost:fmtCash(price),desc:r.d,
-      tags:[`<span class="tag good">+${fmtUSD(r.rate)}/min</span>`,n?`<span class="tag">making ${fmtUSD(r.rate*n)}/min</span>`:'',`<span class="tag">pays back in ${Math.round(price/r.rate)} min</span>`],
+      tags:[`<span class="tag good">+${fmtUSD(r.rate)}/min base</span>`,n?`<span class="tag">making ${fmtUSD(r.rate*n*upMult()*MC[mc.k].m)}/min</span>`:'',`<span class="tag">pays back in ${Math.round(price/r.rate)} min</span>`],
       btn:`<button class="btn ${can?'primary':''}" data-act="rig" data-id="${r.k}" ${can?'':'disabled'}>${n?'Buy another':'Buy'}</button>`})}).join('');
   setHTML($('#minePane'),h);
+}
+/* ---- Copy trading: pro trader bots; follow one and your account mirrors its buys and sells ---- */
+const BOTS=[
+  {k:'sniper',n:'Sniper Sam',e:'🎯',d:'Snipes brand-new launches in their first minutes. Sells at 2× or cuts at −45%.',pick:r=>!r.grad&&r.age<4,tp:2,sl:.55},
+  {k:'grad',n:'Grad Hunter',e:'🎓',d:'Buys coins that are 60–90% bonded and sells soon after they graduate.',pick:r=>!r.grad&&r.mc>41000&&r.mc<62000,tp:9,sl:.6,gradExit:true},
+  {k:'safe',n:'Safe Sally',e:'🛡️',d:'Only graduated coins with momentum. Small wins, rare losses.',pick:r=>r.grad&&chg(r,6)>4,tp:1.35,sl:.82},
+  {k:'degen',n:'Degen Dave',e:'🎲',d:'Apes into whatever is trending. Huge wins, huge losses.',pick:r=>chg(r,6)>20,tp:4,sl:.4},
+];
+const BOTST={}; BOTS.forEach(b=>BOTST[b.k]={pos:{},trades:0,wins:0,ret:0});
+function copyState(){if(!G.copy||typeof G.copy!=='object') G.copy={bot:null,amt:1000,pos:{}};if(!G.copy.pos) G.copy.pos={};return G.copy}
+function botsTick(){
+  const cp=copyState();
+  for(const b of BOTS){const st=BOTST[b.k];
+    for(const id in st.pos){const r=TR.coins.find(x=>x.id===+id), e=st.pos[id];let close=false;
+      if(!r||!r.alive){close=true;st.ret+=-1}
+      else{const x=r.mc/e.mc;if(x>=b.tp||x<=b.sl||(b.gradExit&&r.grad&&G.tick-(r.gradAt||0)>=2*SUBS)){close=true;st.ret+=x-1;if(x>1) st.wins++}}
+      if(close){st.trades++;delete st.pos[id];
+        if(cp.bot===b.k&&cp.pos[id]){delete cp.pos[id];if(r&&r.alive&&r.units>0){trenchSell(r.id,1);toast('📋 Copied '+b.n+': sold $'+r.ticker,'')}}}}
+    if(Object.keys(st.pos).length<3&&Math.random()<.3){
+      const cands=TR.coins.filter(r=>r.alive&&!st.pos[r.id]&&b.pick(r));
+      if(cands.length){const r=pick(cands);st.pos[r.id]={mc:r.mc,at:G.tick};
+        if(cp.bot===b.k&&!cp.pos[r.id]&&G.cash>=cp.amt){cp.pos[r.id]=1;trenchBuy(r.id,cp.amt);toast('📋 Copied '+b.n+': bought '+fmtUSD(cp.amt)+' of $'+r.ticker,'good')}}}
+  }
+}
+function renderCopy(){
+  const cp=copyState();
+  let h=`<div class="caught">Follow one trader and your account copies every buy (using your quick-buy amount, now <b>${fmtUSD(MK.qb)}</b>) and every sell. Stats are since you opened the game.</div>`;
+  h+=BOTS.map(b=>{const st=BOTST[b.k],on=cp.bot===b.k,wr=st.trades?Math.round(st.wins/st.trades*100):null,avg=st.trades?st.ret/st.trades*100:null,open=Object.keys(st.pos).length;
+    return card({title:`${b.e} ${b.n}${on?' <span class="tier">FOLLOWING · '+fmtUSD(cp.amt)+'</span>':''}`,cost:wr==null?'new':wr+'% wins',desc:b.d,
+      tags:[`<span class="tag">${st.trades} trades</span>`,avg==null?'':`<span class="tag ${avg>=0?'good':'heat'}">avg ${avg>=0?'+':''}${avg.toFixed(0)}%</span>`,`<span class="tag">${open} open</span>`],
+      btn:on?`<button class="btn danger" data-act="copyoff">Unfollow</button>`:`<button class="btn primary" data-act="copyon" data-id="${b.k}">Follow · ${fmtUSD(MK.qb)}/trade</button>`})}).join('');
+  return h;
 }
 /* ---- Market: lots of memecoins; fresh launches, trending, and ones that graduate at $69K ---- */
 const TR={coins:[],pnl:0};
@@ -1414,6 +1500,13 @@ function advance(r,quiet){
   let ch=d*Math.min(1.6,G.mood)+gauss()*(r.grad?.05:.09);
   if(Math.random()<(r.grad?.02:.04)){ch+=rnd(.3,.9);if(!quiet){const pct=Math.round((Math.exp(ch)-1)*100);if(r.units>0){toast('$'+r.ticker+' is pumping +'+pct+'%','good');pip('bags',true)}else if(Math.random()<.3) news('$'+r.ticker+' rips '+pct+'% as a streamer shills it.')}}
   if(!r.grad) r.drift-=.0011;
+  // whales: big wallets ape in or dump, and everyone notices
+  if(!quiet&&r.age>2){const wb=Math.random()<(r.grad?.012:.02),wd=!wb&&r.mc>15000&&Math.random()<.008;
+    if(wb||wd){const pct=wb?rnd(.25,.9):-rnd(.2,.45),usd=r.mc*Math.abs(pct)*.8;ch+=Math.log(1+pct);
+      const msg=(wb?'🐋 Whale aped '+fmtUSD(usd)+' into $':'🐋 Whale dumped '+fmtUSD(usd)+' of $')+r.ticker+' ('+(wb?'+':'')+Math.round(pct*100)+'%)';
+      coinChat(r,wb?'whale_watch':'whale_watch',wb?'big wallet just bought. something is up 👀':'whale exit spotted. careful',wb?'up':'down');
+      const top=MK.sel===r.id||r.units>0||(TR.coins.length&&mkList('trend').slice(0,5).includes(r));
+      if(top){toast(msg,wb?'good':'warn',4500);if(r.units>0) pip('bags',true)} else if(Math.random()<.35) news(msg)}}
   const o=r.mc; r.mc=Math.max(500,r.mc*Math.exp(ch)); r.vol=r.vol*.8+Math.abs(ch)*r.mc*.25;
   {if(!r.c||!r.c.length) r.c=candlesFromHist(r);const w=Math.abs(gauss())*(r.grad?.02:.045);r.c.push({o,c:r.mc,h:Math.max(o,r.mc)*(1+w),l:Math.min(o,r.mc)*(1-w*.8)});if(r.c.length>180) r.c.shift()}
   r.hist.push(r.mc); if(r.hist.length>60) r.hist.shift(); if(r.mc>r.ath) r.ath=r.mc;
@@ -1425,6 +1518,19 @@ function advance(r,quiet){
   if(Math.random()<rugP){
     if(!quiet&&r.units>0&&Math.random()<.15*tierOf('monitor3')){r.rugIn=1;toast('Rug radar: the dev wallet on $'+r.ticker+' is moving. Get out now!','warn');Snd.fx('alarm');return}
     doRug(r,quiet)}
+}
+// per-coin chat: shills, FUD, and real hints (rug rumours, graduation hype)
+const CHAT_NAMES=['degen','ape','moonboi','jeet','chad','anon','wagmi','bagholder','sniper','gm'];
+function coinChat(r,who,text,cls){if(!r.chat) r.chat=[];r.chat.push({w:who,t:text,c:cls||'',at:G.tick});if(r.chat.length>30) r.chat.shift()}
+function chatTick(r){
+  if(!r.alive||!(r.units>0||MK.sel===r.id)||Math.random()>.55) return;
+  const c=chg(r,4), nm=pick(CHAT_NAMES)+'_'+Math.floor(rnd(10,999)), prog=r.mc/GRAD_MC;
+  let t;
+  if(r.rugIn>0||(!r.grad&&r.risk>.03&&Math.random()<.25)) t=pick(['dev wallet just moved??','anyone else see that LP tx','dev sold a chunk. not looking good','this smells like a rug ngl','why is the dev quiet in tg']),coinChat(r,nm,t,'warn');
+  else if(!r.grad&&prog>.75) coinChat(r,nm,pick(['almost bonded 🎓','$69K incoming','graduation soon, load up','raydium here we come']),'up');
+  else if(c>15) coinChat(r,nm,pick(['$'+r.ticker+' to the moon 🚀','send it','we are so early','LFG','who just aped lol','green candles only']),'up');
+  else if(c<-15) coinChat(r,nm,pick(['who is dumping','down bad','jeets everywhere','buying the dip?','its over','paper hands smh']),'down');
+  else coinChat(r,nm,pick(['gm','chart looks clean','holding','what is the play here','dev based?','cto when','memes are the future','nice community']),'');
 }
 function lostOn(r,msg){logTrade(r.fizzled?'died':'rugged',r,0,-(r.cost-r.cost*.06*tierOf('beanbag')));const refund=r.cost*.06*tierOf('beanbag');G.cash+=refund;TR.pnl-=(r.cost-refund);st('tradePnl',-(r.cost-refund));
   toast(msg+' Lost '+fmtUSD(r.cost-refund)+(refund?' (insurance paid '+fmtUSD(refund)+')':'')+'.','bad');pip('bags',true);Room.flash(0xef5350);r.units=0;r.cost=0}
@@ -1442,7 +1548,8 @@ function normCoins(){TR.coins.forEach(r=>{if(!r.c||!r.c.length) r.c=candlesFromH
 function trenchTick(){
   normCoins();
   if(!TR.coins.length) for(let i=0;i<mkCap();i++) TR.coins.push(newCoin(true));
-  TR.coins.forEach(r=>{if(r.alive) advance(r,false); else r.deadFor++});
+  TR.coins.forEach(r=>{if(r.alive){advance(r,false);chatTick(r)} else r.deadFor++});
+  botsTick();
   // clear out the dead and the forgotten (never anything you still hold)
   TR.coins=TR.coins.filter(r=>r.units>0||(r.alive?!(r.grad?false:(r.age>150&&r.mc<6000)):r.deadFor<=6));
   const grads=TR.coins.filter(r=>r.alive&&r.grad).sort((a,b)=>a.mc-b.mc);
@@ -1573,12 +1680,14 @@ function renderTrench(){
       ${r.units>0?`<div class="tr-pos"><span>Holding <b>${fmtUSD(val)}</b></span><span>cost ${fmtUSD(r.cost)}</span><span class="${pl>=0?'up':'down'}">${pl>=0?'+':''}${fmtUSD(pl)} (${(pl/r.cost*100).toFixed(0)}%)</span></div>`:''}
       ${r.alive?`<div class="tr-b"><button class="btn primary" data-act="tbuy" data-id="${r.id}" data-amt="${MK.qb}" ${G.cash<MK.qb?'disabled':''}>Buy ${fmtUSD(MK.qb)}</button><button class="btn" data-act="tcustom" data-id="${r.id}">Custom</button>
         ${r.units>0?`<button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".25">Sell 25%</button><button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".5">50%</button><button class="btn danger" data-act="tsellp" data-id="${r.id}" data-f="1">Sell all</button>`:''}</div>`:''}
+      <div class="sec">Chat</div><div class="cchat">${(r.chat&&r.chat.length)?r.chat.slice(-10).reverse().map(m=>`<div class="cm ${m.c}"><b>${esc(m.w)}</b><span>${esc(m.t)}</span></div>`).join(''):'<div class="caught">Quiet in here. Messages appear while you watch or hold.</div>'}</div>
       ${(G.trades||[]).some(t=>t.id===r.id)?'<div class="sec">Your trades on $'+esc(r.ticker)+'</div>'+tradeRows((G.trades||[]).filter(t=>t.id===r.id).slice(0,10)):''}
       <div class="caught">No trading fees.${r.tax?' This coin has a '+r.tax+'% sell tax.':''}</div>
     </div>`;
   } else {
-    const tabs=[['trend','Trending'],['new','New'],['grad','Graduated']];
+    const tabs=[['trend','Trending'],['new','New'],['grad','Graduated'],['copy','Copy']];
     h+=`<div class="lbtabs mtabs">${tabs.map(([k,l])=>`<button data-act="mktab" data-id="${k}" class="${MK.tab===k?'on':''}">${l}</button>`).join('')}</div>`;
+    if(MK.tab==='copy'){h+=renderCopy();setHTML($('#trenchPane'),h);return}
     const list=mkList(MK.tab);
     h+=list.length?'<div class="mlist">'+list.map(mkRow).join('')+'</div>':'<div class="caught">Nothing here yet. Give it a minute.</div>';
     h+=`<div class="disc">Coins bond toward $69K. Hit it and they graduate: locked liquidity, far fewer rugs. Read the flags before you ape.</div>`;
@@ -2159,7 +2268,9 @@ $('#sheet').addEventListener('click',e=>{
     case 'setq':SET.quality=id;saveSet();Room.setQuality(id);renderSettings();break;
     case 'brag':shareCareer();break;
     case 'tbuy':trenchBuy(+id,+b.dataset.amt);break; case 'tcustom':trenchCustom(+id);break; case 'tsell':trenchSell(+id,1);break;
-    case 'tsellp':trenchSell(+id,+b.dataset.f);break; case 'rig':buyRig(id);break;
+    case 'tsellp':trenchSell(+id,+b.dataset.f);break;
+    case 'copyon':{const cp=copyState();cp.bot=id;cp.amt=MK.qb;cp.pos={};save();toast('Following '+BOTS.find(x=>x.k===id).n+'. Copying with '+fmtUSD(MK.qb)+' per trade.','good');renderTrench();break}
+    case 'copyoff':{const cp=copyState();cp.bot=null;cp.pos={};save();toast('Stopped copy trading.');renderTrench();break} case 'rig':buyRig(id);break; case 'style':setStyle(id,b.dataset.v);break; case 'mup':buyUp(id);break; case 'mcoin':setMineCoin(id);break;
     case 'qb':MK.qb=+id;renderTrench();break; case 'mktab':MK.tab=id;MK.sel=null;renderTrench();$('#sheetBody').scrollTop=0;break;
     case 'mtf':MK.tf=+id;renderTrench();break;
     case 'mopen':MK.sel=+id;renderTrench();$('#sheetBody').scrollTop=0;break; case 'mback':MK.sel=null;renderTrench();break;
@@ -2397,7 +2508,7 @@ const Room=(()=>{
       for(let i=0;i<7;i++) bottle(bx+.1,1.15,bz-.75+i*.25,g,[0x1d4a2a,0x5a2a10,0x3a1424,0x1a3a5a][i%4]);glow(0xffb36b,1.8,bx,1.3,bz,.25,g);
       L.bar=new THREE.PointLight(0xffb36b,0,3,2);L.bar.position.set(bx-.3,1.6,bz);g.add(L.bar)}
     // IV: chandelier + gold supercar on the balcony (marble floor + gold frames in applyModern)
-    {const g=tg('mansion',4);cyl(.006,.006,1.8,gold,-1.75,3.5,.5,g,6);const ring=new THREE.Mesh(new THREE.TorusGeometry(.42,.02,8,40),gold);ring.rotation.x=Math.PI/2;ring.position.set(-1.75,2.6,.5);g.add(ring);
+    {const g=tg('mansion',4);cyl(.006,.006,1.1,gold,-1.75,3.13,.5,g,6);const ring=new THREE.Mesh(new THREE.TorusGeometry(.42,.02,8,40),gold);ring.rotation.x=Math.PI/2;ring.position.set(-1.75,2.6,.5);g.add(ring);
       const ring2=ring.clone();ring2.scale.setScalar(.6);ring2.position.y=2.42;g.add(ring2);
       const cr=new THREE.MeshBasicMaterial({color:0xfff4dc,toneMapped:false});for(let i=0;i<16;i++){const a=i/16*Math.PI*2,r=i%2?.42:.25,y=i%2?2.5:2.32;const d=new THREE.Mesh(new THREE.OctahedronGeometry(.035),cr);d.position.set(-1.75+Math.cos(a)*r,y,.5+Math.sin(a)*r);g.add(d)}
       glow(0xffe2b0,2.4,-1.75,2.45,.5,.45,g);L.chand=new THREE.PointLight(0xffe2b0,0,5,2);L.chand.position.set(-1.75,2.3,.5);g.add(L.chand);
@@ -2420,6 +2531,9 @@ const Room=(()=>{
     anim.marble=ctex(512,512,(g,w,h)=>{g.fillStyle='#d8d4cd';g.fillRect(0,0,w,h);for(let i=0;i<22;i++){g.strokeStyle='rgba(120,115,110,'+rnd(.12,.35)+')';g.lineWidth=rnd(.6,2.2);g.beginPath();let x=rnd(0,w),y=0;g.moveTo(x,y);while(y<h){x+=rnd(-30,30);y+=rnd(20,50);g.lineTo(x,y)}g.stroke()}
       g.strokeStyle='rgba(180,170,160,.5)';g.lineWidth=1;for(let i=0;i<=w;i+=128){g.beginPath();g.moveTo(i,0);g.lineTo(i,h);g.stroke();g.beginPath();g.moveTo(0,i);g.lineTo(w,i);g.stroke()}}).t;
     anim.marble.wrapS=anim.marble.wrapT=THREE.RepeatWrapping;anim.marble.repeat.set(3,3);
+    anim.concreteTex=ctex(512,512,(g,w,h)=>{g.fillStyle='#7d7f86';g.fillRect(0,0,w,h);for(let i=0;i<5000;i++){g.fillStyle='rgba('+(Math.random()<.5?'0,0,0':'255,255,255')+','+rnd(.02,.07)+')';g.fillRect(rnd(0,w),rnd(0,h),rnd(1,3),rnd(1,3))}
+      g.strokeStyle='rgba(40,40,46,.35)';g.lineWidth=2;for(let i=0;i<=w;i+=256){g.beginPath();g.moveTo(i,0);g.lineTo(i,h);g.stroke();g.beginPath();g.moveTo(0,i);g.lineTo(w,i);g.stroke()}}).t;
+    anim.concreteTex.wrapS=anim.concreteTex.wrapT=THREE.RepeatWrapping;anim.concreteTex.repeat.set(2,2);
   }
   function buildRig(){
     const g=new THREE.Group();g.position.set(1.32,0,-2.3);S.add(g);anim.rig=g;g.visible=false;
@@ -2442,7 +2556,7 @@ const Room=(()=>{
     const pent=own('mansion');
     // layout per room: nothing tall in front of the window / glass
     if(anim.plantAnchor) anim.plantAnchor.position.set(pent?2.75:-3.35,0,pent?-2.15:-2.25);
-    if(anim.fridgeAnchor){const fa=anim.fridgeAnchor;if(pent){fa.position.set(3.7,0,.75);fa.rotation.y=-Math.PI/2}else{fa.position.set(T('fridge')>=3?3.25:2.05,0,-2.28);fa.rotation.y=0}}
+    if(anim.fridgeAnchor){const fa=anim.fridgeAnchor;if(pent){fa.position.set(4.62,0,-2.22);fa.rotation.y=0}else{fa.position.set(T('fridge')>=3?3.25:2.05,0,-2.28);fa.rotation.y=0}}
     if(scr.side) scr.side.g.scale.setScalar([1,1,1.08,1.16,1.24,1.32][T('monitor2')]);
     if(scr.third) scr.third.g.scale.setScalar([1,1,1.08,1.16,1.24,1.32][T('monitor3')]);
     if(anim.neonMesh){const nt=T('neon'),sc=[1,1,1.08,1.16,1.24,1.3][nt],nx=-.6-(sc-1)*.35;anim.neonMesh.scale.set(sc,sc,1);anim.neonMesh.position.x=nx;anim.neonGlow.position.x=nx;anim.neonGlow.scale.setScalar(2.2*sc)}
@@ -2460,9 +2574,9 @@ const Room=(()=>{
     const city=new THREE.Mesh(new THREE.PlaneGeometry(34,15),new THREE.MeshBasicMaterial({map:big.t,toneMapped:false,fog:false}));city.position.set(.5,2.2,-15);M.add(city);
     glow(0xff8fc8,9,6,6.5,-14.8,.18,M);
     // full-height glass wall with slim black mullions
-    const glassWall=new THREE.Mesh(new THREE.PlaneGeometry(9.4,4.4),new THREE.MeshStandardMaterial({color:0xb8c8ff,transparent:true,opacity:.09,roughness:.04,metalness:.95,depthWrite:false}));glassWall.position.set(.5,2.2,-2.6);M.add(glassWall);
-    for(let x=-3.9;x<=5.2;x+=1.3) box(.045,4.4,.07,black,x,2.2,-2.6,M);
-    box(9.4,.06,.12,black,.5,.03,-2.6,M);box(9.4,.08,.12,black,.5,4.36,-2.6,M);
+    const glassWall=new THREE.Mesh(new THREE.PlaneGeometry(9.4,8),new THREE.MeshStandardMaterial({color:0xb8c8ff,transparent:true,opacity:.09,roughness:.04,metalness:.95,depthWrite:false}));glassWall.position.set(.5,4,-2.6);M.add(glassWall);
+    for(let x=-3.9;x<=5.2;x+=1.3) box(.045,8,.07,black,x,4,-2.6,M);
+    box(9.4,.06,.12,black,.5,.03,-2.6,M);box(9.4,.1,.14,black,.5,7.96,-2.6,M);box(9.4,.05,.1,black,.5,3.9,-2.6,M);
     // balcony: deck, glass balustrade, loungers, planter
     box(9.4,.14,2.4,std(0x6f6f76,{roughness:.9}),.5,-.08,-3.85,M);
     for(let i=0;i<14;i++) box(9.3,.02,.15,std(i%2?0x7a5536:0x6b4a2f,{roughness:.7}),.5,.005,-2.75-i*.165,M);
@@ -2490,7 +2604,7 @@ const Room=(()=>{
     const marble=std(0xf2f0ec,{roughness:.25,metalness:.05});cyl(.38,.38,.04,marble,-1.72,.34,.5,M,40);cyl(.05,.12,.32,black,-1.72,.16,.5,M);
     const art=new THREE.Mesh(new THREE.PlaneGeometry(1.35,.9),std(0xffffff,{map:artTex().t,roughness:.9}));art.rotation.y=Math.PI/2;art.position.set(-3.105,2.05,.25);M.add(art);
     box(.03,.96,1.41,black,-3.14,2.05,.25,M);
-    for(const px of [-1.3,-.5,.3]){cyl(.004,.004,1.75,black,px,3.5,-1.95,M,6);
+    for(const px of [-1.3,-.5,.3]){const top=px<-.6?3.68:8;cyl(.004,.004,top-2.66,black,px,(top+2.66)/2,-1.95,M,6);
       const gl=new THREE.Mesh(new THREE.SphereGeometry(.085,20,14),new THREE.MeshBasicMaterial({color:0xffe2b8,toneMapped:false}));gl.position.set(px,2.58,-1.95);M.add(gl);glow(0xffc77a,.9,px,2.58,-1.95,.45,M)}
     L.pend=new THREE.PointLight(0xffd2a0,0,5,2);L.pend.position.set(-.5,2.4,-1.8);M.add(L.pend);
     anim.pendGlass=[];M.traverse(o=>{if(o.isMesh&&o.geometry.type==='SphereGeometry'&&o.material.isMeshBasicMaterial&&Math.abs(o.position.y-2.58)<.01) anim.pendGlass.push(o)});
@@ -2510,8 +2624,54 @@ const Room=(()=>{
     const fw=new THREE.Group();M.add(fw);anim.mFw=fw;anim.fw=[];
     for(let i=0;i<7;i++){const sp=glow(pick([0xff4fa3,0x5ad1ff,0xffd36b,0xb06bff,0x8ee6b8]),1,0,0,-13.5,0,fw);anim.fw.push({sp,t:Math.random()*2.5,x:0,y:0})}
   }
+  function buildLoft(){
+    const L2=new THREE.Group();modern.add(L2);
+    const white=std(0xeeebe5,{roughness:.6}), dark=std(0x1b1c22,{roughness:.5,metalness:.3}), oak=std(0xb9936a,{map:anim.lightWood,roughness:.5});
+    const glassM=new THREE.MeshStandardMaterial({color:0xcfe0ff,transparent:true,opacity:.16,roughness:.05,metalness:.6,depthWrite:false});
+    const rail=(w,d,x,z)=>{const g=new THREE.Mesh(new THREE.BoxGeometry(w,1,d),glassM);g.position.set(x,4.4,z);L2.add(g);box(w||.04,.04,d||.04,anim.railMat,x,4.92,z,L2)};
+    // tall left wall for the double-height space
+    anim.tallWall=new THREE.Mesh(new THREE.PlaneGeometry(6.8,3.6),std(0x1f2127,{roughness:.95}));anim.tallWall.rotation.y=Math.PI/2;anim.tallWall.position.set(-3.9,6.2,.8);L2.add(anim.tallWall);
+    box(.22,3.6,7.1,anim.shellMat,-4.02,6.2,.8,L2);box(.24,.06,7.1,std(0x3a3458),-4.02,8.03,.8,L2);
+    // mezzanine slab over the lounge
+    box(3.3,.22,4.9,white,-2.25,3.79,-.15,L2);box(3.3,.24,.03,dark,-2.25,3.79,2.31,L2);box(.03,.24,4.9,dark,-.6,3.79,-.15,L2);
+    const fl=new THREE.Mesh(new THREE.PlaneGeometry(3.3,4.9),oak);fl.rotation.x=-Math.PI/2;fl.position.set(-2.25,3.905,-.15);fl.receiveShadow=true;L2.add(fl);
+    for(const [dx,dz] of [[-3.2,-1.5],[-1.4,-1.5],[-3.2,.9],[-1.4,.9]]) glow(0xfff1d6,.5,dx,3.66,dz,.5,L2); // downlights under the slab
+    rail(.02,3.85,-.6,-.675); rail(3.3,.02,-2.25,2.3);
+    // floating stairs up to the mezzanine
+    for(let i=0;i<13;i++){const x=2.5-i*.24,y=.15+i*.29;box(.26,.06,1.0,oak,x,y,1.75,L2)}
+    const str=new THREE.Mesh(new THREE.BoxGeometry(3.4,.08,.05),dark);str.position.set(1.0,2.0,1.23);str.rotation.z=-Math.atan2(3.75,3.1);L2.add(str);
+    const sg=new THREE.Mesh(new THREE.BoxGeometry(3.5,1,.02),glassM);sg.position.set(1.0,2.4,2.27);sg.rotation.z=-Math.atan2(3.75,3.1);L2.add(sg);
+    // upstairs bedroom
+    const y0=3.905;box(2.1,.25,1.7,dark,-2.85,y0+.13,-1.15,L2);box(1.95,.18,1.6,std(0xf4f1ec,{roughness:.95}),-2.8,y0+.34,-1.15,L2);
+    box(1.0,.07,1.62,std(0x6a7d9a,{roughness:.95}),-2.25,y0+.46,-1.15,L2);for(const pz of [-1.55,-.75]) box(.3,.12,.5,std(0xffffff,{roughness:.95}),-3.6,y0+.5,pz,L2);
+    box(.08,1.0,1.9,oak,-3.86,y0+.55,-1.15,L2);
+    box(.4,.4,.4,oak,-3.6,y0+.2,.0,L2);cyl(.1,.12,.3,white,-3.6,y0+.55,.0,L2);glow(0xffd29a,.7,-3.6,y0+.8,.0,.5,L2);
+    const lf=std(0x2c6b40,{roughness:.8,flatShading:true});cyl(.22,.18,.5,dark,-3.5,y0+.25,1.8,L2);for(let i=0;i<9;i++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(.22,0),lf);b.position.set(-3.5+rnd(-.2,.2),y0+.7+i*.12,1.8+rnd(-.2,.2));b.scale.set(1,.8,1);L2.add(b)}
+    box(.9,.4,.8,std(0x2a2b30,{roughness:.8}),-1.4,y0+.2,1.2,L2);box(.9,.5,.15,std(0x2a2b30,{roughness:.8}),-1.4,y0+.5,1.55,L2);
+    const art=new THREE.Mesh(new THREE.PlaneGeometry(1.8,1.1),std(0xffffff,{map:artTex().t,roughness:.9}));art.rotation.y=Math.PI/2;art.position.set(-3.88,y0+2.0,.4);L2.add(art);
+    // tier III+: sky lounge level over the bar, with a spiral staircase
+    const L3=new THREE.Group();L2.add(L3);anim.loft3=L3;const y3=4.45;
+    box(2.8,.22,2.3,white,3.8,y3-.11,-1.45,L3);const f3=new THREE.Mesh(new THREE.PlaneGeometry(2.8,2.3),oak);f3.rotation.x=-Math.PI/2;f3.position.set(3.8,y3+.005,-1.45);L3.add(f3);
+    const r3=(w,d,x,z)=>{const g=new THREE.Mesh(new THREE.BoxGeometry(w,1,d),glassM);g.position.set(x,y3+.5,z);L3.add(g);box(w||.04,.04,d||.04,anim.railMat,x,y3+1.02,z,L3)};
+    r3(2.1,.02,3.45,-.3); r3(.02,2.3,2.4,-1.45);
+    cyl(.05,.05,y3+.1,dark,4.75,(y3+.1)/2,-.05,L3,12);
+    for(let i=0;i<16;i++){const a=i/16*Math.PI*1.75,st=box(.6,.05,.26,oak,4.75+Math.cos(a)*.32,.2+i*(y3-.2)/16,-.05+Math.sin(a)*.32,L3);st.rotation.y=-a}
+    for(const lx of [3.3,4.4]){box(.7,.35,.7,std(0xf1ede6,{roughness:.9}),lx,y3+.18,-1.7,L3);box(.7,.4,.15,std(0xf1ede6,{roughness:.9}),lx,y3+.45,-2.0,L3)}
+    cyl(.25,.25,.04,marbleMat(),3.85,y3+.42,-1.2,L3,24);cyl(.03,.03,.4,dark,3.85,y3+.2,-1.2,L3);
+    const tel=cyl(.05,.07,.7,dark,2.8,y3+1.1,-2.2,L3);tel.rotation.z=1.0;for(const a of [0,2.1,4.2]){const lg=cyl(.012,.012,.9,dark,2.8+Math.cos(a)*.15,y3+.42,-2.2+Math.sin(a)*.15,L3);lg.rotation.set(Math.sin(a)*.25,0,-Math.cos(a)*.25)}
+    glow(0xb06bff,2.2,3.8,y3+.05,-1.45,.15,L3);
+  }
+  function marbleMat(){return std(0xffffff,{map:anim.marble,roughness:.25})}
+  function applyCustom(){
+    const cu=(typeof G!=='undefined'&&G.custom)||{}, pent=modernOn>0;
+    if(!pent){const w=new THREE.Color(cu.wall||'#2b2646');anim.wallMat.color.copy(w);anim.leftMat.color.copy(w).multiplyScalar(.86);
+      const f=cu.floor||'wood',fm=anim.floor.material;fm.map=f==='light'?anim.lightWood:f==='concrete'?anim.concreteTex:anim.woodMap;fm.color.set(f==='black'?0x3a3a42:0xffffff);fm.roughness=f==='concrete'?.85:.55;fm.needsUpdate=true}
+    else anim.floor.material.color.set(0xffffff);
+    anim.neonCustom=cu.neon||''; drawNeon();
+  }
   function applyModern(tier){
     if(!modern||tier===modernOn) return; modernOn=tier; const on=tier>0;
+    if(anim.loft3) anim.loft3.visible=tier>=3;
     anim.mPool.visible=tier>=2; anim.loungers.visible=tier<4; if(anim.rainMesh) anim.rainMesh.visible=!on; anim.mCove.visible=tier>=3; anim.mFw.visible=tier>=5;
     L.pool.intensity=tier>=2?1:0; L.cove.intensity=tier>=3?.7:0;
     const gold=tier>=4; anim.mullMat.color.set(gold?0xc9a14a:0x16171d); anim.mullMat.metalness=gold?.95:.7; anim.mullMat.roughness=gold?.2:.3;
@@ -2523,7 +2683,8 @@ const Room=(()=>{
     anim.deskMat.color.set(on?0xece8e1:0x3b2a24); anim.drawerMat.color.set(on?0xdcd6cc:0x2f2420);
     L.amb.color.set(on?0x8a90b8:0x3a3468); L.amb.intensity=on?.75:.55; L.hemi.intensity=on?.6:.45; L.moon.intensity=on?.7:.45;
     L.pend.intensity=on?1.1:0; L.deck.intensity=on?.8:0;
-    S.background.set(on?0x0b0e1e:0x07080f); S.fog.color.set(on?0x0b0e1e:0x07080f); S.fog.far=on?40:20;
+    S.background.set(on?0x0b0e1e:0x07080f); S.fog.color.set(on?0x0b0e1e:0x07080f); S.fog.near=on?24:16; S.fog.far=on?70:40;
+    anim.leftCap.visible=!on;
   }
   function init(){
     if(!ok){document.body.style.background='radial-gradient(120% 90% at 40% 40%,#2b2646,#090b13)';return}
@@ -2531,8 +2692,8 @@ const Room=(()=>{
     R=new THREE.WebGLRenderer({canvas,antialias:true,powerPreference:'high-performance'});
     R.setPixelRatio(Math.min(2,window.devicePixelRatio||1));R.outputEncoding=THREE.sRGBEncoding;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.15;
     R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.shadowMap.autoUpdate=true;
-    S=new THREE.Scene();S.background=new THREE.Color(0x07080f);S.fog=new THREE.Fog(0x07080f,9,20);
-    C=new THREE.PerspectiveCamera(40,1,.1,60);
+    S=new THREE.Scene();S.background=new THREE.Color(0x07080f);S.fog=new THREE.Fog(0x07080f,16,40);
+    C=new THREE.PerspectiveCamera(40,1,.1,120);
     GLOW=glowTex();
     try{const env=ctex(1024,512,(g,w,h)=>{const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#141a3a');gr.addColorStop(.45,'#3a2a5a');gr.addColorStop(.55,'#2a1f3a');gr.addColorStop(1,'#120e18');g.fillStyle=gr;g.fillRect(0,0,w,h);
         for(let i=0;i<70;i++){g.fillStyle=pick(['#ffd9a0','#ff9ad0','#9ad8ff','#ffffff']);g.globalAlpha=rnd(.25,.8);g.fillRect(rnd(0,w),rnd(h*.35,h*.6),rnd(6,30),rnd(2,8))}
@@ -2550,10 +2711,17 @@ const Room=(()=>{
 
     // room shell
     const wt=woodTex();wt.wrapS=wt.wrapT=THREE.RepeatWrapping;wt.repeat.set(2.4,2.4);
-    const floor=new THREE.Mesh(new THREE.PlaneGeometry(16,16),std(0xffffff,{map:wt,roughness:.55}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;S.add(floor);anim.floor=floor;anim.woodMap=wt;
+    const floor=new THREE.Mesh(new THREE.PlaneGeometry(9.6,6.8),std(0xffffff,{map:wt,roughness:.55}));floor.rotation.x=-Math.PI/2;floor.position.set(.65,0,.8);floor.receiveShadow=true;S.add(floor);anim.floor=floor;anim.woodMap=wt;
+    anim.slabMat=std(0x15131f,{roughness:.8});const slab=box(9.9,.4,7.1,anim.slabMat,.65,-.201,.8);slab.castShadow=false;
     const wallMat=std(0x2b2646,{roughness:.95});
-    const back=new THREE.Mesh(new THREE.PlaneGeometry(16,4.4),wallMat);back.position.set(0,2.2,-2.6);back.receiveShadow=true;S.add(back);oldRoom.push(back);
-    const left=new THREE.Mesh(new THREE.PlaneGeometry(16,4.4),std(0x241f3c,{roughness:.95}));left.rotation.y=Math.PI/2;left.position.set(-3.2,2.2,0);left.receiveShadow=true;S.add(left);anim.leftMat=left.material;
+    anim.wallMat=wallMat;
+    const back=new THREE.Mesh(new THREE.PlaneGeometry(9.6,4.4),wallMat);back.position.set(.65,2.2,-2.6);back.receiveShadow=true;S.add(back);oldRoom.push(back);
+    const left=new THREE.Mesh(new THREE.PlaneGeometry(6.8,4.4),std(0x241f3c,{roughness:.95}));left.rotation.y=Math.PI/2;left.position.set(-3.2,2.2,.8);left.receiveShadow=true;S.add(left);anim.leftMat=left.material;anim.leftWall=left;
+    anim.shellMat=std(0x1a1726,{roughness:.9});
+    oldRoom.push(box(9.9,4.5,.22,anim.shellMat,.65,2.25,-2.72));                // back wall thickness
+    anim.leftShell=box(.22,4.5,7.1,anim.shellMat,-3.32,2.25,.8);                 // left wall thickness (stays in both rooms)
+    oldRoom.push(box(9.9,.06,.24,std(0x3a3458,{roughness:.6}),.65,4.48,-2.72));  // wall caps
+    anim.leftCap=box(.24,.06,7.1,std(0x3a3458,{roughness:.6}),-3.32,4.48,.8);
     oldRoom.push(box(10,.12,.03,std(0x1a1630),0,.06,-2.585));box(.03,.12,10,std(0x1a1630),-3.185,.06,0);
 
     // window
@@ -2690,6 +2858,7 @@ const Room=(()=>{
     // more space: everything along the left wall (wall, bed, shelves, sofa, art...) moves 0.7 m further out
     {const bb=new THREE.Box3(),c=new THREE.Vector3();const shift=o=>{if(o===anim.plantAnchor||o===anim.fridgeAnchor) return;bb.setFromObject(o);if(bb.isEmpty()) return;bb.getCenter(c);if(c.x<-2.2&&c.z>-2.55) o.position.x-=.7};
       S.children.slice().forEach(o=>{if(o===modern) modern.children.slice().forEach(shift); else shift(o)})}
+    buildLoft();
 
     // HUD interaction
     window.addEventListener('pointermove',e=>{if(e.pointerType==='touch') return;mouse.x=e.clientX/window.innerWidth-.5;mouse.y=e.clientY/window.innerHeight-.5});
@@ -2704,7 +2873,7 @@ const Room=(()=>{
     if(document.fonts&&document.fonts.load) document.fonts.load('40px Monoton').then(drawNeon).catch(()=>{});
   }
   let VW=1,VH=1;
-  function resize(){if(!R) return;VW=Math.max(10,window.innerWidth);VH=Math.max(10,window.innerHeight);R.setSize(VW,VH,false);C.aspect=VW/VH;C.fov=VW/VH<.8?62:VW/VH<1.2?50:38;applyView()}
+  function resize(){if(!R) return;VW=Math.max(10,window.innerWidth);VH=Math.max(10,window.innerHeight);R.setSize(VW,VH,false);C.aspect=VW/VH;C.fov=VW/VH<.8?58:VW/VH<1.2?48:40;applyView()}
   function applyView(){if(Math.abs(shiftC)<.5) C.clearViewOffset(); else C.setViewOffset(VW,VH,shiftC,0,VW,VH);C.updateProjectionMatrix()}
   let skyRich=null;
   function hud(){const n=SHOP.reduce((a,x)=>a+tierOf(x.k),0);$('#roomLevel').textContent='ROOM '+n+'/'+TOTAL_T();
@@ -2724,12 +2893,12 @@ const Room=(()=>{
     anim.neonTier=T('neon'); drawNeon();
     if(justBought){flashC=0xffd36b;flashT=.7}
     if(anim.chairMat){if(own('chair')){anim.chairMat.color.set([0,0xc9a14a,0xd99a8a,0xd8dbe2,0xbfefff,0x1a1610][T('chair')]);anim.chairMat.metalness=.85;anim.chairMat.roughness=T('chair')>=4?.15:.28}else{anim.chairMat.color.set(0x2a2440);anim.chairMat.metalness=.05;anim.chairMat.roughness=.6}}
-    applyTiers(); applyModern(T('mansion'));
+    applyTiers(); applyModern(T('mansion')); applyCustom();
     const rich=T('penthouse');if(scr.sky&&rich!==skyRich){skyRich=rich;drawSkyline(scr.sky.g,1024,768,rich);scr.sky.t.needsUpdate=true}
   }
   function drawNeon(){if(!scr.neon) return;const g=scr.neon.g,w=512,h=160;g.clearRect(0,0,w,h);const txt=coin&&coin.alive?'$'+coin.ticker:'RUG ROOM';
     g.textAlign='center';g.textBaseline='middle';let fs=74;g.font=fs+'px Monoton, "Chakra Petch", sans-serif';while(g.measureText(txt).width>w-40&&fs>30){fs-=4;g.font=fs+'px Monoton, "Chakra Petch", sans-serif'}
-    const nt=anim.neonTier|0;const col=anim.neonRed?'#ff3b3b':nt>=5?'hsl('+((Date.now()/20)%360)+',100%,62%)':['#ff4fa3','#ff4fa3','#4fe0ff','#b06bff','#ffc93d'][nt];
+    const nt=anim.neonTier|0;const col=anim.neonRed?'#ff3b3b':anim.neonCustom?anim.neonCustom:nt>=5?'hsl('+((Date.now()/20)%360)+',100%,62%)':['#ff4fa3','#ff4fa3','#4fe0ff','#b06bff','#ffc93d'][nt];
     for(const [b,a] of [[30,.5],[16,.7],[6,1]]){g.shadowColor=col;g.shadowBlur=b;g.fillStyle=col;g.globalAlpha=a;g.fillText(txt,w/2,h/2+4)}
     g.globalAlpha=1;g.shadowBlur=0;g.fillStyle='#ffe3f1';g.fillText(txt,w/2,h/2+4);scr.neon.t.needsUpdate=true}
   function drawScreens(){
@@ -2815,10 +2984,13 @@ const Room=(()=>{
     // camera
     if(Math.abs(shiftT-shiftC)>.5){shiftC+=(shiftT-shiftC)*Math.min(1,dt*7);applyView()}
     titleC+=(titleT-titleC)*Math.min(1,dt*1.6);
-    const portrait=VW/VH<.8,bx=portrait?2.5:3.5,by=portrait?2.5:2.45,bz=portrait?5.2:4.7, tk=titleC;
+    const portrait=VW/VH<.8, pent=modernOn>0, tk=titleC;
+    const tgt=pent?(portrait?[5.4,7.8,17.5,.9,3.4,-.9]:[8.0,6.4,12.2,.3,3.0,-.9]):(portrait?[4.2,4.4,10.0,-.5,1.5,-1.0]:[5.6,3.8,7.8,-.7,1.35,-1.0]);
+    if(!anim.cam) anim.cam=tgt.slice(); for(let i=0;i<6;i++) anim.cam[i]+=(tgt[i]-anim.cam[i])*Math.min(1,dt*2.2);
+    const [bx,by,bz,lx,ly,lz]=anim.cam;
     const tz=portrait?.15:.9, tx=portrait?.35:.9;
     C.position.set(bx+Math.sin(t*.17)*.06+mouse.x*.6+tk*(Math.sin(t*.11)*tx-tx*.66),by+Math.sin(t*.23)*.03-mouse.y*.3+tk*(portrait?.1:.35),bz+tk*tz);
-    C.lookAt((portrait?-.65:-.85)+mouse.x*.2,portrait?1.15:1.1,portrait?-1.6:-1.5);
+    C.lookAt(lx+mouse.x*.2,ly,lz);
     R.render(S,C);
   }
   return{
@@ -2850,7 +3022,7 @@ function loop(t){
    - "claude": inside claude.ai, the viewer's Claude sign-in + the artifact's own database
    - "web":    self-hosted (Cloudflare Pages Functions + D1) at /api/*, username + password
    - "local":  neither available, progress stays on this device */
-const PKEYS=['cash','peakCash','heat','trust','alias','aliasN','lifetime','shame','profile','blacklisted','diff','owned','done','stats','trades','mine','savedAt'];
+const PKEYS=['cash','peakCash','heat','trust','alias','aliasN','lifetime','shame','profile','blacklisted','diff','owned','done','stats','trades','mine','copy','custom','savedAt'];
 const LB_TABS=[['peak','Richest',v=>fmtUSD(v)],['extracted','Extracted',v=>fmtUSD(v)],['peakMc','Biggest coin',v=>fmtUSD(v)],['rugs','Rugs',v=>Math.round(v).toLocaleString('en-GB')],['tiers','Room',v=>Math.round(v)+'/'+TOTAL_T()]];
 let lbTab='peak', obOpen=false;
 var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,lastSync:0,status:'local',token:null,webUser:null,_t:null,_chain:Promise.resolve(),_poll:null,
