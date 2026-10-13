@@ -1473,34 +1473,37 @@ const BOTS=[
   {k:'degen',n:'Degen Dave',e:'🎲',d:'Apes into whatever is trending. Huge wins, huge losses.',pick:r=>chg(r,6)>20,tp:2.5,sl:.5,skill:.4},
 ];
 const BOTST={}; BOTS.forEach(b=>BOTST[b.k]={pos:{},trades:0,wins:0,ret:0});
-function copyState(){if(!G.copy||typeof G.copy!=='object') G.copy={bot:null,amt:1000,pos:{}};if(!G.copy.pos) G.copy.pos={};return G.copy}
+function copyState(){if(!G.copy||typeof G.copy!=='object') G.copy={bots:[],amts:{},pos:{}};const c=G.copy;if(!c.pos) c.pos={};if(!c.amts) c.amts={};
+  if(!Array.isArray(c.bots)){c.bots=c.bot?[c.bot]:[];if(c.bot) c.amts[c.bot]=c.amt||1000;for(const id in c.pos) if(c.pos[id]===1) c.pos[id]=c.bot;delete c.bot}
+  return c}
+const COPY_SLOTS=2;
 const COPY_FEE=.25, COPY_MAX=Infinity;
 function botsTick(){
   const cp=copyState();
   // copied orders land one tick after the trader's, so you get a slightly worse price than they did
   const q=Array.isArray(cp.q)?cp.q:[]; cp.q=[];
   for(const o of q){const r=TR.coins.find(x=>x.id===o.id);
-    if(o.a==='buy'){if(r&&r.alive&&cp.bot===o.b){const amt=Math.min(cp.amt,COPY_MAX);if(G.cash>=amt){cp.pos[r.id]=1;r.copyFee=1;trenchBuy(r.id,amt);toast('📋 Copied '+o.n+': bought '+fmtUSD(amt)+' of $'+r.ticker,'good')}}}
+    if(o.a==='buy'){if(r&&r.alive&&cp.bots.includes(o.b)&&!(r.units>0)){const amt=Math.min(cp.amts[o.b]||MK.qb,COPY_MAX);if(G.cash>=amt){cp.pos[r.id]=o.b;r.copyFee=1;trenchBuy(r.id,amt);toast('📋 Copied '+o.n+': bought '+fmtUSD(amt)+' of $'+r.ticker,'good')}}}
     else if(r&&r.alive&&r.units>0){trenchSell(r.id,1);toast('📋 Copied '+o.n+': sold $'+r.ticker,'')}}
   for(const b of BOTS){const st=BOTST[b.k];
     for(const id in st.pos){const r=TR.coins.find(x=>x.id===+id), e=st.pos[id];let close=false;
       if(!r||!r.alive){close=true;st.ret+=-1}
       else{const x=r.mc/e.mc;if(x>=b.tp||x<=b.sl||(b.gradExit&&r.grad&&G.tick-(r.gradAt||0)>=2*SUBS)){close=true;st.ret+=x-1;if(x>1) st.wins++}}
       if(close){st.trades++;delete st.pos[id];
-        if(cp.bot===b.k&&cp.pos[id]){delete cp.pos[id];if(r&&r.alive&&r.units>0) cp.q.push({a:'sell',id:r.id,n:b.n})}}}
+        if(cp.pos[id]===b.k){delete cp.pos[id];if(r&&r.alive&&r.units>0) cp.q.push({a:'sell',id:r.id,b:b.k,n:b.n})}}}
     if(Object.keys(st.pos).length<3&&Math.random()<.3){
       const smart=Math.random()<b.skill, cands=TR.coins.filter(r=>r.alive&&!st.pos[r.id]&&(smart?b.pick(r):!r.grad||Math.random()<.3));
       if(cands.length){const r=pick(cands);st.pos[r.id]={mc:r.mc,at:G.tick};
-        if(cp.bot===b.k&&!cp.pos[r.id]&&Object.keys(cp.pos).length<2&&!cp.q.some(o=>o.id===r.id)) cp.q.push({a:'buy',id:r.id,b:b.k,n:b.n})}}
+        if(cp.bots.includes(b.k)&&!cp.pos[r.id]&&Object.values(cp.pos).filter(v=>v===b.k).length<2&&!cp.q.some(o=>o.id===r.id)) cp.q.push({a:'buy',id:r.id,b:b.k,n:b.n})}}
   }
 }
 function renderCopy(){
   const cp=copyState();
-  let h=`<div class="caught">Follow one trader and your account copies their buys (using your quick-buy amount, now <b>${fmtUSD(MK.qb)}</b>) and sells. Copies land a moment after the trader's, you hold at most 2 copied coins at once, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. Stats are since you opened the game.</div>`;
-  h+=BOTS.map(b=>{const st=BOTST[b.k],on=cp.bot===b.k,wr=st.trades?Math.round(st.wins/st.trades*100):null,avg=st.trades?st.ret/st.trades*100:null,open=Object.keys(st.pos).length;
-    return card({title:`${b.e} ${b.n}${on?' <span class="tier">FOLLOWING · '+fmtUSD(cp.amt)+'</span>':''}`,cost:wr==null?'new':wr+'% wins',desc:b.d,
+  let h=`<div class="caught">Follow up to 2 traders and your account copies their buys (each one uses the quick-buy amount you had when you followed them, now <b>${fmtUSD(MK.qb)}</b>) and sells. Copies land a moment after the trader's, you hold at most 2 copied coins per trader, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. Stats are since you opened the game.</div>`;
+  h+=BOTS.map(b=>{const st=BOTST[b.k],on=cp.bots.includes(b.k),full=!on&&cp.bots.length>=COPY_SLOTS,wr=st.trades?Math.round(st.wins/st.trades*100):null,avg=st.trades?st.ret/st.trades*100:null,open=Object.keys(st.pos).length;
+    return card({title:`${b.e} ${b.n}${on?' <span class="tier">FOLLOWING · '+fmtUSD(cp.amts[b.k]||MK.qb)+'</span>':''}`,cost:wr==null?'new':wr+'% wins',desc:b.d,
       tags:[`<span class="tag">${st.trades} trades</span>`,avg==null?'':`<span class="tag ${avg>=0?'good':'heat'}">avg ${avg>=0?'+':''}${avg.toFixed(0)}%</span>`,`<span class="tag">${open} open</span>`],
-      btn:on?`<button class="btn danger" data-act="copyoff">Unfollow</button>`:`<button class="btn primary" data-act="copyon" data-id="${b.k}">Follow · ${fmtUSD(Math.min(MK.qb,COPY_MAX))}/trade</button>`})}).join('');
+      btn:on?`<button class="btn danger" data-act="copyoff" data-id="${b.k}">Unfollow</button>`:`<button class="btn ${full?'':'primary'}" data-act="copyon" data-id="${b.k}" ${full?'disabled':''}>${full?'2 traders max':'Follow · '+fmtUSD(MK.qb)+'/trade'}</button>`})}).join('');
   return h;
 }
 /* ---- Market: lots of memecoins; fresh launches, trending, and ones that graduate at $69K ---- */
@@ -2325,8 +2328,8 @@ $('#sheet').addEventListener('click',e=>{
     case 'brag':shareCareer();break;
     case 'tbuy':trenchBuy(+id,+b.dataset.amt);break; case 'tcustom':trenchCustom(+id);break; case 'tsell':trenchSell(+id,1);break;
     case 'tsellp':trenchSell(+id,+b.dataset.f);break;
-    case 'copyon':{const cp=copyState();cp.bot=id;cp.amt=Math.min(MK.qb,COPY_MAX);cp.pos={};cp.q=[];save();toast('Following '+BOTS.find(x=>x.k===id).n+'. Copying with '+fmtUSD(cp.amt)+' per trade.','good');renderTrench();break}
-    case 'copyoff':{const cp=copyState();cp.bot=null;cp.pos={};cp.q=[];save();toast('Stopped copy trading.');renderTrench();break} case 'rig':buyRig(id);break; case 'style':setStyle(id,b.dataset.v);break; case 'mup':buyUp(id);break; case 'mcoin':setMineCoin(id);break;
+    case 'copyon':{const cp=copyState();if(cp.bots.includes(id)||cp.bots.length>=COPY_SLOTS) break;cp.bots.push(id);cp.amts[id]=MK.qb;save();toast('Following '+BOTS.find(x=>x.k===id).n+'. Copying with '+fmtUSD(MK.qb)+' per trade.','good');renderTrench();break}
+    case 'copyoff':{const cp=copyState();cp.bots=cp.bots.filter(x=>x!==id);for(const k in cp.pos) if(cp.pos[k]===id) delete cp.pos[k];cp.q=(cp.q||[]).filter(o=>o.b!==id);save();toast('Unfollowed '+BOTS.find(x=>x.k===id).n+'.');renderTrench();break} case 'rig':buyRig(id);break; case 'style':setStyle(id,b.dataset.v);break; case 'mup':buyUp(id);break; case 'mcoin':setMineCoin(id);break;
     case 'qb':MK.qb=+id;renderTrench();break; case 'mktab':MK.tab=id;MK.sel=null;renderTrench();$('#sheetBody').scrollTop=0;break;
     case 'mtf':MK.tf=+id;renderTrench();break;
     case 'mopen':MK.sel=+id;renderTrench();$('#sheetBody').scrollTop=0;break; case 'mback':MK.sel=null;renderTrench();break;
