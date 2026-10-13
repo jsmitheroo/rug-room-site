@@ -749,9 +749,9 @@ function loadRun(given){
   sys('Resumed $'+c.ticker+' where you left it. '+c.holders.length+' holders still in.');
 }
 let hiddenAt=0;
-window.addEventListener('pagehide',()=>{saveRun();if(typeof Cloud!=='undefined') Cloud.flush()});
+window.addEventListener('pagehide',()=>{if(G.copy&&typeof G.copy==='object'){G.copy.last=Date.now();writeLocal()}saveRun();if(typeof Cloud!=='undefined') Cloud.flush()});
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){hiddenAt=Date.now();saveRun();if(typeof Cloud!=='undefined') Cloud.flush()}
+  if(document.hidden){hiddenAt=Date.now();if(G.copy&&typeof G.copy==='object'){G.copy.last=Date.now();writeLocal();if(typeof copyChecked!=='undefined') copyChecked=false}saveRun();if(typeof Cloud!=='undefined') Cloud.flush()}
   // back after a while: grab anything newer from another device
   else if(hiddenAt&&Date.now()-hiddenAt>20000&&typeof Cloud!=='undefined'&&Cloud.canSync()) Cloud.pull();
 });
@@ -1291,12 +1291,12 @@ function newAccount(){
   $('#chartEmpty').hidden=false; chatEl.innerHTML=''; Room.reset(); form=randomCoin(); closeModal(); syncSpeed(); closeSheet(); renderAll(true);
   onboarding();
 }
-const roomMissing=()=>SHOP.filter(x=>x.k!=='mansion'&&x.k!=='penthouse'&&!own(x.k));
+const roomMissing=()=>SHOP.filter(x=>x.k!=='mansion'&&x.k!=='penthouse'&&tierOf(x.k)<maxT(x));
 function buyItem(k,ok){
   const it=SHOP.find(x=>x.k===k); if(!it) return; const t=tierOf(k); if(t>=maxT(it)) return;
   const cost=priceFor(it,t+1);
+  if(k==='mansion'&&roomMissing().length) return toast('Max out every room item first (skyline view not needed). Not maxed yet: '+roomMissing().map(x=>x.name).join(', ')+'.','bad');
   if(G.cash<cost) return toast('Not enough cash for '+it.name.toLowerCase()+' tier '+ROMAN[t+1],'bad');
-  if(k==='mansion'&&roomMissing().length) return toast('Buy every room item first (skyline view not needed). Still missing: '+roomMissing().map(x=>x.name).join(', ')+'.','bad');
   const others=SHOP.filter(x=>x.k!=='mansion'&&tierOf(x.k)>0);
   if(k==='mansion'&&others.length&&!ok) return openModal(`<div class="kick">NEW ROOM LEVEL</div><h3>Move up to ${esc(it.tiers[t])}?</h3><p>Moving up a room level resets everything else in the room. Your ${others.length} other item${others.length>1?'s':''} (${others.reduce((a,x)=>a+tierOf(x.k),0)} tiers) go back to zero and you rebuild the new space from scratch. Your cash, bags and mining aren't touched.</p><div class="acts"><button class="btn" data-act="ok">Not yet</button><button class="btn primary" data-act="buymansion">Upgrade for ${fmtUSD(cost)}</button></div>`);
   G.cash-=cost; G.owned[k]=t+1;
@@ -1352,7 +1352,7 @@ function renderRoomShop(){
     if(t) tags.push('<span class="tag good">'+it.p(t)+'</span>');
     if(t<mt) tags.push('<span class="tag">'+(t?'Next: ':'')+it.p(t+1)+'</span>');
     const lockM=it.k==='mansion'&&t<mt&&roomMissing().length;
-    if(it.k==='mansion'&&t<mt) tags.push(lockM?'<span class="tag heat">Buy every item first · '+roomMissing().length+' left</span>':'<span class="tag heat">Resets your other items</span>');
+    if(it.k==='mansion'&&t<mt) tags.push(lockM?'<span class="tag heat">Max every item first · '+roomMissing().length+' left</span>':'<span class="tag heat">Resets your other items</span>');
     return card({title,cost:t>=mt?(mt>1?'MAX':'OWNED'):fmtCash(next),desc:t<mt?it.desc+(t?' Next tier: '+it.tiers[t]+'.':''):it.desc,tags,
       btn:t>=mt?'<span class="tag good">'+(mt>1?'Maxed':'Owned')+'</span>':`<button class="btn ${can?'primary':''}" data-act="buy" data-id="${it.k}" ${can?'':'disabled'}>${t?'Upgrade to '+ROMAN[t+1]:'Buy'}</button>`})}).join('');
   setHTML($('#roomPane'),h);
@@ -1480,9 +1480,29 @@ function copyState(){if(!G.copy||typeof G.copy!=='object') G.copy={bots:[],amts:
   if(!Array.isArray(c.bots)){c.bots=c.bot?[c.bot]:[];if(c.bot) c.amts[c.bot]=c.amt||1000;for(const id in c.pos) if(c.pos[id]===1) c.pos[id]=c.bot;delete c.bot}
   return c}
 const COPY_SLOTS=2;
+// while you're away the traders keep trading for you (up to 24h). Each trader has a typical pace, hit rate and rug risk.
+const COPY_OFF={sniper:{tph:6,pw:.45,pr:.10},grad:{tph:3,pw:.35,pr:.05},safe:{tph:4,pw:.62,pr:.02},degen:{tph:5,pw:.36,pr:.15}};
+let copyChecked=false;
+function copyOffline(){
+  const cp=copyState(), now=Date.now(), last=cp.last||now; cp.last=now; copyChecked=true;
+  const gap=Math.min(now-last,OFFLINE_CAP); if(!cp.bots.length||gap<60000) return;
+  const lines=[]; let total=0;
+  for(const k of cp.bots){const b=BOTS.find(x=>x.k===k),o=COPY_OFF[k];if(!b||!o) continue; const amt=cp.amts[k]||MK.qb;
+    let n=0,w=0,pnl=0,acc=gap/3600000*o.tph; while(acc>=1||(acc>0&&Math.random()<acc)){acc-=1; if(G.cash<amt) break; n++;
+      const u=Math.random(); let d;
+      if(u<o.pw){d=amt*(b.tp-1)*rnd(.7,1.15)*(1-COPY_FEE);w++} else if(u<o.pw+o.pr) d=-amt; else d=-amt*(1-b.sl)*rnd(.8,1.1);
+      G.cash+=d; pnl+=d}
+    if(n){total+=pnl; TR.pnl+=pnl; st('tradePnl',pnl); st('trades',n); if(w) st('trenchWins',w);
+      if(!Array.isArray(G.trades)) G.trades=[]; G.trades.unshift({at:now,side:'copied',id:-1,tk:b.n,nm:b.n,m:'',usd:Math.round(amt*n),pnl:Math.round(pnl),mc:0,away:n});
+      lines.push(`<div class="hrow"><span class="hs">${b.e}</span><span class="mr-n"><b>${b.n}</b><span>${n} trade${n>1?'s':''} · ${w} win${w==1?'':'s'}</span></span><span class="mr-p"><b class="${pnl>=0?'up':'down'}">${pnl>=0?'+':''}${fmtUSD(pnl)}</b></span></div>`)}}
+  if(!lines.length) return; save();
+  const hrs=gap/3600000, away=hrs>=1?Math.floor(hrs)+'h '+Math.round((hrs%1)*60)+'m':Math.round(gap/60000)+' min';
+  const html=`<div class="kick">COPY TRADING</div><h3>Your traders made ${total>=0?'+':''}${fmtUSD(total)}</h3><p>While you were away (${away}) the traders you follow kept trading with your money.</p><div class="mlist">${lines.join('')}</div><div class="acts"><button class="btn primary" data-act="ok">Nice</button></div>`;
+  if($('#overlay').hidden&&!obOpen) openModal(html); else toast('Copy trading while away: '+(total>=0?'+':'')+fmtUSD(total),total>=0?'good':'bad',7000);
+}
 const COPY_FEE=.25, COPY_MAX=Infinity;
 function botsTick(){
-  const cp=copyState();
+  const cp=copyState(); if(copyChecked) cp.last=Date.now();
   // copied orders land one tick after the trader's, so you get a slightly worse price than they did
   const q=Array.isArray(cp.q)?cp.q:[]; cp.q=[];
   for(const o of q){const r=TR.coins.find(x=>x.id===o.id);
@@ -1502,7 +1522,7 @@ function botsTick(){
 }
 function renderCopy(){
   const cp=copyState();
-  let h=`<div class="caught">Follow up to 2 traders and your account copies their buys (each one uses the quick-buy amount you had when you followed them, now <b>${fmtUSD(MK.qb)}</b>) and sells. Copies land a moment after the trader's, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. Stats are since you opened the game.</div>`;
+  let h=`<div class="caught">Follow up to 2 traders and your account copies their buys (each one uses the quick-buy amount you had when you followed them, now <b>${fmtUSD(MK.qb)}</b>) and sells. Copies land a moment after the trader's, and the trader takes <b>${COPY_FEE*100}%</b> of your profit on winning copies. Traders keep trading for you while you're away, for up to 24 hours. Stats are since you opened the game.</div>`;
   h+=BOTS.map(b=>{const st=BOTST[b.k],on=cp.bots.includes(b.k),full=!on&&cp.bots.length>=COPY_SLOTS,wr=st.trades?Math.round(st.wins/st.trades*100):null,avg=st.trades?st.ret/st.trades*100:null,open=Object.keys(st.pos).length;
     return card({title:`${b.e} ${b.n}${on?' <span class="tier">FOLLOWING · '+fmtUSD(cp.amts[b.k]||MK.qb)+'</span>':''}`,cost:wr==null?'new':wr+'% wins',desc:b.d,
       tags:[`<span class="tag">${st.trades} trades</span>`,avg==null?'':`<span class="tag ${avg>=0?'good':'heat'}">avg ${avg>=0?'+':''}${avg.toFixed(0)}%</span>`,`<span class="tag">${open} open</span>`],
@@ -1739,6 +1759,7 @@ function tradeRows(list,clock){
   if(!list.length) return '<div class="caught">No trades yet.</div>';
   const ago=t=>{const s=Math.max(0,Math.round((Date.now()-t)/1000));return s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d'};
   return '<div class="mlist">'+list.map(t=>{const sell=t.side.startsWith('sell'),bad=t.side==='rugged'||t.side==='died',live=TR.coins.some(r=>r.id===t.id&&r.alive);
+    const isC=t.side==='copied'; if(isC) return `<div class="hrow"><span class="hs">COPIED</span><span class="mr-n"><b>${esc(t.tk)} · away</b><span>${clock?new Date(t.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):ago(t.at)+' ago'} · ${t.away} trades</span></span><span class="mr-p"><b>${fmtUSD(t.usd)}</b><span class="${t.pnl>=0?'up':'down'}">${t.pnl>=0?'+':''}${fmtUSD(t.pnl)}</span></span></div>`;
     const when=clock?new Date(t.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):ago(t.at)+' ago';
     return `<div class="hrow ${live?'tap':''}" ${live?`data-act="bagopen" data-id="${t.id}"`:''}><span class="hs ${bad?'down':sell?'':'up'}">${t.side.toUpperCase()}</span><span class="mr-n"><b>${MASCOT_EMOJI[t.m]||''} $${esc(t.tk)}</b><span>${when} · mc ${fmtUSD(t.mc)}</span></span>
       <span class="mr-p"><b>${bad?'—':fmtUSD(t.usd)}</b>${t.pnl==null?'':`<span class="${t.pnl>=0?'up':'down'}">${t.pnl>=0?'+':''}${fmtUSD(t.pnl)}</span>`}</span></div>`}).join('')+'</div>';
@@ -3465,8 +3486,8 @@ news('Markets quiet. Somewhere a dev is choosing a frog name.');
 syncLayoutVars();
 
 loadRun(); renderAll(true); syncSoundBtn();
-setInterval(()=>{if(!document.hidden&&G.profile){mineTick();if(curSheet==='mine'&&!pressing) renderMine()}},1000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&G.profile) setTimeout(mineTick,600)});
+setInterval(()=>{if(!document.hidden&&G.profile){copyOffline();mineTick();if(curSheet==='mine'&&!pressing) renderMine()}},1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&G.profile) setTimeout(()=>{mineTick();setTimeout(copyOffline,900)},600)});
 const cloudReady=Cloud.init().catch(()=>{}).then(()=>{renderTitle();checkResetLink()});
 function renderTitle(){
   if(!titleOn) return;
