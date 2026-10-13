@@ -425,6 +425,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .bond.big{max-width:none;height:7px;flex:1}.bondrow{display:flex;align-items:center;gap:10px;font:500 11.5px var(--f-mono);color:var(--muted)}.bondrow b{color:var(--fg)}
 .gradb{display:inline-block;font:700 9.5px var(--f-mono);letter-spacing:.12em;color:#1a1405;background:#ffd36b;padding:2px 6px;border-radius:4px;width:max-content}
 .bigc{width:100%;height:140px;display:block}.mback{align-self:flex-start;padding:6px 11px;font-size:12px}
+.tr svg.cndl,.cndl{width:100%;height:auto;aspect-ratio:320/170;display:block;background:rgba(5,6,12,.35);border-radius:8px}.cndl .cg{stroke:rgba(120,130,170,.18);stroke-width:1}.cndl .ct{font:500 8.5px var(--f-mono);fill:#8a92ad}
+.tfrow{display:flex;gap:5px;align-items:center}.tfrow span{margin-left:auto;font:500 10.5px var(--f-mono);color:var(--muted)}
+.hrow{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-top:1px solid rgba(255,255,255,.045)}.hrow:first-child{border-top:0}
+.hs{font:700 9.5px var(--f-mono);letter-spacing:.06em;color:var(--muted)}
 .devnav{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none;flex:none}
 .devnav button{flex:none;font:600 11.5px var(--f-ui);letter-spacing:.06em;text-transform:uppercase;padding:6px 11px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--muted);cursor:pointer}
 .devnav button.on{background:rgba(255,79,163,.16);border-color:rgba(255,79,163,.5);color:#ffd1e8}
@@ -673,7 +677,7 @@ const TYPES={
   airdrop:{label:'Airdrop farmers',color:'#8b93ad'},
 };
 const SHOP=[
-  {k:'plant',name:'Houseplant',price:400,tiers:['Monstera','Fiddle-leaf fig','Indoor palm','Bonsai garden','Living wall'],p:t=>'Trading fees −'+(15*t)+'%',desc:'Greenery by the window. A calm trader pays less to trade.'},
+  {k:'plant',name:'Houseplant',price:400,tiers:['Monstera','Fiddle-leaf fig','Indoor palm','Bonsai garden','Living wall'],p:t=>'Buy slippage −'+(8*t)+'%',desc:'Greenery by the window. A calm trader gets better fills.'},
   {k:'beanbag',name:'Bean bag',price:600,tiers:['Teal','Velvet purple','Hot pink','Gold leather','Black diamond'],p:t=>'Rug insurance: '+(6*t)+'% back when you get rugged',desc:'Somewhere soft to land when a coin goes to zero.'},
   {k:'fairy',name:'Fairy lights',price:800,tiers:['Warm string','Double string','Festival','Starfield','Aurora'],p:t=>'+'+(4*t)+' more coins on the market',desc:'Lights over the window. More launches find their way to you.'},
   {k:'fridge',name:'Energy drink fridge',price:1000,tiers:['Mini fridge','Glass door','Neon cooler','Smart fridge','Champagne vault'],p:t=>'Sniper: +'+(4*t)+'% tokens on coins under 5 minutes old',desc:'Caffeine for the first-block snipes.'},
@@ -696,7 +700,7 @@ const tierOf=k=>{const v=G.owned&&G.owned[k];return v===true?1:(v|0)};
 const own=k=>tierOf(k)>0;
 
 /* ================= state ================= */
-const FRESH=()=>({owned:{},done:{},stats:{},cash:2000,peakCash:2000,heat:0,trust:60,alias:'anon_dev',aliasN:1,profile:null,blacklisted:false,diff:'normal',
+const FRESH=()=>({trades:[],owned:{},done:{},stats:{},cash:2000,peakCash:2000,heat:0,trust:60,alias:'anon_dev',aliasN:1,profile:null,blacklisted:false,diff:'normal',
   lifetime:{launched:0,rugs:0,extracted:0,victims:0,lost:0},shame:[]});
 let G=Object.assign(FRESH(),{speed:1,tick:0,over:false,events:[],mood:1});
 try{const s=JSON.parse(localStorage.getItem('rugroom.v1')||'null');if(s&&typeof s.cash==='number'){Object.assign(G,s);
@@ -707,7 +711,7 @@ const ownedCount=()=>SHOP.filter(x=>own(x.k)).length;
 function runSnap(trim){
   let c=(coin&&coin.alive)?coin:null;
   if(c&&trim){c=Object.assign({},c,{candles:c.candles.slice(-trim),trades:(c.trades||[]).slice(-40),recent:(c.recent||[]).slice(-40),markers:(c.markers||[]).slice(-40)})}
-  return {v:1,coin:c,tr:{coins:TR.coins,pnl:TR.pnl},aid,at:G.savedAt||Date.now()};
+  return {v:1,coin:c,tr:{coins:TR.coins.map(r=>{const o=Object.assign({},r);delete o.c;return o}),pnl:TR.pnl},aid,at:G.savedAt||Date.now()};
 }
 let switching=false; // true while reloading onto a newer save from another device: never write the old state back
 function saveRun(){
@@ -737,7 +741,7 @@ document.addEventListener('visibilitychange',()=>{
   // back after a while: grab anything newer from another device
   else if(hiddenAt&&Date.now()-hiddenAt>20000&&typeof Cloud!=='undefined'&&Cloud.canSync()) Cloud.pull();
 });
-function writeLocal(){try{localStorage.setItem('rugroom.v1',JSON.stringify({cash:G.cash,peakCash:G.peakCash,heat:G.heat,trust:G.trust,alias:G.alias,aliasN:G.aliasN,lifetime:G.lifetime,shame:G.shame,profile:G.profile,blacklisted:G.blacklisted,diff:G.diff,owned:G.owned,done:G.done,stats:G.stats,savedAt:G.savedAt}))}catch(e){}}
+function writeLocal(){try{localStorage.setItem('rugroom.v1',JSON.stringify({cash:G.cash,peakCash:G.peakCash,heat:G.heat,trust:G.trust,alias:G.alias,aliasN:G.aliasN,lifetime:G.lifetime,shame:G.shame,profile:G.profile,blacklisted:G.blacklisted,diff:G.diff,owned:G.owned,done:G.done,stats:G.stats,trades:G.trades,savedAt:G.savedAt}))}catch(e){}}
 function save(){if(switching) return;G.savedAt=Date.now();writeLocal();if(typeof Cloud!=='undefined') Cloud.queue()}
 let coin=null, aid=0, titleOn=true;
 
@@ -1335,7 +1339,7 @@ const GRAD_MC=69000;
 const MK={tab:'trend',sel:null,qb:1000};
 function gauss(){return (Math.random()+Math.random()+Math.random()+Math.random()-2)/1.15}
 const mkCap=()=>30+4*tierOf('fairy');
-const feeRate=()=>Math.max(.002,.01*(1-.15*tierOf('plant')));
+const feeRate=()=>0;
 function newCoin(warm){
   const m=pick(MASCOTS)[0], a=pick(ANI[m]);
   const name=((Math.random()<.6?pick(PRE)+' ':'')+a+pick(SUF)).replace(/\s+/g,' ').trim();
@@ -1356,7 +1360,8 @@ function advance(r,quiet){
   let ch=d*Math.min(1.6,G.mood)+gauss()*(r.grad?.05:.09);
   if(Math.random()<(r.grad?.02:.04)){ch+=rnd(.3,.9);if(!quiet){const pct=Math.round((Math.exp(ch)-1)*100);if(r.units>0){toast('$'+r.ticker+' is pumping +'+pct+'%','good');pip('bags',true)}else if(Math.random()<.3) news('$'+r.ticker+' rips '+pct+'% as a streamer shills it.')}}
   if(!r.grad) r.drift-=.0011;
-  r.mc=Math.max(500,r.mc*Math.exp(ch)); r.vol=r.vol*.8+Math.abs(ch)*r.mc*.25;
+  const o=r.mc; r.mc=Math.max(500,r.mc*Math.exp(ch)); r.vol=r.vol*.8+Math.abs(ch)*r.mc*.25;
+  {if(!r.c||!r.c.length) r.c=candlesFromHist(r);const w=Math.abs(gauss())*(r.grad?.02:.045);r.c.push({o,c:r.mc,h:Math.max(o,r.mc)*(1+w),l:Math.min(o,r.mc)*(1-w*.8)});if(r.c.length>180) r.c.shift()}
   r.hist.push(r.mc); if(r.hist.length>60) r.hist.shift(); if(r.mc>r.ath) r.ath=r.mc;
   if(!r.grad&&r.mc>=GRAD_MC){r.grad=true;r.gradAt=G.tick;r.locked=true;r.risk*=.12;r.drift=rnd(-.006,.035);
     if(!quiet){news('$'+r.ticker+' graduates at '+fmtUSD(r.mc)+'. Liquidity locked, the big money arrives.');if(r.units>0){st('grads');toast('$'+r.ticker+' graduated! You were early.','good');Snd.fx('mission')}}}
@@ -1367,7 +1372,7 @@ function advance(r,quiet){
     if(!quiet&&r.units>0&&Math.random()<.15*tierOf('monitor3')){r.rugIn=1;toast('Rug radar: the dev wallet on $'+r.ticker+' is moving. Get out now!','warn');Snd.fx('alarm');return}
     doRug(r,quiet)}
 }
-function lostOn(r,msg){const refund=r.cost*.06*tierOf('beanbag');G.cash+=refund;TR.pnl-=(r.cost-refund);st('tradePnl',-(r.cost-refund));
+function lostOn(r,msg){logTrade(r.fizzled?'died':'rugged',r,0,-(r.cost-r.cost*.06*tierOf('beanbag')));const refund=r.cost*.06*tierOf('beanbag');G.cash+=refund;TR.pnl-=(r.cost-refund);st('tradePnl',-(r.cost-refund));
   toast(msg+' Lost '+fmtUSD(r.cost-refund)+(refund?' (insurance paid '+fmtUSD(refund)+')':'')+'.','bad');pip('bags',true);Room.flash(0xef5350);r.units=0;r.cost=0}
 function doRug(r,quiet){
   r.alive=false; r.mc*=.015; r.hist.push(r.mc);
@@ -1375,8 +1380,11 @@ function doRug(r,quiet){
   if(Math.random()<.4) news(r.devName+' rugs $'+r.ticker+'. Liquidity gone.');
   if(r.units>0){st('rugged');Snd.fx('alarm');lostOn(r,'You got rugged on $'+r.ticker+'.')}
 }
+function liveCandle(r){if(!r.c||!r.c.length) return;const k=r.c[r.c.length-1];k.c=r.mc;if(r.mc>k.h) k.h=r.mc;if(r.mc<k.l) k.l=r.mc}
+function logTrade(side,r,usd,pnl){if(!Array.isArray(G.trades)) G.trades=[];G.trades.unshift({at:Date.now(),side,id:r.id,tk:r.ticker,nm:r.name,m:r.mascot,usd:Math.round(usd),pnl:pnl==null?null:Math.round(pnl),mc:Math.round(r.mc)});if(G.trades.length>150) G.trades.length=150}
 function bagValue(){return TR.coins.reduce((a,r)=>a+(r.alive&&r.units>0?r.units*r.mc:0),0)}
-function normCoins(){TR.coins.forEach(r=>{if(r.born==null) r.born=G.tick-(r.age||0)*SUBS;if(!r.ath) r.ath=r.mc;if(r.vol==null) r.vol=0;if(!r.boost) r.boost=0;if(!r.rugIn) r.rugIn=0;if(r.grad==null) r.grad=false})}
+function candlesFromHist(r){const c=[];for(let i=1;i<r.hist.length;i++){const o=r.hist[i-1],cl=r.hist[i],w=Math.abs(gauss())*(r.grad?.02:.045);c.push({o,c:cl,h:Math.max(o,cl)*(1+w),l:Math.min(o,cl)*(1-w*.8)})}return c}
+function normCoins(){TR.coins.forEach(r=>{if(!r.c||!r.c.length) r.c=candlesFromHist(r);if(r.born==null) r.born=G.tick-(r.age||0)*SUBS;if(!r.ath) r.ath=r.mc;if(r.vol==null) r.vol=0;if(!r.boost) r.boost=0;if(!r.rugIn) r.rugIn=0;if(r.grad==null) r.grad=false})}
 function trenchTick(){
   normCoins();
   if(!TR.coins.length) for(let i=0;i<mkCap();i++) TR.coins.push(newCoin(true));
@@ -1396,8 +1404,9 @@ function trenchBuy(id,amt){
   if(G.cash<amt) return toast('Not enough cash','bad');
   const net=amt*(1-feeRate()), mult=1+.03*tierOf('led')+(!r.grad&&r.age<5?.04*tierOf('fridge'):0);
   // fill at the price after your own buy moves it
-  G.cash-=amt; r.units+=net/(r.mc+net*1.2)*mult; r.cost+=amt; r.mc+=net*1.2; r.hist[r.hist.length-1]=r.mc; if(r.mc>r.ath) r.ath=r.mc;
+  G.cash-=amt; r.units+=net/(r.mc+net*1.2*(1-.08*tierOf('plant')))*mult; r.cost+=amt; r.mc+=net*1.2; r.hist[r.hist.length-1]=r.mc; if(r.mc>r.ath) r.ath=r.mc; liveCandle(r);
   if(tierOf('neon')) r.boost=4;
+  logTrade('buy',r,amt,null);
   st('trades'); toast('Bought '+fmtUSD(amt)+' of $'+r.ticker,'good'); Snd.fx('buy'); saveRun(); renderAll();
 }
 function trenchSell(id,frac){
@@ -1406,9 +1415,9 @@ function trenchSell(id,frac){
   const tax=r.tax*(1-.1*tierOf('vinyl'));
   let val=fill*(1-tax/100)*(1-feeRate()); const costPart=r.cost*frac; let pnl=val-costPart;
   if(pnl>0){const bonus=pnl*(.02*tierOf('trophy')+.04*tierOf('mansion')+(r.grad?.04*tierOf('chair'):0));val+=bonus;pnl+=bonus}
-  G.cash+=val; TR.pnl+=pnl; st('tradePnl',pnl); st('trades'); if(pnl>0) st('trenchWins');
+  G.cash+=val; TR.pnl+=pnl; st('tradePnl',pnl); st('trades'); if(pnl>0) st('trenchWins'); logTrade(frac<1?'sell '+Math.round(frac*100)+'%':'sell',r,val,pnl);
   if(costPart>0){const x=val/costPart;if(x>(G.stats.bestX||0)) G.stats.bestX=x}
-  r.mc=after; r.units-=u; r.cost-=costPart; if(frac>=1||r.units*r.mc<.5){r.units=0;r.cost=0}
+  r.mc=after; liveCandle(r); r.units-=u; r.cost-=costPart; if(frac>=1||r.units*r.mc<.5){r.units=0;r.cost=0}
   toast('Sold '+(frac<1?Math.round(frac*100)+'% of ':'')+'$'+r.ticker+' for '+fmtUSD(val)+'. '+(pnl>=0?'+':'')+fmtUSD(pnl),pnl>=0?'good':'bad');
   save(); saveRun(); renderAll();
 }
@@ -1451,6 +1460,20 @@ function sparkSVG(pts,dead){
 }
 const fmtAge=t=>{const m=Math.max(0,Math.round(t));return m<60?m+'m':Math.floor(m/60)+'h'};
 function chg(r,n){const h=r.hist;if(h.length<2) return 0;const a=h[Math.max(0,h.length-1-n)];return (h[h.length-1]-a)/a*100}
+function aggCandles(cs,n){if(n<=1) return cs.slice();const out=[];for(let i=cs.length%n;i<cs.length;i+=n){const g=cs.slice(i,i+n);if(!g.length) continue;out.push({o:g[0].o,c:g[g.length-1].c,h:Math.max(...g.map(x=>x.h)),l:Math.min(...g.map(x=>x.l))})}return out}
+function candleChart(r){
+  const tf=MK.tf||1, all=aggCandles(r.c||[],tf), cs=all.slice(-40);
+  if(cs.length<2) return '<div class="caught">Not enough trading yet for this timeframe.</div>';
+  let hi=Math.max(...cs.map(k=>k.h)),lo=Math.min(...cs.map(k=>k.l));if(hi-lo<1){hi+=1;lo=Math.max(0,lo-1)}
+  const W=320,H=170,pr=46,top=8,bot=H-14,cw=(W-pr-6)/cs.length,Y=v=>bot-(v-lo)/(hi-lo)*(bot-top);
+  let g='';for(let i=0;i<=3;i++){const y=top+(bot-top)*i/3,v=hi-(hi-lo)*i/3;g+=`<line x1="0" x2="${W-pr}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" class="cg"/><text x="${W-pr+4}" y="${(y+3).toFixed(1)}" class="ct">${fmtUSD(v).replace('$','')}</text>`}
+  if(!r.grad&&GRAD_MC>lo&&GRAD_MC<hi){const y=Y(GRAD_MC).toFixed(1);g+=`<line x1="0" x2="${W-pr}" y1="${y}" y2="${y}" stroke="#ffd36b" stroke-dasharray="4 4" opacity=".7"/><text x="4" y="${y-3}" class="ct" fill="#ffd36b">GRAD $69K</text>`}
+  let b='';cs.forEach((k,i)=>{const x=3+i*cw+cw/2,up=k.c>=k.o,col=up?'#26a69a':'#ef5350',y1=Y(Math.max(k.o,k.c)),y2=Y(Math.min(k.o,k.c));
+    b+=`<line x1="${x.toFixed(1)}" x2="${x.toFixed(1)}" y1="${Y(k.h).toFixed(1)}" y2="${Y(k.l).toFixed(1)}" stroke="${col}" stroke-width="1"/><rect x="${(x-cw*.36).toFixed(1)}" y="${y1.toFixed(1)}" width="${Math.max(1,cw*.72).toFixed(1)}" height="${Math.max(1,y2-y1).toFixed(1)}" fill="${col}"/>`});
+  const last=cs[cs.length-1],ly=Y(last.c).toFixed(1),lc=last.c>=last.o?'#26a69a':'#ef5350';
+  b+=`<line x1="0" x2="${W-pr}" y1="${ly}" y2="${ly}" stroke="${lc}" stroke-dasharray="2 3" opacity=".6"/><rect x="${W-pr}" y="${ly-7}" width="${pr}" height="14" rx="3" fill="${lc}"/><text x="${W-pr+4}" y="${+ly+4}" class="ct" fill="#fff">${fmtUSD(last.c).replace('$','')}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="cndl">${g}${b}</svg>`;
+}
 function bigChart(pts,dead){
   if(pts.length<2) return '<svg viewBox="0 0 300 120"></svg>';
   let lo=Math.min(...pts),hi=Math.max(...pts);if(hi-lo<1) hi=lo+1;
@@ -1487,7 +1510,8 @@ function renderTrench(){
     <div class="tr ${r.alive?'':'dead'}">
       <div class="tr-h"><span class="lc-m">${MASCOT_EMOJI[r.mascot]}</span><span class="tr-n"><b>${esc(r.name)}</b><span>$${r.ticker} · by ${esc(r.devName)} · ${fmtAge(r.age)} old</span></span>
       <span class="tr-p"><b>${fmtUSD(r.mc)}</b><span class="${c>=0?'up':'down'}">${c>=0?'+':''}${Math.round(c)}%</span></span></div>
-      ${bigChart(r.hist,!r.alive)}
+      <div class="tfrow">${[[1,'1m'],[5,'5m'],[15,'15m']].map(([n,l])=>`<button class="chipb ${(MK.tf||1)===n?'on':''}" data-act="mtf" data-id="${n}">${l}</button>`).join('')}<span>MCAP · USD</span></div>
+      ${candleChart(r)}
       ${r.alive?'':'<span class="stamp">'+(r.fizzled?'DEAD':'RUGGED')+'</span>'}
       ${r.grad?`<div class="caught"><b class="gradb">GRADUATED</b> Bonded at $69K. Liquidity locked, calmer and much safer.</div>`:`<div class="bondrow"><span>Bonding curve</span><span class="bond big"><i style="width:${prog.toFixed(0)}%"></i></span><b>${prog.toFixed(0)}%</b></div>`}
       <div class="sumgrid"><div class="kpi"><label>ATH</label><b>${fmtUSD(r.ath)}</b></div><div class="kpi"><label>Vol</label><b>${fmtUSD(r.vol)}</b></div></div>
@@ -1495,7 +1519,8 @@ function renderTrench(){
       ${r.units>0?`<div class="tr-pos"><span>Holding <b>${fmtUSD(val)}</b></span><span>cost ${fmtUSD(r.cost)}</span><span class="${pl>=0?'up':'down'}">${pl>=0?'+':''}${fmtUSD(pl)} (${(pl/r.cost*100).toFixed(0)}%)</span></div>`:''}
       ${r.alive?`<div class="tr-b"><button class="btn primary" data-act="tbuy" data-id="${r.id}" data-amt="${MK.qb}" ${G.cash<MK.qb?'disabled':''}>Buy ${fmtUSD(MK.qb)}</button><button class="btn" data-act="tcustom" data-id="${r.id}">Custom</button>
         ${r.units>0?`<button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".25">Sell 25%</button><button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".5">50%</button><button class="btn danger" data-act="tsellp" data-id="${r.id}" data-f="1">Sell all</button>`:''}</div>`:''}
-      <div class="caught">Fee ${(feeRate()*100).toFixed(2)}% per trade.${r.tax?' Coin sell tax '+r.tax+'%.':''}</div>
+      ${(G.trades||[]).some(t=>t.id===r.id)?'<div class="sec">Your trades on $'+esc(r.ticker)+'</div>'+tradeRows((G.trades||[]).filter(t=>t.id===r.id).slice(0,10)):''}
+      <div class="caught">No trading fees.${r.tax?' This coin has a '+r.tax+'% sell tax.':''}</div>
     </div>`;
   } else {
     const tabs=[['trend','Trending'],['new','New'],['grad','Graduated']];
@@ -1505,6 +1530,13 @@ function renderTrench(){
     h+=`<div class="disc">Coins bond toward $69K. Hit it and they graduate: locked liquidity, far fewer rugs. Read the flags before you ape.</div>`;
   }
   setHTML($('#trenchPane'),h);
+}
+function tradeRows(list){
+  if(!list.length) return '<div class="caught">No trades yet.</div>';
+  const ago=t=>{const s=Math.max(0,Math.round((Date.now()-t)/1000));return s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d'};
+  return '<div class="mlist">'+list.map(t=>{const sell=t.side.startsWith('sell'),bad=t.side==='rugged'||t.side==='died';
+    return `<div class="hrow"><span class="hs ${bad?'down':sell?'':'up'}">${t.side.toUpperCase()}</span><span class="mr-n"><b>${MASCOT_EMOJI[t.m]||''} $${esc(t.tk)}</b><span>${ago(t.at)} ago · mc ${fmtUSD(t.mc)}</span></span>
+      <span class="mr-p"><b>${bad?'—':fmtUSD(t.usd)}</b>${t.pnl==null?'':`<span class="${t.pnl>=0?'up':'down'}">${t.pnl>=0?'+':''}${fmtUSD(t.pnl)}</span>`}</span></div>`}).join('')+'</div>';
 }
 function renderBags(){
   const held=TR.coins.filter(r=>r.units>0), val=held.reduce((a,r)=>a+(r.alive?r.units*r.mc:0),0), cost=held.reduce((a,r)=>a+r.cost,0), un=val-cost;
@@ -1516,6 +1548,8 @@ function renderBags(){
       <span class="mr-n"><b>${esc(r.name)}</b><span>$${r.ticker} · mc ${fmtUSD(r.mc)}${r.grad?' · GRAD':''}</span></span>
       <span class="mr-p"><b>${fmtUSD(v)}</b><span class="${p>=0?'up':'down'}">${p>=0?'+':''}${(p/r.cost*100).toFixed(0)}%</span></span>
       <button class="btn mbuy" data-act="tsellp" data-id="${r.id}" data-f="1">Sell</button></div>`}).join('')+'</div>';
+  const T=Array.isArray(G.trades)?G.trades:[], wins=T.filter(t=>t.pnl>0).length, closed=T.filter(t=>t.pnl!=null).length;
+  h+=`<div class="sec">Trade history <span class="mono" style="letter-spacing:0">${closed?Math.round(wins/closed*100)+'% win rate · ':''}${T.length} trades</span></div>`+tradeRows(T.slice(0,60));
   setHTML($('#bagsPane'),h);
 }
 
@@ -1740,7 +1774,7 @@ $('#dock').addEventListener('click',e=>{const b=e.target.closest('.dk');if(b) op
 $('#sheetClose').addEventListener('click',closeSheet);
 $('#aliasBox').addEventListener('click',()=>openSheet('shame'));
 document.querySelectorAll('[data-open]').forEach(b=>b.addEventListener('click',()=>openSheet(b.dataset.open)));
-$('#livecard').addEventListener('click',()=>{if(coin&&coin.alive) return openSheet('chart');const t=+$('#livecard').dataset.tid;if(t) MK.sel=t;openSheet('trench')});
+$('#livecard').addEventListener('click',()=>{if(coin&&coin.alive) return openSheet('chart');const t=+$('#livecard').dataset.tid;if(t) MK.sel=t;if(curSheet==='trench'){renderTrench();$('#sheetBody').scrollTop=0}else openSheet('trench')});
 const activeTab=g=>g==='feed'?(curSheet==='chart'?feedTab:null):curSheet;
 function syncLayoutVars(){const r=document.documentElement.style;r.setProperty('--hudH',$('#hud').offsetHeight+'px');r.setProperty('--dockH',$('#dock').offsetHeight+'px');
   if(curSheet) Room.setShift(window.innerWidth>760?$('#sheet').getBoundingClientRect().width:0)}
@@ -1990,7 +2024,7 @@ function renderHelp(){
   let h=`<div class="sec">The loop</div>`+steps.map((s,i)=>`<div class="help-step"><span class="n">${i+1}</span><div><h4>${s[0]}</h4><p>${s[1]}</p></div></div>`).join('');
   h+=`<div class="sec">Good to know</div><div class="gl">
    <div><b>Bonding and graduating</b><p>New coins bond toward $69K. If they get there they graduate, lock their liquidity and calm down. Buying before graduation is where the big multiples are.</p></div>
-   <div><b>Fees and slippage</b><p>Each trade costs a small fee, and big orders move the price against you. Room upgrades cut both.</p></div>
+   <div><b>Slippage</b><p>No trading fees, but big orders move the price against you, and some coins charge a sell tax. Room upgrades cut both.</p></div>
    <div><b>Room</b><p>Every upgrade is a trading perk: lower fees, rug insurance, sniper bonuses, rug radar, profit bonuses and more. Every tier also changes how it looks.</p></div>
    <div><b>Dev (side mode)</b><p>Fancy being the dev? Launch your own coin, promote it, and rug it if you dare. That is where Heat and Trust come in.</p></div>
    <div><b>Career</b><p>Missions pay cash rewards. Sign in to sync your save and climb the leaderboard.</p></div>
@@ -2071,6 +2105,7 @@ $('#sheet').addEventListener('click',e=>{
     case 'tbuy':trenchBuy(+id,+b.dataset.amt);break; case 'tcustom':trenchCustom(+id);break; case 'tsell':trenchSell(+id,1);break;
     case 'tsellp':trenchSell(+id,+b.dataset.f);break;
     case 'qb':MK.qb=+id;renderTrench();break; case 'mktab':MK.tab=id;MK.sel=null;renderTrench();$('#sheetBody').scrollTop=0;break;
+    case 'mtf':MK.tf=+id;renderTrench();break;
     case 'mopen':MK.sel=+id;renderTrench();$('#sheetBody').scrollTop=0;break; case 'mback':MK.sel=null;renderTrench();break;
     case 'bagopen':MK.sel=+id;openSheet('trench');break;
     case 'lielow':lieLow();break; case 'alias':aliasModal();break;
@@ -2745,7 +2780,7 @@ function loop(t){
    - "claude": inside claude.ai, the viewer's Claude sign-in + the artifact's own database
    - "web":    self-hosted (Cloudflare Pages Functions + D1) at /api/*, username + password
    - "local":  neither available, progress stays on this device */
-const PKEYS=['cash','peakCash','heat','trust','alias','aliasN','lifetime','shame','profile','blacklisted','diff','owned','done','stats','savedAt'];
+const PKEYS=['cash','peakCash','heat','trust','alias','aliasN','lifetime','shame','profile','blacklisted','diff','owned','done','stats','trades','savedAt'];
 const LB_TABS=[['peak','Richest',v=>fmtUSD(v)],['extracted','Extracted',v=>fmtUSD(v)],['peakMc','Biggest coin',v=>fmtUSD(v)],['rugs','Rugs',v=>Math.round(v).toLocaleString('en-GB')],['tiers','Room',v=>Math.round(v)+'/'+TOTAL_T()]];
 let lbTab='peak', obOpen=false;
 var Cloud={mode:'pending',uid:null,who:'',db:null,user:null,board:[],boardAt:0,lastSync:0,status:'local',token:null,webUser:null,_t:null,_chain:Promise.resolve(),_poll:null,
