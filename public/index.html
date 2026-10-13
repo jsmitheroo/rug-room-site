@@ -428,6 +428,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .tr svg.cndl,.cndl{width:100%;height:auto;aspect-ratio:320/170;display:block;background:rgba(5,6,12,.35);border-radius:8px}.cndl .cg{stroke:rgba(120,130,170,.18);stroke-width:1}.cndl .ct{font:500 8.5px var(--f-mono);fill:#8a92ad}
 .tfrow{display:flex;gap:5px;align-items:center}.tfrow span{margin-left:auto;font:500 10.5px var(--f-mono);color:var(--muted)}
 .hrow{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-top:1px solid rgba(255,255,255,.045)}.hrow:first-child{border-top:0}
+.hrow.tap{cursor:pointer}.hrow.tap:hover{background:rgba(255,255,255,.03)}
 .hs{font:700 9.5px var(--f-mono);letter-spacing:.06em;color:var(--muted)}
 .cchat{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:rgba(5,6,12,.35);max-height:210px;overflow:hidden}
 .cm{font-size:12px;line-height:1.35;display:flex;gap:6px;min-width:0}.cm b{color:#b9bfd6;font-weight:600;flex:none}.cm span{color:#c4c9da;overflow-wrap:anywhere}
@@ -1311,6 +1312,7 @@ const SKIRTS=[['Default','#1a1630'],['Black','#0e0e12'],['White','#eeeae2'],['Oa
 const TRIMS=[['Default','#3a3458'],['Black','#141418'],['White','#f0ede6'],['Brass','#b8913f'],['Chrome','#c9ccd6'],['Teal','#26a69a'],['Rose','#d77a8f']];
 const DESKS=[['Walnut','#3b2a24'],['Oak','#b9936a'],['White','#ece8e1'],['Black','#18181d'],['Grey','#5e6170'],['Pink','#e58fb7'],['Mint','#8ee6b8']];
 function custom(){if(!G.custom||typeof G.custom!=='object') G.custom={};return G.custom}
+function picker(k,list){const v=custom()[k],c=v&&v[0]==='#'&&!list.some(x=>x[1]===v);return `<label class="swc pick ${c?'on':''}" title="Pick any colour" style="background:${c?v:'#222'}"><input type="color" class="cpick" data-k="${k}" value="${v&&v[0]==='#'?v:'#ff4fa3'}"></label>`}
 function swatch(k,list,def){const cu=custom();return list.map(([n,c])=>`<button class="swc ${(cu[k]||def)===c?'on':''}" style="background:${c}" title="${n}" data-act="style" data-id="${k}" data-v="${c}"></button>`).join('')}
 function setStyle(kind,v){custom()[kind]=v;save();Room.apply();renderRoomShop()}
 function renderRoomShop(){
@@ -1320,12 +1322,12 @@ function renderRoomShop(){
     <div class="caught">Most items have 5 tiers. Each tier costs 5× more and makes the perk stronger. Tier V costs 600× the first.</div>`;
   const cu=custom();
   h+=`<div class="sec">Style</div><div class="stylebox">
-    <div class="srow"><span>Walls</span><div class="sw8">${WALLS.map(([n,c])=>`<button class="swc ${(cu.wall||'#2b2646')===c?'on':''}" style="background:${c}" title="${n}" data-act="style" data-id="wall" data-v="${c}"></button>`).join('')}</div></div>
+    <div class="srow"><span>Walls</span><div class="sw8">${swatch('wall',WALLS,'#2b2646')}${picker('wall',WALLS)}</div></div>
     <div class="srow"><span>Floor</span><div class="sw8">${FLOORS.map(([n,k])=>`<button class="chipb ${(cu.floor||'wood')===k?'on':''}" data-act="style" data-id="floor" data-v="${k}">${n}</button>`).join('')}</div></div>
-    <div class="srow"><span>Skirting</span><div class="sw8">${swatch('skirt',SKIRTS,'#1a1630')}</div></div>
-    <div class="srow"><span>Trim</span><div class="sw8">${swatch('trim',TRIMS,'#3a3458')}</div></div>
-    <div class="srow"><span>Desk</span><div class="sw8">${swatch('desk',DESKS,'')}<button class="chipb ${!cu.desk?'on':''}" data-act="style" data-id="desk" data-v="">Auto</button></div></div>
-    <div class="srow"><span>Neon</span><div class="sw8">${NEONS.map(([n,c])=>`<button class="swc ${(cu.neon||'')===c?'on':''}" style="background:${c};box-shadow:0 0 8px ${c}" title="${n}" data-act="style" data-id="neon" data-v="${c}"></button>`).join('')}<button class="swc rgbsw ${cu.neon==='rgb'?'on':''}" title="RGB cycle" data-act="style" data-id="neon" data-v="rgb"></button><label class="swc pick ${cu.neon&&cu.neon[0]==='#'&&!NEONS.some(x=>x[1]===cu.neon)?'on':''}" title="Pick any colour" style="background:${cu.neon&&cu.neon[0]==='#'&&!NEONS.some(x=>x[1]===cu.neon)?cu.neon:'#222'}"><input type="color" id="neonPick" value="${cu.neon&&cu.neon[0]==='#'?cu.neon:'#ff4fa3'}"></label><button class="chipb ${!cu.neon?'on':''}" data-act="style" data-id="neon" data-v="">Auto</button></div></div>
+    <div class="srow"><span>Skirting</span><div class="sw8">${swatch('skirt',SKIRTS,'#1a1630')}${picker('skirt',SKIRTS)}</div></div>
+    <div class="srow"><span>Trim</span><div class="sw8">${swatch('trim',TRIMS,'#3a3458')}${picker('trim',TRIMS)}</div></div>
+    <div class="srow"><span>Desk</span><div class="sw8">${swatch('desk',DESKS,'')}${picker('desk',DESKS)}<button class="chipb ${!cu.desk?'on':''}" data-act="style" data-id="desk" data-v="">Auto</button></div></div>
+    <div class="srow"><span>Neon</span><div class="sw8">${NEONS.map(([n,c])=>`<button class="swc ${(cu.neon||'')===c?'on':''}" style="background:${c};box-shadow:0 0 8px ${c}" title="${n}" data-act="style" data-id="neon" data-v="${c}"></button>`).join('')}<button class="swc rgbsw ${cu.neon==='rgb'?'on':''}" title="RGB cycle" data-act="style" data-id="neon" data-v="rgb"></button>${picker('neon',NEONS)}<button class="chipb ${!cu.neon?'on':''}" data-act="style" data-id="neon" data-v="">Auto</button></div></div>
     <div class="srow"><span>Strips</span><div class="sw8"><button class="chipb ${cu.strips!=='off'?'on':''}" data-act="style" data-id="strips" data-v="">On</button><button class="chipb ${cu.strips==='off'?'on':''}" data-act="style" data-id="strips" data-v="off">Off</button></div></div>
   </div><div class="caught">Wall and floor colours apply to the bedroom; the penthouse keeps its own finishes. Skirting, trim, desk and neon apply everywhere. Neon colours every light strip in the room, including the sign, desk LEDs and floor glow. Auto uses your upgrade colours.</div>`;
   h+=`<div class="sec">Upgrades</div>`;
@@ -1485,7 +1487,7 @@ function renderCopy(){
 /* ---- Market: lots of memecoins; fresh launches, trending, and ones that graduate at $69K ---- */
 const TR={coins:[],pnl:0};
 const GRAD_MC=69000;
-const MK={tab:'trend',sel:null,qb:1000};
+const MK={tab:'trend',sel:null,qb:1000,bt:'hold',hf:'all'};
 function gauss(){return (Math.random()+Math.random()+Math.random()+Math.random()-2)/1.15}
 const mkCap=()=>34;
 const feeRate=()=>0;
@@ -1707,16 +1709,20 @@ function renderTrench(){
   }
   setHTML($('#trenchPane'),h);
 }
-function tradeRows(list){
+function tradeRows(list,clock){
   if(!list.length) return '<div class="caught">No trades yet.</div>';
   const ago=t=>{const s=Math.max(0,Math.round((Date.now()-t)/1000));return s<60?s+'s':s<3600?Math.floor(s/60)+'m':s<86400?Math.floor(s/3600)+'h':Math.floor(s/86400)+'d'};
-  return '<div class="mlist">'+list.map(t=>{const sell=t.side.startsWith('sell'),bad=t.side==='rugged'||t.side==='died';
-    return `<div class="hrow"><span class="hs ${bad?'down':sell?'':'up'}">${t.side.toUpperCase()}</span><span class="mr-n"><b>${MASCOT_EMOJI[t.m]||''} $${esc(t.tk)}</b><span>${ago(t.at)} ago · mc ${fmtUSD(t.mc)}</span></span>
+  return '<div class="mlist">'+list.map(t=>{const sell=t.side.startsWith('sell'),bad=t.side==='rugged'||t.side==='died',live=TR.coins.some(r=>r.id===t.id&&r.alive);
+    const when=clock?new Date(t.at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):ago(t.at)+' ago';
+    return `<div class="hrow ${live?'tap':''}" ${live?`data-act="bagopen" data-id="${t.id}"`:''}><span class="hs ${bad?'down':sell?'':'up'}">${t.side.toUpperCase()}</span><span class="mr-n"><b>${MASCOT_EMOJI[t.m]||''} $${esc(t.tk)}</b><span>${when} · mc ${fmtUSD(t.mc)}</span></span>
       <span class="mr-p"><b>${bad?'—':fmtUSD(t.usd)}</b>${t.pnl==null?'':`<span class="${t.pnl>=0?'up':'down'}">${t.pnl>=0?'+':''}${fmtUSD(t.pnl)}</span>`}</span></div>`}).join('')+'</div>';
 }
 function renderBags(){
   const held=TR.coins.filter(r=>r.units>0), val=held.reduce((a,r)=>a+posVal(r),0), cost=held.reduce((a,r)=>a+r.cost,0), un=val-cost;
-  let h=`<div class="pos"><div class="kpi"><label>Bags value</label><b>${fmtUSD(val)}</b></div><div class="kpi"><label>Unrealised</label><b class="${un>=0?'up':'down'}">${un>=0?'+':''}${fmtUSD(un)}</b></div>
+  const T=Array.isArray(G.trades)?G.trades:[];
+  let h=`<div class="lbtabs mtabs"><button data-act="bagtab" data-id="hold" class="${MK.bt==='hold'?'on':''}">Holdings · ${held.length}</button><button data-act="bagtab" data-id="hist" class="${MK.bt==='hist'?'on':''}">Trade history · ${T.length}</button></div>`;
+  if(MK.bt==='hist'){setHTML($('#bagsPane'),h+renderHistory(T));return}
+  h+=`<div class="pos"><div class="kpi"><label>Bags value</label><b>${fmtUSD(val)}</b></div><div class="kpi"><label>Unrealised</label><b class="${un>=0?'up':'down'}">${un>=0?'+':''}${fmtUSD(un)}</b></div>
     <div class="kpi"><label>Realised P/L</label><b class="${TR.pnl>=0?'up':'down'}">${TR.pnl>=0?'+':''}${fmtUSD(TR.pnl)}</b></div><div class="kpi"><label>Best trade</label><b>${(G.stats.bestX||0).toFixed(1)}×</b></div></div>`;
   if(!held.length) h+=`<div class="caught">No bags yet. Find something in the Market.</div><button class="btn primary big" data-go="trench">Open the market</button>`;
   else h+='<div class="mlist">'+held.sort((a,b)=>posVal(b)-posVal(a)).map(r=>{const v=posVal(r),p=v-r.cost;
@@ -1724,9 +1730,24 @@ function renderBags(){
       <span class="mr-n"><b>${esc(r.name)}</b><span>$${r.ticker} · mc ${fmtUSD(r.mc)}${r.grad?' · GRAD':''}</span></span>
       <span class="mr-p"><b>${fmtUSD(v)}</b><span class="${p>=0?'up':'down'}">${p>=0?'+':''}${(p/r.cost*100).toFixed(0)}%</span></span>
       <button class="btn mbuy" data-act="tsellp" data-id="${r.id}" data-f="1">Sell</button></div>`}).join('')+'</div>';
-  const T=Array.isArray(G.trades)?G.trades:[], wins=T.filter(t=>t.pnl>0).length, closed=T.filter(t=>t.pnl!=null).length;
-  h+=`<div class="sec">Trade history <span class="mono" style="letter-spacing:0">${closed?Math.round(wins/closed*100)+'% win rate · ':''}${T.length} trades</span></div>`+tradeRows(T.slice(0,60));
+  if(T.length) h+=`<div class="sec">Recent trades</div>`+tradeRows(T.slice(0,5))+`<button class="btn big" data-act="bagtab" data-id="hist">See full trade history</button>`;
   setHTML($('#bagsPane'),h);
+}
+function renderHistory(T){
+  const closed=T.filter(t=>t.pnl!=null), wins=closed.filter(t=>t.pnl>0), net=closed.reduce((a,t)=>a+t.pnl,0),
+    vol=T.filter(t=>t.side==='buy').reduce((a,t)=>a+t.usd,0), best=closed.reduce((a,t)=>t.pnl>(a?a.pnl:-Infinity)?t:a,null), worst=closed.reduce((a,t)=>t.pnl<(a?a.pnl:Infinity)?t:a,null);
+  let h=`<div class="pos"><div class="kpi"><label>Net P/L</label><b class="${net>=0?'up':'down'}">${net>=0?'+':''}${fmtUSD(net)}</b></div><div class="kpi"><label>Win rate</label><b>${closed.length?Math.round(wins.length/closed.length*100)+'%':'—'}</b></div>
+    <div class="kpi"><label>Best</label><b class="up">${best&&best.pnl>0?'+'+fmtUSD(best.pnl):'—'}</b></div><div class="kpi"><label>Worst</label><b class="down">${worst&&worst.pnl<0?fmtUSD(worst.pnl):'—'}</b></div></div>
+    <div class="caught">${T.length} trades · ${fmtUSD(vol)} bought in total. Your last 150 trades are kept.</div>`;
+  const F=[['all','All'],['buy','Buys'],['sell','Sells'],['win','Wins'],['loss','Losses']];
+  h+=`<div class="qbrow"><span>Show</span>${F.map(([k,l])=>`<button class="chipb ${MK.hf===k?'on':''}" data-act="histf" data-id="${k}">${l}</button>`).join('')}</div>`;
+  const L=T.filter(t=>MK.hf==='all'||(MK.hf==='buy'&&t.side==='buy')||(MK.hf==='sell'&&t.side.startsWith('sell'))||(MK.hf==='win'&&t.pnl>0)||(MK.hf==='loss'&&t.pnl!=null&&t.pnl<0));
+  if(!T.length) return h+`<div class="caught">No trades yet. Buy something in the Market and it shows up here.</div><button class="btn primary big" data-go="trench">Open the market</button>`;
+  if(!L.length) return h+`<div class="caught">Nothing matches that filter yet.</div>`;
+  let day='';const parts=[];
+  for(const t of L){const d=new Date(t.at),k=d.toDateString(),lab=k===new Date().toDateString()?'Today':k===new Date(Date.now()-864e5).toDateString()?'Yesterday':d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+    if(k!==day){day=k;parts.push({lab,rows:[]})} parts[parts.length-1].rows.push(t)}
+  return h+parts.map(p=>`<div class="sec">${p.lab}</div>`+tradeRows(p.rows,true)).join('');
 }
 
 function checkStates(){
@@ -2289,6 +2310,7 @@ $('#sheet').addEventListener('click',e=>{
     case 'qb':MK.qb=+id;renderTrench();break; case 'mktab':MK.tab=id;MK.sel=null;renderTrench();$('#sheetBody').scrollTop=0;break;
     case 'mtf':MK.tf=+id;renderTrench();break;
     case 'mopen':MK.sel=+id;renderTrench();$('#sheetBody').scrollTop=0;break; case 'mback':MK.sel=null;renderTrench();break;
+    case 'bagtab':MK.bt=id;renderBags();$('#sheetBody').scrollTop=0;break; case 'histf':MK.hf=id;renderBags();break;
     case 'bagopen':MK.sel=+id;openSheet('trench');break;
     case 'lielow':lieLow();break; case 'alias':aliasModal();break;
     case 'lbtab':lbTab=id;renderShame();break;
@@ -2299,8 +2321,8 @@ $('#sheet').addEventListener('click',e=>{
     case 'wipe': if(Date.now()-wipeArm<3000){restart()} else {wipeArm=Date.now();b.textContent='Tap again to reset everything'} break;
   }
 });
-$('#sheet').addEventListener('input',e=>{if(e.target.id==='setVol'){SET.vol=+e.target.value;Snd.ensure();Snd.setVol(SET.vol);saveSet()} if(e.target.id==='neonPick'){custom().neon=e.target.value;Room.apply();const l=e.target.parentNode;l.style.background=e.target.value}});
-$('#sheet').addEventListener('change',e=>{if(e.target.id==='neonPick'){setStyle('neon',e.target.value);return}if(e.target.id==='payTok'){$('#promotePane').dataset.tok=e.target.checked?'1':'0';renderPromote()}});
+$('#sheet').addEventListener('input',e=>{if(e.target.id==='setVol'){SET.vol=+e.target.value;Snd.ensure();Snd.setVol(SET.vol);saveSet()} if(e.target.classList.contains('cpick')){custom()[e.target.dataset.k]=e.target.value;Room.apply();e.target.parentNode.style.background=e.target.value}});
+$('#sheet').addEventListener('change',e=>{if(e.target.classList.contains('cpick')){setStyle(e.target.dataset.k,e.target.value);return}if(e.target.id==='payTok'){$('#promotePane').dataset.tok=e.target.checked?'1':'0';renderPromote()}});
 
 /* modal */
 function openModal(html,locked){$('#modal').innerHTML=html;$('#overlay').hidden=false;$('#overlay').dataset.locked=locked?'1':'';const b=$('#modal .btn.primary');if(b) b.focus()}
