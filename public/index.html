@@ -2280,6 +2280,7 @@ $('#sheet').addEventListener('click',e=>{
     case 'lbtab':lbTab=id;renderShame();break;
     case 'syncnow':Cloud.push();toast('Syncing…');break;
     case 'signout':Cloud.signOut();break;
+    case 'dellocal':delLocalModal();break;
     case 'auth':authModal(id);break;
     case 'wipe': if(Date.now()-wipeArm<3000){restart()} else {wipeArm=Date.now();b.textContent='Tap again to reset everything'} break;
   }
@@ -2292,7 +2293,7 @@ function openModal(html,locked){$('#modal').innerHTML=html;$('#overlay').hidden=
 function closeModal(){$('#overlay').hidden=true}
 $('#overlay').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');
-  if(b){const a=b.dataset.act; if(a==='restart') return restart(); if(a==='newacct') return newAccount(); if(a==='share'){if(lastResult) shareCoin(lastResult);return} closeModal();
+  if(b){const a=b.dataset.act; if(a==='restart') return restart(); if(a==='newacct') return newAccount(); if(a==='dellocalok') return deleteLocal(); if(a==='share'){if(lastResult) shareCoin(lastResult);return} closeModal();
     if(a==='next'){form=randomCoin();form.seed=Math.min(1000,Math.max(200,Math.floor((G.cash-50)/100)*100));openSheet('launch')}
     if(a==='shame') openSheet('shame');
     if(a==='alias') aliasModal(); return}
@@ -3213,6 +3214,13 @@ function syncLabel(){
   if(s==='readonly') return ['View-only access. Your progress can’t sync here','bad'];
   return [ago==null?'Synced':ago<60?'Synced just now':'Synced '+Math.round(ago/60)+' min ago','good'];
 }
+function delLocalModal(){
+  openModal(`<div class="kick bad">DELETE LOCAL SAVE</div><h3>Wipe this device?</h3><p>This permanently deletes the progress saved in this browser: cash, coins, bags, room, mining, missions and settings. You’ll start again from the beginning. It can’t be undone.</p><div class="acts"><button class="btn" data-act="ok">Cancel</button><button class="btn danger" data-act="dellocalok">Delete everything</button></div>`);
+}
+function deleteLocal(){
+  switching=true; try{Object.keys(localStorage).filter(k=>k.startsWith('rugroom.')).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{sessionStorage.clear()}catch(e){} location.reload();
+}
 function renderAccountLite(){const d=$('#syncDot');if(!d) return;const [t,c]=syncLabel();d.className='sync '+c;d.title=t}
 function renderAccount(){
   const [t,c]=syncLabel();
@@ -3222,6 +3230,7 @@ function renderAccount(){
   else if(Cloud.mode==='web'){who='Sign in to save your progress across devices and join the leaderboard.';btns=`<button class="btn" data-act="auth" data-id="login">Sign in</button><button class="btn primary" data-act="auth" data-id="register">Create account</button>`}
   else if(Cloud.mode==='local'){who='Accounts aren’t available here, so leaderboards and syncing are off. Your progress still saves in this browser.'}
   else who='Checking for your account…';
+  if((Cloud.mode==='web'&&!Cloud.token)||Cloud.mode==='local') btns+=`<button class="btn danger" data-act="dellocal">Delete local save</button>`;
   return `<div class="acct"><div class="acct-h"><span class="sync ${c}"></span><span>${t}</span></div><p>${who}</p>${btns?`<div class="acct-b">${btns}</div>`:''}</div>`;
 }
 function renderBoard(){
