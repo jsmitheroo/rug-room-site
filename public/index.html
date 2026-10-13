@@ -1401,7 +1401,7 @@ function checkMissions(){
 }
 function pip(name,on){const b=document.querySelector('.dk[data-sheet="'+name+'"]');if(!b) return;let p=b.querySelector('.pip');if(on&&!p){p=document.createElement('i');p.className='pip';b.appendChild(p)}else if(!on&&p) p.remove()}
 
-/* ---- Crypto mining: passive income from rigs. Full rate while playing, 15% while away (up to 24h) ---- */
+/* ---- Crypto mining: passive income from rigs. Full rate while playing, 1% while away (up to 24h) ---- */
 const RIGS=[
   {k:'laptop',n:'Old laptop',e:'💻',price:2000,rate:10,d:'Mines in the background. Fans sound like a jet.'},
   {k:'pc',n:'Gaming PC',e:'🖥️',price:15000,rate:90,d:'RGB everything. Hashes between matches.'},
@@ -2307,7 +2307,7 @@ function renderHelp(){
    <div><b>Bonding and graduating</b><p>New coins bond toward $69K. If they get there they graduate, lock their liquidity and calm down. Buying before graduation is where the big multiples are.</p></div>
    <div><b>Slippage</b><p>No trading fees, but big orders move the price against you, and some coins charge a sell tax. Room upgrades cut both.</p></div>
    <div><b>Room</b><p>Every upgrade is a trading perk: lower fees, rug insurance, sniper bonuses, rug radar, profit bonuses and more. Every tier also changes how it looks.</p></div>
-   <div><b>Mining</b><p>Buy rigs in the Mine tab for steady income every minute you play. Close the game and they keep mining at 15% speed for up to 24 hours.</p></div>
+   <div><b>Mining</b><p>Buy rigs in the Mine tab for steady income every minute you play. Close the game and they keep mining at 1% speed for up to 24 hours.</p></div>
    <div><b>Dev (side mode)</b><p>Fancy being the dev? Launch your own coin, promote it, and rug it if you dare. That is where Heat and Trust come in.</p></div>
    <div><b>Career</b><p>Missions pay cash rewards. Sign in to sync your save and climb the leaderboard.</p></div>
   </div>
