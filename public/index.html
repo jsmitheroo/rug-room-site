@@ -2940,7 +2940,7 @@ const Room=(()=>{
     const fl=new THREE.Mesh(new THREE.CircleGeometry(R,96),std(0xffffff,{map:ft.t,roughness:.35,metalness:.35}));fl.rotation.x=-Math.PI/2;fl.position.set(CX,.002,0);fl.receiveShadow=true;G2.add(fl);
     cyl(R+.15,R+.15,.12,steel,CX,-.06,0,G2,96);
     cyl(R+.1,R*.62,1.8,dark,CX,-1.02,0,G2,96);
-    {const band=new THREE.Mesh(new THREE.TorusGeometry(R*.86,.05,8,96),new THREE.MeshBasicMaterial({color:0x5ad1ff,toneMapped:false}));band.rotation.x=Math.PI/2;band.position.set(CX,-1.1,0);G2.add(band)}
+    {const band=new THREE.Mesh(new THREE.TorusGeometry(R*.86,.05,8,96),anim.rnMat);band.rotation.x=Math.PI/2;band.position.set(CX,-1.1,0);G2.add(band)}
     cyl(1.4,.5,1.4,dark,CX,-2.5,0,G2,32); glow(0x5ad1ff,3,CX,-2.9,0,.35,G2);
     // space outside
     const sp=ctex(2048,1024,(g,w,h)=>drawView(g,w,h,4,false,6));const back=new THREE.Mesh(new THREE.PlaneGeometry(110,55),new THREE.MeshBasicMaterial({map:sp.t,toneMapped:false,fog:false}));back.position.set(CX,6,-40);G2.add(back);
@@ -2952,7 +2952,15 @@ const Room=(()=>{
     for(let k=0;k<=10;k++){const a=Math.PI+k/10*Math.PI, x=CX+Math.cos(a)*R, z=Math.sin(a)*R;
       box(.14,H,.14,steel,x,H/2,z,G2).rotation.y=-a;
       const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(x,H,z),new THREE.Vector3(CX+Math.cos(a)*R*.55,HUB+.3,Math.sin(a)*R*.55),new THREE.Vector3(CX+Math.cos(a)*1.1,HUB,Math.sin(a)*1.1));
-      const rib=new THREE.Mesh(new THREE.TubeGeometry(curve,20,.07,6,false),steel);G2.add(rib)}
+      const rib=new THREE.Mesh(new THREE.TubeGeometry(curve,20,.07,6,false),steel);G2.add(rib);
+      // neon: up each post (frames every window) and along each dome rib
+      const ri=R-.16;anim.tube(H-.4,'x',CX+Math.cos(a)*ri,H/2+.05,Math.sin(a)*ri,G2,Math.PI/2);
+      const nc=new THREE.QuadraticBezierCurve3(new THREE.Vector3(CX+Math.cos(a)*(R-.12),H-.08,Math.sin(a)*(R-.12)),new THREE.Vector3(CX+Math.cos(a)*R*.55,HUB+.16,Math.sin(a)*R*.55),new THREE.Vector3(CX+Math.cos(a)*1.25,HUB-.12,Math.sin(a)*1.25));
+      G2.add(new THREE.Mesh(new THREE.TubeGeometry(nc,24,.016,5,false),anim.rnMat));G2.add(new THREE.Mesh(new THREE.TubeGeometry(nc,24,.06,5,false),anim.rnHalo2))}
+    // neon: top and bottom of the glass, so each pane is outlined
+    for(const [y,rr] of [[H-.2,R-.16],[.42,R-.16],[H*.62,R-.1]]){const t1=new THREE.Mesh(new THREE.TorusGeometry(rr,.02,6,128,Math.PI),anim.rnMat);t1.rotation.x=Math.PI/2;t1.rotation.z=Math.PI;t1.position.set(CX,y,0);G2.add(t1);
+      const t2=new THREE.Mesh(new THREE.TorusGeometry(rr,.085,6,128,Math.PI),anim.rnHalo);t2.rotation.x=Math.PI/2;t2.rotation.z=Math.PI;t2.position.set(CX,y,0);G2.add(t2)}
+    for(let k=0;k<10;k++){const a=Math.PI+(k+.5)/10*Math.PI;anim.rnSprites.push(glow(0xff4fa3,2.2,CX+Math.cos(a)*(R-.4),H*.5,Math.sin(a)*(R-.4),.18,G2))}
     {const hub=new THREE.Mesh(new THREE.TorusGeometry(1.15,.18,10,40),white);hub.rotation.x=Math.PI/2;hub.position.set(CX,HUB,0);G2.add(hub);
       cyl(1.0,1.0,.2,dark,CX,HUB,0,G2,40);glow(0xf2f6ff,3,CX,HUB-.3,0,.35,G2)}
     // habitat ring and solar wings outside give it a station silhouette
@@ -2981,16 +2989,17 @@ const Room=(()=>{
       const mon=new THREE.Group();mon.position.set(Math.sin(a)*(r-.2),1.55,-Math.cos(a)*(r-.2)+r-.2);mon.rotation.y=-a;dk.add(mon);
       box(1.2,.7,.04,dark,0,0,0,mon);const sc=new THREE.Mesh(new THREE.PlaneGeometry(1.12,.62),new THREE.MeshBasicMaterial({map:scr.main.tex.t,toneMapped:false}));sc.position.z=.025;mon.add(sc);box(.05,.5,.05,steel,0,-.55,-.02,mon)}
     glow(0x5ad1ff,3.5,CX,1.5,-3.1,.25,G2);
+    for(let i=-2;i<=2;i++){const a=i*.2,r=3.2;const t=anim.tube(1.3,'x',Math.sin(a)*(r+.38),.06,-Math.cos(a)*(r+.38)+r,dk);t.rotation.y=-a}
     const ch=new THREE.Group();ch.position.set(CX,0,-1.4);G2.add(ch);const cm=std(0x1c1f26,{roughness:.5});box(.62,.1,.6,cm,0,.55,0,ch);const cb=box(.6,.9,.1,cm,0,1.05,.3,ch);cb.rotation.x=-.12;cyl(.04,.04,.4,steel,0,.32,0,ch);cyl(.3,.3,.04,steel,0,.04,0,ch,24);
     // lounge (left): curved sofa round a table
     const lg=new THREE.Group();lg.position.set(CX-4.2,0,2.2);G2.add(lg);
-    const rugM=new THREE.Mesh(new THREE.CircleGeometry(1.8,64),std(0x3a4150,{roughness:1}));rugM.rotation.x=-Math.PI/2;rugM.position.y=.025;lg.add(rugM);
+    const rugM=new THREE.Mesh(new THREE.CircleGeometry(1.8,64),std(0x3a4150,{roughness:1}));rugM.rotation.x=-Math.PI/2;rugM.position.y=.025;lg.add(rugM);{const t=new THREE.Mesh(new THREE.TorusGeometry(1.8,.018,6,64),anim.rnMat);t.rotation.x=Math.PI/2;t.position.y=.03;lg.add(t)}
     for(let k=0;k<5;k++){const a=Math.PI*.9+k*.32;const sx=Math.cos(a)*1.45,sz=Math.sin(a)*1.45;const sb=box(.95,.34,.75,fab,sx,.17,sz,lg);sb.rotation.y=-a+Math.PI/2;const bk=box(.95,.4,.18,fab,Math.cos(a)*1.85,.46,Math.sin(a)*1.85,lg);bk.rotation.y=-a+Math.PI/2}
     box(.3,.26,.28,std(0x5ad1ff,{roughness:.8}),-1.3,.47,-.6,lg);box(.3,.26,.28,std(0xff4fa3,{roughness:.8}),-.3,.47,-1.35,lg);
     cyl(.55,.55,.05,std(0xf7f7f5,{roughness:.2}),0,.4,0,lg,48);cyl(.08,.14,.38,steel,0,.2,0,lg,16);
     for(const [px,pz] of [[CX-6.9,-.3],[CX+7.0,.2]]){const pg=new THREE.Group();pg.position.set(px,0,pz);G2.add(pg);cyl(.32,.26,.7,dark,0,.35,0,pg,24);const lf=std(0x3c8f4a,{roughness:.8,flatShading:true});for(let q=0;q<12;q++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(rnd(.2,.34),0),lf);b.position.set(rnd(-.3,.3),1.0+q*.13,rnd(-.3,.3));pg.add(b)}}
     // observation dais (back right) with loungers and a telescope
-    const ob=new THREE.Group();ob.position.set(CX+4.4,0,-4.6);ob.rotation.y=-.5;G2.add(ob);cyl(1.8,1.9,.28,white,0,.14,0,ob,48);cyl(1.81,1.81,.03,steel,0,.29,0,ob,48);
+    const ob=new THREE.Group();ob.position.set(CX+4.4,0,-4.6);ob.rotation.y=-.5;G2.add(ob);cyl(1.8,1.9,.28,white,0,.14,0,ob,48);{const t=new THREE.Mesh(new THREE.TorusGeometry(1.86,.02,6,64),anim.rnMat);t.rotation.x=Math.PI/2;t.position.y=.06;ob.add(t);const t2=new THREE.Mesh(new THREE.TorusGeometry(1.86,.08,6,64),anim.rnHalo);t2.rotation.x=Math.PI/2;t2.position.y=.06;ob.add(t2)}cyl(1.81,1.81,.03,steel,0,.29,0,ob,48);
     for(const lx of [-.7,.5]){const l=new THREE.Group();l.position.set(lx,.3,.2);ob.add(l);box(.6,.14,1.4,dark,0,.09,0,l);box(.55,.07,1.05,fab,0,.19,.18,l);const bk=box(.55,.07,.45,fab,0,.33,-.45,l);bk.rotation.x=.7}
     {const tl=cyl(.07,.1,1.1,dark,1.1,1.2,-.6,ob,16);tl.rotation.z=1.0;tl.rotation.y=.6;for(const a of [0,2.1,4.2]){const leg=cyl(.015,.015,.95,steel,1.1+Math.cos(a)*.18,.72,-.6+Math.sin(a)*.18,ob,6);leg.rotation.set(Math.sin(a)*.2,0,-Math.cos(a)*.2)}}
     // holo-table (front right)
