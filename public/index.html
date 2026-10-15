@@ -433,6 +433,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .tr svg.cndl,.cndl{width:100%;height:auto;aspect-ratio:320/170;display:block;background:rgba(5,6,12,.35);border-radius:8px}.cndl .cg{stroke:rgba(120,130,170,.18);stroke-width:1}.cndl .ct{font:500 8.5px var(--f-mono);fill:#8a92ad}
 .tfrow{display:flex;gap:5px;align-items:center}.tfrow span{margin-left:auto;font:500 10.5px var(--f-mono);color:var(--muted)}
 .hrow{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-top:1px solid rgba(255,255,255,.045)}.hrow:first-child{border-top:0}
+.pips.sm i{width:7px}
 .hrow.tap{cursor:pointer}.hrow.tap:hover{background:rgba(255,255,255,.03)}
 .hs{font:700 9.5px var(--f-mono);letter-spacing:.06em;color:var(--muted)}
 .cchat{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:rgba(5,6,12,.35);max-height:210px;overflow:hidden}
@@ -1428,7 +1429,11 @@ const MINE_UPS=[
   {k:'oc',n:'Overclock',e:'⚡',per:.10,price:40000,d:'Push every chip harder.'},
   {k:'cool',n:'Liquid cooling',e:'❄️',per:.15,price:250000,d:'Cooler rigs run faster for longer.'},
   {k:'power',n:'Cheap power deal',e:'🔌',per:.20,price:1500000,d:'Lock in a cheap electricity contract.'},
+  {k:'ai',n:'AI auto-tuner',e:'🧠',per:.35,price:20000000,d:'A model that retunes every rig every second.'},
+  {k:'fusion',n:'Fusion reactor',e:'☢️',per:.6,price:250000000,d:'Unlimited power. Questionable permits.'},
+  {k:'quantum',n:'Quantum miner',e:'🌀',per:1,price:3000000000,d:'Mines blocks in parallel universes and keeps the rewards.'},
 ];
+const MINE_MAX=15;
 const MINE_COINS=[
   {k:'btc',n:'Bitcoin',e:'🟠',base:1.0,vol:.03,d:'Steady.'},
   {k:'eth',n:'Ethereum',e:'🔷',base:1.08,vol:.06,d:'A bit more swing.'},
@@ -1440,7 +1445,7 @@ let mcTickAt=0;
 function mineCoinsTick(){const now=Date.now();if(now-mcTickAt<20000) return;mcTickAt=now;
   MINE_COINS.forEach(c=>{const s=MC[c.k];s.m=Math.max(.05,s.m+(c.base-s.m)*.15+gauss()*c.vol*c.base);s.hist.push(s.m);if(s.hist.length>30) s.hist.shift()})}
 const upLvl=k=>(mineState().ups||{})[k]|0;
-const upPrice=u=>Math.round(u.price*Math.pow(4,upLvl(u.k)));
+const upPrice=u=>Math.round(u.price*Math.pow(2.6,upLvl(u.k)));
 const upMult=()=>MINE_UPS.reduce((a,u)=>a*(1+u.per*upLvl(u.k)),1);
 const mineCoin=()=>MINE_COINS.find(c=>c.k===(mineState().coin||'btc'))||MINE_COINS[0];
 function mineState(){if(!G.mine||typeof G.mine!=='object') G.mine={rigs:{},last:0,total:0};if(!G.mine.rigs) G.mine.rigs={};return G.mine}
@@ -1463,7 +1468,7 @@ function mineTick(){
   const earn=rate/60000*gap; G.cash+=earn; m.total+=earn; st('mined',earn);
   if(now-mineSaveAt>30000){mineSaveAt=now;save()}
 }
-function buyUp(k){const u=MINE_UPS.find(x=>x.k===k);if(!u) return;const lv=upLvl(k);if(lv>=5) return;const price=upPrice(u);
+function buyUp(k){const u=MINE_UPS.find(x=>x.k===k);if(!u) return;const lv=upLvl(k);if(lv>=MINE_MAX) return;const price=upPrice(u);
   if(G.cash<price) return toast('Not enough cash','bad');mineTick();G.cash-=price;const m=mineState();if(!m.ups) m.ups={};m.ups[k]=lv+1;save();Snd.fx('buy');toast(u.n+' level '+(lv+1)+'. Mining +'+Math.round(u.per*100)+'%','good');renderAll()}
 function setMineCoin(k){mineTick();mineState().coin=k;save();toast('Rigs now mining '+MINE_COINS.find(c=>c.k===k).n,'good');renderMine()}
 function buyRig(k){
@@ -1482,9 +1487,9 @@ function renderMine(){
     <div class="caught">Payouts change every 20 seconds. Wilder coins pay more on average but swing harder. Offline earnings use each coin's average rate.</div>
     <div class="sec">Upgrades <span class="mono" style="letter-spacing:0">×${upMult().toFixed(2)} output</span></div>`;
   h+=MINE_UPS.map(u=>{const lv=upLvl(u.k),price=upPrice(u),can=lv<5&&G.cash>=price;
-    return card({title:`${u.e} ${u.n}${lv?` <span class="tier">Lv ${lv}</span>`:''}`,cost:lv>=5?'MAX':fmtCash(price),desc:u.d,
-      tags:['<span class="pips">'+[1,2,3,4,5].map(i=>`<i class="${i<=lv?'on':''}"></i>`).join('')+'</span>',`<span class="tag good">+${Math.round(u.per*100)}% per level</span>`],
-      btn:lv>=5?'<span class="tag good">Maxed</span>':`<button class="btn ${can?'primary':''}" data-act="mup" data-id="${u.k}" ${can?'':'disabled'}>${lv?'Upgrade':'Buy'}</button>`})}).join('');
+    return card({title:`${u.e} ${u.n}${lv?` <span class="tier">Lv ${lv}/${MINE_MAX}</span>`:''}`,cost:lv>=MINE_MAX?'MAX':fmtCash(price),desc:u.d,
+      tags:['<span class="pips sm">'+Array.from({length:MINE_MAX},(_,i)=>`<i class="${i<lv?'on':''}"></i>`).join('')+'</span>',`<span class="tag good">+${Math.round(u.per*100)}% per level</span>`],
+      btn:lv>=MINE_MAX?'<span class="tag good">Maxed</span>':`<button class="btn ${can?'primary':''}" data-act="mup" data-id="${u.k}" ${can?'':'disabled'}>${lv?'Upgrade':'Buy'}</button>`})}).join('');
   h+=`<div class="sec">Rigs</div>`;
   h+=RIGS.map(r=>{const n=rigCount(r.k),price=rigPrice(r),can=G.cash>=price;
     return card({title:`${r.e} ${r.n}${n?` <span class="tier">×${n}</span>`:''}`,cost:fmtCash(price),desc:r.d,
@@ -1549,13 +1554,13 @@ function renderCopy(){
   h+=BOTS.map(b=>{const st=BOTST[b.k],on=cp.bots.includes(b.k),full=!on&&cp.bots.length>=COPY_SLOTS,wr=st.trades?Math.round(st.wins/st.trades*100):null,avg=st.trades?st.ret/st.trades*100:null,open=Object.keys(st.pos).length;
     return card({title:`${b.e} ${b.n}${on?' <span class="tier">FOLLOWING · '+fmtUSD(cp.amts[b.k]||MK.qb)+'</span>':''}`,cost:wr==null?'new':wr+'% wins',desc:b.d,
       tags:[`<span class="tag">${st.trades} trades</span>`,avg==null?'':`<span class="tag ${avg>=0?'good':'heat'}">avg ${avg>=0?'+':''}${avg.toFixed(0)}%</span>`,`<span class="tag">${open} open</span>`],
-      btn:on?`<button class="btn danger" data-act="copyoff" data-id="${b.k}">Unfollow</button>`:`<button class="btn ${full?'':'primary'}" data-act="copyon" data-id="${b.k}" ${full?'disabled':''}>${full?'2 traders max':'Follow · '+fmtUSD(MK.qb)+'/trade'}</button>`})}).join('');
+      btn:on?`<button class="btn" data-act="copyamt" data-id="${b.k}">Amount</button><button class="btn danger" data-act="copyoff" data-id="${b.k}">Unfollow</button>`:`<button class="btn ${full?'':'primary'}" data-act="copyon" data-id="${b.k}" ${full?'disabled':''}>${full?'2 traders max':'Follow · '+fmtUSD(MK.qb)+'/trade'}</button>`})}).join('');
   return h;
 }
 /* ---- Market: lots of memecoins; fresh launches, trending, and ones that graduate at $69K ---- */
 const TR={coins:[],pnl:0};
 const GRAD_MC=69000;
-const MK={tab:'trend',sel:null,qb:1000,bt:'hold',hf:'all'};
+const MK={tab:'trend',sel:null,qb:(SET&&SET.qb)||1000,bt:'hold',hf:'all'};
 function gauss(){return (Math.random()+Math.random()+Math.random()+Math.random()-2)/1.15}
 const mkCap=()=>34;
 const feeRate=()=>0;
@@ -1712,6 +1717,15 @@ function parseAmt(v){
   v=String(v||'').trim().toLowerCase().replace(/[$,£\s]/g,''); const m=v.match(/^(\d*\.?\d+)([kmb]?)$/); if(!m) return NaN;
   return parseFloat(m[1])*({'':1,k:1e3,m:1e6,b:1e9}[m[2]]);
 }
+function askAmount(kick,title,desc,cb,quick){
+  openModal(`<div class="kick">${kick}</div><h3>${title}</h3><p>${desc} Type an amount like 750, 25k, 1.5m or 2b.</p>
+  <form id="amForm" class="field" style="gap:10px"><div class="field"><input type="text" id="amIn" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="e.g. 250k" style="font-family:var(--f-mono)"></div>
+    ${quick?`<div class="acct-b">${quick.map(([l,v])=>`<button type="button" class="btn" data-v="${v}">${l}</button>`).join('')}</div>`:''}
+    <div class="ob-err" id="amErr"></div><div class="acts"><button type="button" class="btn" data-act="ok">Cancel</button><button type="submit" class="btn primary">Set</button></div></form>`);
+  const inp=$('#amIn'); inp.focus();
+  document.querySelectorAll('#amForm [data-v]').forEach(b=>b.addEventListener('click',()=>{inp.value=b.dataset.v}));
+  $('#amForm').addEventListener('submit',e=>{e.preventDefault();const a=Math.floor(parseAmt(inp.value));if(!(a>=1)){$('#amErr').textContent='Enter an amount, like 500 or 25k.';return}const m=cb(a);if(typeof m==='string'){$('#amErr').textContent=m;return}closeModal()});
+}
 function trenchCustom(id){
   const r=TR.coins.find(x=>x.id===id); if(!r||!r.alive) return;
   openModal(`<div class="kick">CUSTOM BUY</div><h3>Buy $${esc(r.ticker)}</h3>
@@ -1789,7 +1803,7 @@ function mkRow(r){
 function renderTrench(){
   if(!TR.coins.length) trenchTick();
   const r=MK.sel&&TR.coins.find(x=>x.id===MK.sel);
-  let h=`<div class="qbrow"><span>Quick buy</span>${QB.map(a=>`<button class="chipb ${MK.qb===a?'on':''}" data-act="qb" data-id="${a}" ${G.cash<a?'disabled':''}>${fmtUSD(a).replace(/\.0+(?=[KMB])/,'')}</button>`).join('')}</div>`;
+  let h=`<div class="qbrow"><span>Quick buy</span>${QB.map(a=>`<button class="chipb ${MK.qb===a?'on':''}" data-act="qb" data-id="${a}" ${G.cash<a?'disabled':''}>${fmtUSD(a).replace(/\.0+(?=[KMB])/,'')}</button>`).join('')}<button class="chipb ${QB.includes(MK.qb)?'':'on'}" data-act="qbcustom">${QB.includes(MK.qb)?'Custom':fmtUSD(MK.qb)}</button></div>`;
   if(r){
     const first=r.hist[0]||r.mc, c=(r.mc-first)/first*100, [rk,rc]=riskOf(r), val=posVal(r), pl=val-r.cost, prog=Math.min(100,r.mc/GRAD_MC*100);
     h+=`<button class="btn mback" data-act="mback">← Back to market</button>
@@ -1804,7 +1818,7 @@ function renderTrench(){
       <div class="tags"><span class="risk ${rc}">${rk}</span><span class="tag ${r.dev>15?'heat':''}">dev ${r.dev}%</span><span class="tag ${r.locked?'good':'heat'}">LP ${r.locked?'locked':'unlocked'}</span></div>
       ${r.units>0?`<div class="tr-pos"><span>Holding <b>${fmtUSD(val)}</b></span><span>cost ${fmtUSD(r.cost)}</span><span class="${pl>=0?'up':'down'}">${pl>=0?'+':''}${fmtUSD(pl)} (${(pl/r.cost*100).toFixed(0)}%)</span></div>`:''}
       ${r.alive?`<div class="tr-b"><button class="btn primary" data-act="tbuy" data-id="${r.id}" data-amt="${MK.qb}" ${G.cash<MK.qb?'disabled':''}>Buy ${fmtUSD(MK.qb)}</button><button class="btn" data-act="tcustom" data-id="${r.id}">Custom</button>
-        ${r.units>0?`<button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".25">Sell 25%</button><button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".5">50%</button><button class="btn danger" data-act="tsellp" data-id="${r.id}" data-f="1">Sell all</button>`:''}</div>`:''}
+        ${r.units>0?`<button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".25">Sell 25%</button><button class="btn" data-act="tsellp" data-id="${r.id}" data-f=".5">50%</button><button class="btn" data-act="tsellc" data-id="${r.id}">Custom</button><button class="btn danger" data-act="tsellp" data-id="${r.id}" data-f="1">Sell all</button>`:''}</div>`:''}
       <div class="sec">Chat</div><div class="cchat">${(r.chat&&r.chat.length)?r.chat.slice(-10).reverse().map(m=>`<div class="cm ${m.c}"><b>${esc(m.w)}</b><span>${esc(m.t)}</span></div>`).join(''):'<div class="caught">Quiet in here. Messages appear while you watch or hold.</div>'}</div>
       ${(G.trades||[]).some(t=>t.id===r.id)?'<div class="sec">Your trades on $'+esc(r.ticker)+'</div>'+tradeRows((G.trades||[]).filter(t=>t.id===r.id).slice(0,10)):''}
       <div class="caught">No trading fees or sell taxes. Big orders move the price, but selling straight back returns what you put in.</div>
@@ -2418,7 +2432,10 @@ $('#sheet').addEventListener('click',e=>{
     case 'tsellp':trenchSell(+id,+b.dataset.f);break;
     case 'copyon':{const cp=copyState();if(cp.bots.includes(id)||cp.bots.length>=COPY_SLOTS) break;cp.bots.push(id);cp.amts[id]=MK.qb;save();toast('Following '+BOTS.find(x=>x.k===id).n+'. Copying with '+fmtUSD(MK.qb)+' per trade.','good');renderTrench();break}
     case 'copyoff':{const cp=copyState();cp.bots=cp.bots.filter(x=>x!==id);for(const k in cp.pos) if(cp.pos[k]===id) delete cp.pos[k];cp.q=(cp.q||[]).filter(o=>o.b!==id);save();toast('Unfollowed '+BOTS.find(x=>x.k===id).n+'.');renderTrench();break} case 'rig':buyRig(id);break; case 'style':setStyle(id,b.dataset.v);break; case 'mup':buyUp(id);break; case 'mcoin':setMineCoin(id);break;
-    case 'qb':MK.qb=+id;renderTrench();break; case 'mktab':MK.tab=id;MK.sel=null;renderTrench();$('#sheetBody').scrollTop=0;break;
+    case 'qb':MK.qb=+id;SET.qb=MK.qb;saveSet();renderTrench();break;
+    case 'qbcustom':askAmount('QUICK BUY','Custom quick-buy amount','Used by every Buy button and when you follow a copy trader.',a=>{MK.qb=a;try{SET.qb=a;saveSet()}catch(e){}renderTrench()},[['50K',50000],['250K',250000],['5M',5e6],['50M',5e7]]);break;
+    case 'tsellc':{const r=TR.coins.find(x=>x.id===+id);if(!r||!(r.units>0)) break;const v=posVal(r);askAmount('CUSTOM SELL','Sell some $'+esc(r.ticker),'Your bag is worth about '+fmtUSD(v)+'.',a=>{const c=TR.coins.find(x=>x.id===+id);if(!c||!c.alive||!(c.units>0)) return 'That coin is gone.';const X=poolX(c),Y=X*c.mc;const u=a>=posVal(c)?c.units:a*X/Math.max(1,Y-a);trenchSell(c.id,Math.min(1,u/c.units))});break}
+    case 'copyamt':{const cp=copyState();const b=BOTS.find(x=>x.k===id);askAmount('COPY AMOUNT','Copy '+b.n+' with…','Each copied buy will use this amount.',a=>{cp.amts[id]=a;save();renderTrench()},[['100K',1e5],['1M',1e6],['10M',1e7],['100M',1e8]]);break} case 'mktab':MK.tab=id;MK.sel=null;renderTrench();$('#sheetBody').scrollTop=0;break;
     case 'mtf':MK.tf=+id;renderTrench();break;
     case 'mopen':MK.sel=+id;renderTrench();$('#sheetBody').scrollTop=0;break; case 'mback':MK.sel=null;renderTrench();break;
     case 'bagtab':MK.bt=id;renderBags();$('#sheetBody').scrollTop=0;break; case 'histf':MK.hf=id;renderBags();break;
