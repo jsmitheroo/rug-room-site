@@ -1486,7 +1486,7 @@ function renderMine(){
     <div class="mcoins">${MINE_COINS.map(c=>{const st=MC[c.k],on=mc.k===c.k;return `<button class="mcoin ${on?'on':''}" data-act="mcoin" data-id="${c.k}"><span class="mce">${c.e}</span><b>${c.n}</b><span class="${st.m>=c.base?'up':'down'}">×${st.m.toFixed(2)}</span>${sparkSVG(st.hist,false)}<small>${c.d}</small></button>`}).join('')}</div>
     <div class="caught">Payouts change every 20 seconds. Wilder coins pay more on average but swing harder. Offline earnings use each coin's average rate.</div>
     <div class="sec">Upgrades <span class="mono" style="letter-spacing:0">×${upMult().toFixed(2)} output</span></div>`;
-  h+=MINE_UPS.map(u=>{const lv=upLvl(u.k),price=upPrice(u),can=lv<5&&G.cash>=price;
+  h+=MINE_UPS.map(u=>{const lv=upLvl(u.k),price=upPrice(u),can=lv<MINE_MAX&&G.cash>=price;
     return card({title:`${u.e} ${u.n}${lv?` <span class="tier">Lv ${lv}/${MINE_MAX}</span>`:''}`,cost:lv>=MINE_MAX?'MAX':fmtCash(price),desc:u.d,
       tags:['<span class="pips sm">'+Array.from({length:MINE_MAX},(_,i)=>`<i class="${i<lv?'on':''}"></i>`).join('')+'</span>',`<span class="tag good">+${Math.round(u.per*100)}% per level</span>`],
       btn:lv>=MINE_MAX?'<span class="tag good">Maxed</span>':`<button class="btn ${can?'primary':''}" data-act="mup" data-id="${u.k}" ${can?'':'disabled'}>${lv?'Upgrade':'Buy'}</button>`})}).join('');
