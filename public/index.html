@@ -713,9 +713,9 @@ const SHOP=[
   {k:'chair',name:'Gaming chair',price:15000,tiers:['Gold','Rose gold','Platinum','Diamond','Black gold'],p:t=>'+'+(4*t)+'% profit on graduated coins',desc:'Whales respect the throne.'},
   {k:'trophy',name:'Trophy shelf',price:25000,tiers:['Bronze cup','Silver cup','Gold cup','Platinum cup','Crystal cup'],p:t=>'+'+(2*t)+'% bonus on winning trades',desc:'Trader of the Year. You gave it to yourself.'},
   {k:'penthouse',name:'Penthouse view',price:60000,tiers:['40th floor','60th floor','80th floor','Sky lounge','Top of the city'],p:t=>'Earn '+(.05*t).toFixed(2)+'% of your bags every minute',desc:'Move up. The skyline outside gets brighter every tier.'},
-  {k:'mansion',name:'Modern penthouse',price:10000000,max:10,tiers:['Glass penthouse','Infinity pool','Bar & lights','Gold & marble','Sky palace','Diamond suite','Aquarium wall','Sky garden','Stratosphere','Orbital palace'],p:t=>'+'+(4*t)+'% bonus on winning trades',desc:'Move out of the bedroom. Full glass wall, a balcony over the city and a proper modern setup.'},
+  {k:'mansion',name:'Modern penthouse',price:10000000,max:11,tiers:['Glass penthouse','Infinity pool','Bar & lights','Gold & marble','Sky palace','Diamond suite','Aquarium wall','Sky garden','Stratosphere','Orbital palace','Space station'],p:t=>'+'+(4*t)+'% bonus on winning trades',desc:'Move out of the bedroom. Full glass wall, a balcony over the city and a proper modern setup.'},
 ];
-const TIER_MULT=[0,1,5,25,120,600,3000,15000,75000,375000,2000000], MAXT=5, ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
+const TIER_MULT=[0,1,5,25,120,600,3000,15000,75000,375000,2000000,10000000], MAXT=5, ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X','XI'];
 const maxT=it=>it.max||MAXT, TOTAL_T=()=>SHOP.reduce((a,x)=>a+maxT(x),0);
 const fridgeCut=t=>Math.min(.8,.15+.15*t), sleuthCut=t=>Math.max(.3,1-.15*t);
 const roomScale=()=>1+.3*tierOf('mansion');
@@ -2924,6 +2924,76 @@ const Room=(()=>{
       const r3=new THREE.Group();L3.add(r3);TB(2.1,'x',3.45,y3-.23,-.27,r3);TB(2.3,'z',2.37,y3-.23,-1.45,r3);sp(1.4,3.4,y3-.3,-.3,.3,r3);
       L.rn2=new THREE.PointLight(0xff4fa3,0,8,2);L.rn2.position.set(-1.5,3.2,1.5);rg.add(L.rn2)}
   }
+  // ---- level XI: a whole space station. Wide, calm, uncluttered.
+  let station=null; const stHidden=new Set();
+  function buildStation(){
+    const G2=new THREE.Group();G2.visible=false;S.add(G2);station=G2;anim.stLeds=[];
+    const white=std(0xe9ecf1,{roughness:.45,metalness:.1}), panel=std(0xd3d8e0,{roughness:.6}), dark=std(0x23262e,{roughness:.4,metalness:.5}), steel=std(0x9aa3b2,{metalness:.85,roughness:.25}), glassM=new THREE.MeshStandardMaterial({color:0xcfe0ff,transparent:true,opacity:.1,roughness:.05,metalness:.6,depthWrite:false});
+    const X0=-8,X1=10,Z0=-5.6,Z1=5.6,W=X1-X0,D=Z1-Z0,H=6.6,cx=(X0+X1)/2;
+    // floor: large brushed panels
+    const ft=ctex(1024,640,(g,w,h)=>{g.fillStyle='#2b2f37';g.fillRect(0,0,w,h);for(let x=0;x<w;x+=128) for(let y=0;y<h;y+=128){g.fillStyle='rgba(255,255,255,'+rnd(.015,.04)+')';g.fillRect(x+2,y+2,124,124)}
+      g.strokeStyle='rgba(140,170,210,.18)';g.lineWidth=2;for(let x=0;x<=w;x+=128){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke()}for(let y=0;y<=h;y+=128){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}});
+    const fl=new THREE.Mesh(new THREE.PlaneGeometry(W,D),std(0xffffff,{map:ft.t,roughness:.35,metalness:.35}));fl.rotation.x=-Math.PI/2;fl.position.set(cx,.001,0);fl.receiveShadow=true;G2.add(fl);
+    box(W+.4,.5,D+.4,dark,cx,-.25,0,G2); box(W+.5,.06,D+.5,steel,cx,-.02,0,G2);
+    // space outside: earth, moon, stars (orbit view) far behind the window
+    const sp=ctex(2048,1024,(g,w,h)=>drawView(g,w,h,4,false,6));const back=new THREE.Mesh(new THREE.PlaneGeometry(90,45),new THREE.MeshBasicMaterial({map:sp.t,toneMapped:false,fog:false}));back.position.set(cx,8,-34);G2.add(back);
+    // panoramic window wall with structural ribs
+    const gw=new THREE.Mesh(new THREE.PlaneGeometry(W,H),glassM);gw.position.set(cx,H/2,Z0);G2.add(gw);
+    for(let x=X0;x<=X1+.01;x+=2.25){box(.12,H,.18,steel,x,H/2,Z0,G2)} box(W,.25,.3,white,cx,H,Z0,G2); box(W,.35,.5,white,cx,.17,Z0+.1,G2);
+    box(W,.06,.1,steel,cx,H*.62,Z0,G2);
+    // left wall: clean white panels with light seams
+    box(.3,H,D,white,X0-.15,H/2,0,G2); for(let z=Z0+1.6;z<Z1;z+=1.6) box(.04,H-.4,.03,panel,X0+.01,H/2,z,G2); box(.06,.25,D,white,X0+.02,H,0,G2);
+    // neon edge lines (follow the Neon setting)
+    anim.tube(W,'x',cx,.38,Z0+.38,G2); anim.tube(D,'z',X0+.05,.12,0,G2); anim.tube(D,'z',X0+.05,H-.15,0,G2); anim.tube(W,'x',cx,H-.15,Z0+.05,G2);
+    // trading command deck: long white desk with a curved monitor wall
+    const dk=new THREE.Group();dk.position.set(1.2,0,-1.6);G2.add(dk);
+    for(let i=-2;i<=2;i++){const a=i*.2,r=3.2;const seg=box(1.32,.08,.8,white,Math.sin(a)*r,.88,-Math.cos(a)*r+r,dk);seg.rotation.y=-a;const b2=box(1.25,.8,.06,dark,Math.sin(a)*(r-.33),.45,-Math.cos(a)*(r-.33)+r-.33,dk);b2.rotation.y=-a;
+      const mon=new THREE.Group();mon.position.set(Math.sin(a)*(r-.2),1.55,-Math.cos(a)*(r-.2)+r-.2);mon.rotation.y=-a;dk.add(mon);
+      box(1.2,.7,.04,dark,0,0,0,mon);const sc=new THREE.Mesh(new THREE.PlaneGeometry(1.12,.62),new THREE.MeshBasicMaterial({map:scr.main.tex.t,toneMapped:false}));sc.position.z=.025;mon.add(sc);box(.05,.5,.05,steel,0,-.55,-.02,mon)}
+    glow(0x5ad1ff,3.5,1.2,1.5,-1.3,.25,G2);
+    const ch=new THREE.Group();ch.position.set(1.2,0,.35);G2.add(ch);const cm=std(0x1c1f26,{roughness:.5});box(.62,.1,.6,cm,0,.55,0,ch);const cb=box(.6,.9,.1,cm,0,1.05,.3,ch);cb.rotation.x=-.12;cyl(.04,.04,.4,steel,0,.32,0,ch);cyl(.3,.3,.04,steel,0,.04,0,ch,24);
+    // lounge (left): low sofa, rug, table, tall plant
+    const lg=new THREE.Group();lg.position.set(-5,0,2.6);G2.add(lg);const fab=std(0xf1efea,{roughness:.95}),acc=std(0x5ad1ff,{roughness:.8});
+    const rugM=new THREE.Mesh(new THREE.CircleGeometry(1.9,64),std(0x3a4150,{roughness:1}));rugM.rotation.x=-Math.PI/2;rugM.position.y=.025;rugM.receiveShadow=false;lg.add(rugM);
+    box(3.0,.32,.9,fab,0,.16,-1.1,lg);box(3.0,.45,.22,fab,0,.42,-1.5,lg);box(.9,.32,1.9,fab,-1.95,.16,-.6,lg);box(.22,.45,1.9,fab,-2.3,.42,-.6,lg);
+    box(.32,.28,.3,acc,-.6,.45,-1.2,lg);box(.32,.28,.3,std(0xff4fa3,{roughness:.8}),.7,.45,-1.2,lg);
+    cyl(.6,.6,.05,std(0xf7f7f5,{roughness:.2}),0,.4,.4,lg,48);cyl(.08,.14,.38,steel,0,.2,.4,lg,16);
+    {const pg=new THREE.Group();pg.position.set(-2.4,0,1.4);lg.add(pg);cyl(.32,.26,.7,dark,0,.35,0,pg,24);const lf=std(0x3c8f4a,{roughness:.8,flatShading:true});for(let i=0;i<12;i++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(rnd(.2,.34),0),lf);b.position.set(rnd(-.3,.3),1.0+i*.13,rnd(-.3,.3));pg.add(b)}}
+    // observation deck (right, by the glass): raised platform, loungers, telescope
+    const ob=new THREE.Group();ob.position.set(6.6,0,-3.7);G2.add(ob);box(5.2,.3,2.6,white,0,.15,0,ob);box(5.2,.04,2.62,steel,0,.31,0,ob);
+    for(const [x,w] of [[0,5.2]]){const g3=new THREE.Mesh(new THREE.BoxGeometry(w,.8,.02),glassM);g3.position.set(x,.72,1.3);ob.add(g3);box(w,.04,.05,steel,x,1.13,1.3,ob)}
+    for(const lx of [-1.4,0]){const l=new THREE.Group();l.position.set(lx,.32,-.1);ob.add(l);box(.7,.16,1.6,dark,0,.1,0,l);box(.64,.08,1.2,fab,0,.22,.2,l);const bk=box(.64,.08,.5,fab,0,.38,-.5,l);bk.rotation.x=.7}
+    {const tl=cyl(.07,.1,1.1,dark,1.6,1.25,-.2,ob,16);tl.rotation.z=1.0;for(const a of [0,2.1,4.2]){const leg=cyl(.015,.015,.95,steel,1.6+Math.cos(a)*.18,.75,-.2+Math.sin(a)*.18,ob,6);leg.rotation.set(Math.sin(a)*.2,0,-Math.cos(a)*.2)}}
+    // holo-table (right front): live market globe
+    const ht=new THREE.Group();ht.position.set(6.4,0,2.4);G2.add(ht);cyl(1.0,1.15,.75,dark,0,.38,0,ht,48);cyl(1.02,1.02,.04,std(0x5ad1ff,{emissive:0x2a8fbf,emissiveIntensity:.8}),0,.77,0,ht,48);
+    const hp=new THREE.Group();hp.position.y=1.7;ht.add(hp);anim.stHolo=hp;hp.add(new THREE.Mesh(new THREE.SphereGeometry(.62,28,18),new THREE.MeshBasicMaterial({color:0x4fe0ff,wireframe:true,transparent:true,opacity:.5,toneMapped:false})));
+    const rg=new THREE.Mesh(new THREE.TorusGeometry(.95,.012,6,72),new THREE.MeshBasicMaterial({color:0xb06bff,toneMapped:false}));rg.rotation.x=1.25;hp.add(rg);glow(0x4fe0ff,3,0,1.7,0,.35,ht);
+    for(let i=0;i<4;i++) box(.5,.6,.04,std(0x0f1a2a,{emissive:0x1d6fa0,emissiveIntensity:.5,transparent:true,opacity:.8}),Math.cos(i*1.57)*1.3,1.5,Math.sin(i*1.57)*1.3,ht).rotation.y=-i*1.57+Math.PI/2;
+    // mining racks along the back of the left wall
+    for(let k=0;k<3;k++){const rk=new THREE.Group();rk.position.set(-7.3,0,-4.6+k*1.05);G2.add(rk);box(.9,2.6,.8,dark,0,1.3,0,rk);
+      for(let r=0;r<10;r++) for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.018,6,6),new THREE.MeshBasicMaterial({color:i%3?0x39ff88:0x5ad1ff}));m.position.set(.46,.3+r*.22,-.3+i*.15);rk.add(m);anim.stLeds.push(m)}}
+    // airlock on the left wall
+    {const al=new THREE.Group();al.position.set(X0+.05,1.6,.1);al.rotation.y=Math.PI/2;G2.add(al);const ring=new THREE.Mesh(new THREE.TorusGeometry(1.15,.12,16,48),steel);al.add(ring);
+      const door=new THREE.Mesh(new THREE.CircleGeometry(1.05,48),std(0xc9ced8,{metalness:.6,roughness:.35}));door.position.z=.01;al.add(door);box(.06,2.1,.02,dark,0,0,.03,al);
+      for(let i=0;i<12;i++){const a=i/12*Math.PI*2;glow(0x5ad1ff,.22,Math.cos(a)*1.15,Math.sin(a)*1.15,.12,.8,al)}}
+    // a shuttle docked outside
+    {const sh=new THREE.Group();sh.position.set(-2.5,4.2,-11);G2.add(sh);anim.stShip=sh;const hull=std(0xdfe3ea,{metalness:.5,roughness:.4});
+      const body=new THREE.Mesh(new THREE.CylinderGeometry(.5,.7,3.2,16),hull);body.rotation.z=Math.PI/2;sh.add(body);const nose=new THREE.Mesh(new THREE.ConeGeometry(.5,1.1,16),hull);nose.rotation.z=-Math.PI/2;nose.position.x=2.15;sh.add(nose);
+      box(1.4,.06,2.6,hull,-.4,0,0,sh);glow(0x5ad1ff,1.6,-1.8,0,0,.6,sh)}
+    // lighting for the station
+    L.st1=new THREE.PointLight(0xf2f6ff,0,24,2);L.st1.position.set(1,6.2,1);G2.add(L.st1);
+    L.st2=new THREE.PointLight(0x5ad1ff,0,8,2);L.st2.position.set(6.4,2.4,2.4);G2.add(L.st2);
+    L.stSun=new THREE.DirectionalLight(0xfff1dc,0);L.stSun.position.set(8,9,-14);G2.add(L.stSun);
+  }
+  function stationOn(){return modernOn>=11}
+  function enforceStation(){
+    if(!station) return; const on=stationOn(); station.visible=on;
+    if(on){S.children.forEach(c=>{if(c===station||c.isLight||!c.visible) return;c.visible=false;stHidden.add(c)});
+      L.st1.intensity=1.5;L.st2.intensity=1.1;L.stSun.intensity=1.1;S.background.set(0x010208);S.fog.color.set(0x010208);S.fog.near=30;S.fog.far=140;
+      ['lamp','screen','neon','led','pend','deck','pool','cove','bar','chand','dia','aq','rn','rn2'].forEach(k=>{if(L[k]) L[k].intensity=0})}
+    else {L.st1.intensity=L.st2.intensity=L.stSun.intensity=0}
+  }
+  function leaveStation(){if(stHidden.size){stHidden.forEach(c=>c.visible=true);stHidden.clear()}}
   function marbleMat(){return std(0xffffff,{map:anim.marble,roughness:.25})}
   function dayFactor(){
     const m=(typeof SET!=='undefined'&&SET.daynight)||'auto'; if(m==='day') return 1; if(m==='night') return 0;
@@ -2936,7 +3006,7 @@ const Room=(()=>{
     const pent=modernOn>0, dusk=d>0&&d<1?1-Math.abs(d-.5)*2:0, c=new THREE.Color();
     if(anim.viewDay) anim.viewDay.material.opacity=d; if(anim.cityDay) anim.cityDay.material.opacity=d;
     const nb=new THREE.Color(pent?0x0b0e1e:0x07080f), db=new THREE.Color(0x8fb8dc), duskC=new THREE.Color(0xd98a6a);
-    c.copy(nb).lerp(db,d); if(dusk) c.lerp(duskC,dusk*.45); S.background.copy(c); S.fog.color.copy(c);
+    c.copy(nb).lerp(db,d); if(dusk) c.lerp(duskC,dusk*.45); if(modernOn<11){S.background.copy(c); S.fog.color.copy(c)}
     L.amb.color.set(pent?0x8a90b8:0x3a3468).lerp(new THREE.Color(0xfff6ea),d*.8); L.amb.intensity=(pent?.75:.55)+d*.55;
     L.hemi.color.set(0x6a5bb0).lerp(new THREE.Color(0xcfe3ff),d); L.hemi.intensity=(pent?.6:.45)+d*.55;
     L.moon.color.set(0x8fa6ff).lerp(new THREE.Color(dusk>.3?0xffb27a:0xfff1d8),d); L.moon.intensity=(pent?.7:.45)+d*1.2; L.moon.position.set(3,4+d*4,-6);
@@ -3186,7 +3256,7 @@ const Room=(()=>{
     // more space: everything along the left wall (wall, bed, shelves, sofa, art...) moves 0.7 m further out
     {const bb=new THREE.Box3(),c=new THREE.Vector3();const shift=o=>{if(o===anim.plantAnchor||o===anim.fridgeAnchor) return;bb.setFromObject(o);if(bb.isEmpty()) return;bb.getCenter(c);if(c.x<-2.2&&c.z>-2.55) o.position.x-=.7};
       S.children.slice().forEach(o=>{if(o===modern) modern.children.slice().forEach(shift); else shift(o)})}
-    buildLoft();
+    buildLoft(); buildStation();
 
     // HUD interaction
     window.addEventListener('pointermove',e=>{if(e.pointerType==='touch') return;mouse.x=e.clientX/window.innerWidth-.5;mouse.y=e.clientY/window.innerHeight-.5});
@@ -3222,7 +3292,8 @@ const Room=(()=>{
     anim.neonTier=T('neon'); drawNeon();
     if(justBought){flashC=0xffd36b;flashT=.7}
     if(anim.chairMat){if(own('chair')){anim.chairMat.color.set([0,0xc9a14a,0xd99a8a,0xd8dbe2,0xbfefff,0x1a1610][T('chair')]);anim.chairMat.metalness=.85;anim.chairMat.roughness=T('chair')>=4?.15:.28}else{anim.chairMat.color.set(0x2a2440);anim.chairMat.metalness=.05;anim.chairMat.roughness=.6}}
-    applyTiers(); applyModern(T('mansion')); applyCustom(); applyDay(true);
+    if(T('mansion')<11) leaveStation();
+    applyTiers(); applyModern(T('mansion')); applyCustom(); applyDay(true); enforceStation();
     const rich=T('penthouse');if(scr.sky&&rich!==skyRich){skyRich=rich;const lv=rich>=5?2:rich>=3?1:0;drawView(scr.sky.g,1024,768,lv,false,rich);scr.sky.t.needsUpdate=true;
       if(anim.viewDayTex){drawView(anim.viewDayTex.g,1024,768,lv,true,rich);anim.viewDayTex.t.needsUpdate=true}}
   }
@@ -3283,7 +3354,7 @@ const Room=(()=>{
     if((nCus==='rgb'||(!nCus&&tierOf('neon')>=5))&&Math.floor(t*10)!==anim.nT){anim.nT=Math.floor(t*10);drawNeon()}
     if(anim.fairy&&own('fairy')) anim.fairy.forEach((f,i)=>{f.material.opacity=.35+Math.sin(t*2+i*1.7)*.2});
     // lamp flicker
-    L.lamp.intensity=1.7+Math.sin(t*7)*.03+(Math.random()<.01?-.3:0);
+    L.lamp.intensity=modernOn>=11?0:1.7+Math.sin(t*7)*.03+(Math.random()<.01?-.3:0);
     // neon flicker
     if(anim.neonMesh&&own('neon')&&!modernOn){const f=Math.random()<.015?.3:1;anim.neonMesh.material.opacity=f;L.neon.intensity=.9*f}
     // sirens
@@ -3307,6 +3378,7 @@ const Room=(()=>{
     if(nCus!=='rgb'&&anim.armLed&&tierOf('chair')>=2) anim.armLed.color.setHSL(rgbHue(t),1,.6);
     if(!nCus&&anim.ledBack&&tierOf('led')>=2) anim.ledBack.material.color.copy(anim.ledMat.color);
     // penthouse: pool shimmer and fireworks
+    if(modernOn>=11){if(anim.stHolo){anim.stHolo.rotation.y+=dt*.4;anim.stHolo.position.y=1.7+Math.sin(t*1.1)*.05}if(anim.stShip){anim.stShip.position.y=4.2+Math.sin(t*.4)*.15;anim.stShip.rotation.z=Math.sin(t*.3)*.04}anim.stLeds.forEach((m,i)=>{m.visible=Math.sin(t*(4+i%7)+i*1.3)>-.4})}
     if(modernOn>=6&&anim.crystals){anim.crystals.rotation.y+=dt*.35;anim.crystals.position.y=5.7+Math.sin(t*.8)*.08}
     if(modernOn>=7&&anim.aqTex) anim.aqTex.offset.x=(anim.aqTex.offset.x+dt*.012)%1;
     if(modernOn>=10&&anim.holo){anim.holo.rotation.y+=dt*.5;anim.holo.position.y=2.4+Math.sin(t*1.2)*.05}
@@ -3319,7 +3391,7 @@ const Room=(()=>{
     if(Math.abs(shiftT-shiftC)>.5){shiftC+=(shiftT-shiftC)*Math.min(1,dt*7);applyView()}
     titleC+=(titleT-titleC)*Math.min(1,dt*1.6);
     const portrait=VW/VH<.8, pent=modernOn>0, tk=titleC;
-    const tgt=pent?(portrait?[5.4,7.8,17.5,.9,3.4,-.9]:[8.0,6.4,12.2,.3,3.0,-.9]):(portrait?[4.2,4.4,10.0,-.5,1.5,-1.0]:[5.6,3.8,7.8,-.7,1.35,-1.0]);
+    const tgt=modernOn>=11?(portrait?[13,17,34,1,2.6,-1]:[16.5,10.5,19.5,1,1.4,-1.2]):pent?(portrait?[5.4,7.8,17.5,.9,3.4,-.9]:[8.0,6.4,12.2,.3,3.0,-.9]):(portrait?[4.2,4.4,10.0,-.5,1.5,-1.0]:[5.6,3.8,7.8,-.7,1.35,-1.0]);
     if(!anim.cam||anim.snapCam){anim.cam=tgt.slice();anim.snapCam=false} for(let i=0;i<6;i++) anim.cam[i]+=(tgt[i]-anim.cam[i])*Math.min(1,dt*2.2);
     const [bx,by,bz,lx,ly,lz]=anim.cam;
     const tz=portrait?.15:.9, tx=portrait?.35:.9;
