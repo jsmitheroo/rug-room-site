@@ -1670,7 +1670,7 @@ function candlesFromHist(r){const c=[];for(let i=1;i<r.hist.length;i++){const o=
 function fixBroken(){
   if(!G.fixes||typeof G.fixes!=='object') G.fixes={};
   let hit=false;
-  TR.coins.forEach(r=>{if(r.alive&&(!isFinite(r.mc)||r.mc>MC_HARD||/ribbington/i.test(r.name||'')||(r.units>0&&!r.event&&posVal(r)>5e11))){r.mc=isFinite(r.mc)?Math.min(r.mc,MC_HARD):MC_HARD;doRug(r,false);hit=true;
+  TR.coins.forEach(r=>{if(r.alive&&(!isFinite(r.mc)||r.mc>MC_HARD||/ribbington/i.test(r.name||''))){r.mc=isFinite(r.mc)?Math.min(r.mc,MC_HARD):MC_HARD;doRug(r,false);hit=true;
     toast('$'+r.ticker+' was rugged. That position is gone.','bad',8000)}});
   if(typeof coin!=='undefined'&&coin&&coin.alive&&(!isFinite(mcapOf(coin))||mcapOf(coin)>MC_HARD||/ribbington/i.test(coin.name||''))){coin.devTokens=0;endCoin('Rugged by the market (broken coin)',false);hit=true}
   if(hit){save();saveRun();if(typeof renderAll==='function') renderAll()}
