@@ -2928,61 +2928,81 @@ const Room=(()=>{
   let station=null; const stHidden=new Set();
   function buildStation(){
     const G2=new THREE.Group();G2.visible=false;S.add(G2);station=G2;anim.stLeds=[];
-    const white=std(0xe9ecf1,{roughness:.45,metalness:.1}), panel=std(0xd3d8e0,{roughness:.6}), dark=std(0x23262e,{roughness:.4,metalness:.5}), steel=std(0x9aa3b2,{metalness:.85,roughness:.25}), glassM=new THREE.MeshStandardMaterial({color:0xcfe0ff,transparent:true,opacity:.1,roughness:.05,metalness:.6,depthWrite:false});
-    const X0=-8,X1=10,Z0=-5.6,Z1=5.6,W=X1-X0,D=Z1-Z0,H=6.6,cx=(X0+X1)/2;
-    // floor: large brushed panels
-    const ft=ctex(1024,640,(g,w,h)=>{g.fillStyle='#2b2f37';g.fillRect(0,0,w,h);for(let x=0;x<w;x+=128) for(let y=0;y<h;y+=128){g.fillStyle='rgba(255,255,255,'+rnd(.015,.04)+')';g.fillRect(x+2,y+2,124,124)}
-      g.strokeStyle='rgba(140,170,210,.18)';g.lineWidth=2;for(let x=0;x<=w;x+=128){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke()}for(let y=0;y<=h;y+=128){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}});
-    const fl=new THREE.Mesh(new THREE.PlaneGeometry(W,D),std(0xffffff,{map:ft.t,roughness:.35,metalness:.35}));fl.rotation.x=-Math.PI/2;fl.position.set(cx,.001,0);fl.receiveShadow=true;G2.add(fl);
-    box(W+.4,.5,D+.4,dark,cx,-.25,0,G2); box(W+.5,.06,D+.5,steel,cx,-.02,0,G2);
-    // space outside: earth, moon, stars (orbit view) far behind the window
-    const sp=ctex(2048,1024,(g,w,h)=>drawView(g,w,h,4,false,6));const back=new THREE.Mesh(new THREE.PlaneGeometry(90,45),new THREE.MeshBasicMaterial({map:sp.t,toneMapped:false,fog:false}));back.position.set(cx,8,-34);G2.add(back);
-    // panoramic window wall with structural ribs
-    const gw=new THREE.Mesh(new THREE.PlaneGeometry(W,H),glassM);gw.position.set(cx,H/2,Z0);G2.add(gw);
-    for(let x=X0;x<=X1+.01;x+=2.25){box(.12,H,.18,steel,x,H/2,Z0,G2)} box(W,.25,.3,white,cx,H,Z0,G2); box(W,.35,.5,white,cx,.17,Z0+.1,G2);
-    box(W,.06,.1,steel,cx,H*.62,Z0,G2);
-    // left wall: clean white panels with light seams
-    box(.3,H,D,white,X0-.15,H/2,0,G2); for(let z=Z0+1.6;z<Z1;z+=1.6) box(.04,H-.4,.03,panel,X0+.01,H/2,z,G2); box(.06,.25,D,white,X0+.02,H,0,G2);
-    // neon edge lines (follow the Neon setting)
-    anim.tube(W,'x',cx,.38,Z0+.38,G2); anim.tube(D,'z',X0+.05,.12,0,G2); anim.tube(D,'z',X0+.05,H-.15,0,G2); anim.tube(W,'x',cx,H-.15,Z0+.05,G2);
-    // trading command deck: long white desk with a curved monitor wall
-    const dk=new THREE.Group();dk.position.set(1.2,0,-1.6);G2.add(dk);
+    const white=std(0xe9ecf1,{roughness:.45,metalness:.1}), dark=std(0x23262e,{roughness:.4,metalness:.5}), steel=std(0x9aa3b2,{metalness:.85,roughness:.25}),
+      glassM=new THREE.MeshStandardMaterial({color:0xcfe0ff,transparent:true,opacity:.1,roughness:.05,metalness:.6,depthWrite:false,side:THREE.DoubleSide}),
+      fab=std(0xf1efea,{roughness:.95});
+    const CX=1, R=8.2, H=5.6, HUB=H+2.6;
+    // round deck with a tapered hull underneath
+    const ft=ctex(1024,1024,(g,w,h)=>{g.fillStyle='#2b2f37';g.fillRect(0,0,w,h);const c=w/2;
+      for(let r=60;r<c;r+=70){g.strokeStyle='rgba(140,170,210,.16)';g.lineWidth=2;g.beginPath();g.arc(c,c,r,0,7);g.stroke()}
+      for(let k=0;k<24;k++){const a=k/24*Math.PI*2;g.beginPath();g.moveTo(c+Math.cos(a)*60,c+Math.sin(a)*60);g.lineTo(c+Math.cos(a)*c,c+Math.sin(a)*c);g.stroke()}
+      const rg=g.createRadialGradient(c,c,0,c,c,c);rg.addColorStop(0,'rgba(255,255,255,.06)');rg.addColorStop(1,'rgba(0,0,0,.15)');g.fillStyle=rg;g.fillRect(0,0,w,h)});
+    const fl=new THREE.Mesh(new THREE.CircleGeometry(R,96),std(0xffffff,{map:ft.t,roughness:.35,metalness:.35}));fl.rotation.x=-Math.PI/2;fl.position.set(CX,.002,0);fl.receiveShadow=true;G2.add(fl);
+    cyl(R+.15,R+.15,.12,steel,CX,-.06,0,G2,96);
+    cyl(R+.1,R*.62,1.8,dark,CX,-1.02,0,G2,96);
+    {const band=new THREE.Mesh(new THREE.TorusGeometry(R*.86,.05,8,96),new THREE.MeshBasicMaterial({color:0x5ad1ff,toneMapped:false}));band.rotation.x=Math.PI/2;band.position.set(CX,-1.1,0);G2.add(band)}
+    cyl(1.4,.5,1.4,dark,CX,-2.5,0,G2,32); glow(0x5ad1ff,3,CX,-2.9,0,.35,G2);
+    // space outside
+    const sp=ctex(2048,1024,(g,w,h)=>drawView(g,w,h,4,false,6));const back=new THREE.Mesh(new THREE.PlaneGeometry(110,55),new THREE.MeshBasicMaterial({map:sp.t,toneMapped:false,fog:false}));back.position.set(CX,6,-40);G2.add(back);
+    // curved panoramic glass around the back half
+    const gw=new THREE.Mesh(new THREE.CylinderGeometry(R,R,H,96,1,true,Math.PI/2,Math.PI),glassM);gw.position.set(CX,H/2,0);G2.add(gw);
+    {const sill=new THREE.Mesh(new THREE.CylinderGeometry(R,R,.35,96,1,true,Math.PI/2,Math.PI),white);sill.material=white.clone();sill.material.side=THREE.DoubleSide;sill.position.set(CX,.17,0);G2.add(sill)}
+    {const top=new THREE.Mesh(new THREE.TorusGeometry(R,.12,8,96,Math.PI),white);top.rotation.x=Math.PI/2;top.rotation.z=Math.PI;top.position.set(CX,H,0);G2.add(top)}
+    // ribs: posts around the glass that arch up into a hub over the middle
+    for(let k=0;k<=10;k++){const a=Math.PI+k/10*Math.PI, x=CX+Math.cos(a)*R, z=Math.sin(a)*R;
+      box(.14,H,.14,steel,x,H/2,z,G2).rotation.y=-a;
+      const curve=new THREE.QuadraticBezierCurve3(new THREE.Vector3(x,H,z),new THREE.Vector3(CX+Math.cos(a)*R*.55,HUB+.3,Math.sin(a)*R*.55),new THREE.Vector3(CX+Math.cos(a)*1.1,HUB,Math.sin(a)*1.1));
+      const rib=new THREE.Mesh(new THREE.TubeGeometry(curve,20,.07,6,false),steel);G2.add(rib)}
+    {const hub=new THREE.Mesh(new THREE.TorusGeometry(1.15,.18,10,40),white);hub.rotation.x=Math.PI/2;hub.position.set(CX,HUB,0);G2.add(hub);
+      cyl(1.0,1.0,.2,dark,CX,HUB,0,G2,40);glow(0xf2f6ff,3,CX,HUB-.3,0,.35,G2)}
+    // habitat ring and solar wings outside give it a station silhouette
+    {const ring=new THREE.Group();ring.position.set(CX,-.9,0);ring.rotation.x=.12;G2.add(ring);anim.stRing=ring;
+      const tor=new THREE.Mesh(new THREE.TorusGeometry(R+5.5,.55,14,120),white);tor.rotation.x=Math.PI/2;ring.add(tor);
+      for(let k=0;k<6;k++){const a=k/6*Math.PI*2;const L0=R+.5,L1=R+5.5,sp2=cyl(.12,.12,L1-L0,steel,Math.cos(a)*(L0+L1)/2,0,Math.sin(a)*(L0+L1)/2,ring,8);sp2.rotation.z=Math.PI/2;sp2.rotation.y=-a;
+        for(let w=0;w<10;w++){const b=w/10*Math.PI*2/6+a;glow(0xffe2b0,.35,Math.cos(b)*(R+5.5),.3,Math.sin(b)*(R+5.5),.8,ring)}}}
+    {const pt=ctex(256,128,(g,w,h)=>{g.fillStyle='#152a5c';g.fillRect(0,0,w,h);g.strokeStyle='rgba(160,200,255,.45)';g.lineWidth=2;for(let x=0;x<=w;x+=32){g.beginPath();g.moveTo(x,0);g.lineTo(x,h);g.stroke()}for(let y=0;y<=h;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}});
+      const pm=new THREE.MeshStandardMaterial({map:pt.t,metalness:.6,roughness:.3,side:THREE.DoubleSide,emissive:0x0a1a3a});
+      for(const sd of [-1,1]){const tx=CX+sd*(R+9);box(15,.18,.18,steel,CX+sd*(R+7),3.2,-4,G2);
+        for(let k=0;k<3;k++){const pn=new THREE.Mesh(new THREE.PlaneGeometry(3.6,2.2),pm);pn.position.set(tx+sd*(k*4.2-2.4),3.2,-4);pn.rotation.x=-Math.PI/2+.5;G2.add(pn)}}}
+    // docking tube off the left with a shuttle on the end
+    {const tb=cyl(.9,.9,4.5,white,CX-R-2.1,1.4,1.2,G2,24);tb.rotation.z=Math.PI/2;for(let k=0;k<4;k++){const rr=new THREE.Mesh(new THREE.TorusGeometry(.95,.06,8,32),steel);rr.rotation.y=Math.PI/2;rr.position.set(CX-R-.4-k*1.2,1.4,1.2);G2.add(rr)}
+      const sh=new THREE.Group();sh.position.set(CX-R-6.2,1.6,1.2);G2.add(sh);anim.stShip=sh;const hull=std(0xdfe3ea,{metalness:.5,roughness:.4});
+      const body=new THREE.Mesh(new THREE.CylinderGeometry(.6,.8,3.4,16),hull);body.rotation.z=Math.PI/2;sh.add(body);const nose=new THREE.Mesh(new THREE.ConeGeometry(.6,1.2,16),hull);nose.rotation.z=Math.PI/2;nose.position.x=-2.3;sh.add(nose);
+      box(1.6,.06,3.0,hull,.3,0,0,sh);glow(0x5ad1ff,1.8,1.9,0,0,.6,sh);
+      const door=new THREE.Mesh(new THREE.CircleGeometry(.85,32),std(0xc9ced8,{metalness:.6,roughness:.35}));door.rotation.y=Math.PI/2;door.position.set(CX-R+.05,1.4,1.2);G2.add(door);
+      for(let k=0;k<10;k++){const a=k/10*Math.PI*2;glow(0x5ad1ff,.2,CX-R+.08,1.4+Math.sin(a)*.9,1.2+Math.cos(a)*.9,.8,G2)}}
+    // neon rings (follow the Neon setting)
+    {const c1=new THREE.Mesh(new THREE.TorusGeometry(R-.12,.022,6,160),anim.rnMat);c1.rotation.x=Math.PI/2;c1.position.set(CX,.04,0);G2.add(c1);
+      const c2=new THREE.Mesh(new THREE.TorusGeometry(R-.12,.09,6,160),anim.rnHalo2);c2.rotation.x=Math.PI/2;c2.position.set(CX,.05,0);G2.add(c2);
+      const c3=new THREE.Mesh(new THREE.TorusGeometry(1.15,.03,6,60),anim.rnMat);c3.rotation.x=Math.PI/2;c3.position.set(CX,HUB-.2,0);G2.add(c3)}
+    // command desk: curved, facing the room
+    const dk=new THREE.Group();dk.position.set(CX,0,-3.4);G2.add(dk);
     for(let i=-2;i<=2;i++){const a=i*.2,r=3.2;const seg=box(1.32,.08,.8,white,Math.sin(a)*r,.88,-Math.cos(a)*r+r,dk);seg.rotation.y=-a;const b2=box(1.25,.8,.06,dark,Math.sin(a)*(r-.33),.45,-Math.cos(a)*(r-.33)+r-.33,dk);b2.rotation.y=-a;
       const mon=new THREE.Group();mon.position.set(Math.sin(a)*(r-.2),1.55,-Math.cos(a)*(r-.2)+r-.2);mon.rotation.y=-a;dk.add(mon);
       box(1.2,.7,.04,dark,0,0,0,mon);const sc=new THREE.Mesh(new THREE.PlaneGeometry(1.12,.62),new THREE.MeshBasicMaterial({map:scr.main.tex.t,toneMapped:false}));sc.position.z=.025;mon.add(sc);box(.05,.5,.05,steel,0,-.55,-.02,mon)}
-    glow(0x5ad1ff,3.5,1.2,1.5,-1.3,.25,G2);
-    const ch=new THREE.Group();ch.position.set(1.2,0,.35);G2.add(ch);const cm=std(0x1c1f26,{roughness:.5});box(.62,.1,.6,cm,0,.55,0,ch);const cb=box(.6,.9,.1,cm,0,1.05,.3,ch);cb.rotation.x=-.12;cyl(.04,.04,.4,steel,0,.32,0,ch);cyl(.3,.3,.04,steel,0,.04,0,ch,24);
-    // lounge (left): low sofa, rug, table, tall plant
-    const lg=new THREE.Group();lg.position.set(-5,0,2.6);G2.add(lg);const fab=std(0xf1efea,{roughness:.95}),acc=std(0x5ad1ff,{roughness:.8});
-    const rugM=new THREE.Mesh(new THREE.CircleGeometry(1.9,64),std(0x3a4150,{roughness:1}));rugM.rotation.x=-Math.PI/2;rugM.position.y=.025;rugM.receiveShadow=false;lg.add(rugM);
-    box(3.0,.32,.9,fab,0,.16,-1.1,lg);box(3.0,.45,.22,fab,0,.42,-1.5,lg);box(.9,.32,1.9,fab,-1.95,.16,-.6,lg);box(.22,.45,1.9,fab,-2.3,.42,-.6,lg);
-    box(.32,.28,.3,acc,-.6,.45,-1.2,lg);box(.32,.28,.3,std(0xff4fa3,{roughness:.8}),.7,.45,-1.2,lg);
-    cyl(.6,.6,.05,std(0xf7f7f5,{roughness:.2}),0,.4,.4,lg,48);cyl(.08,.14,.38,steel,0,.2,.4,lg,16);
-    {const pg=new THREE.Group();pg.position.set(-2.4,0,1.4);lg.add(pg);cyl(.32,.26,.7,dark,0,.35,0,pg,24);const lf=std(0x3c8f4a,{roughness:.8,flatShading:true});for(let i=0;i<12;i++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(rnd(.2,.34),0),lf);b.position.set(rnd(-.3,.3),1.0+i*.13,rnd(-.3,.3));pg.add(b)}}
-    // observation deck (right, by the glass): raised platform, loungers, telescope
-    const ob=new THREE.Group();ob.position.set(6.6,0,-3.7);G2.add(ob);box(5.2,.3,2.6,white,0,.15,0,ob);box(5.2,.04,2.62,steel,0,.31,0,ob);
-    for(const [x,w] of [[0,5.2]]){const g3=new THREE.Mesh(new THREE.BoxGeometry(w,.8,.02),glassM);g3.position.set(x,.72,1.3);ob.add(g3);box(w,.04,.05,steel,x,1.13,1.3,ob)}
-    for(const lx of [-1.4,0]){const l=new THREE.Group();l.position.set(lx,.32,-.1);ob.add(l);box(.7,.16,1.6,dark,0,.1,0,l);box(.64,.08,1.2,fab,0,.22,.2,l);const bk=box(.64,.08,.5,fab,0,.38,-.5,l);bk.rotation.x=.7}
-    {const tl=cyl(.07,.1,1.1,dark,1.6,1.25,-.2,ob,16);tl.rotation.z=1.0;for(const a of [0,2.1,4.2]){const leg=cyl(.015,.015,.95,steel,1.6+Math.cos(a)*.18,.75,-.2+Math.sin(a)*.18,ob,6);leg.rotation.set(Math.sin(a)*.2,0,-Math.cos(a)*.2)}}
-    // holo-table (right front): live market globe
-    const ht=new THREE.Group();ht.position.set(6.4,0,2.4);G2.add(ht);cyl(1.0,1.15,.75,dark,0,.38,0,ht,48);cyl(1.02,1.02,.04,std(0x5ad1ff,{emissive:0x2a8fbf,emissiveIntensity:.8}),0,.77,0,ht,48);
+    glow(0x5ad1ff,3.5,CX,1.5,-3.1,.25,G2);
+    const ch=new THREE.Group();ch.position.set(CX,0,-1.4);G2.add(ch);const cm=std(0x1c1f26,{roughness:.5});box(.62,.1,.6,cm,0,.55,0,ch);const cb=box(.6,.9,.1,cm,0,1.05,.3,ch);cb.rotation.x=-.12;cyl(.04,.04,.4,steel,0,.32,0,ch);cyl(.3,.3,.04,steel,0,.04,0,ch,24);
+    // lounge (left): curved sofa round a table
+    const lg=new THREE.Group();lg.position.set(CX-4.2,0,2.2);G2.add(lg);
+    const rugM=new THREE.Mesh(new THREE.CircleGeometry(1.8,64),std(0x3a4150,{roughness:1}));rugM.rotation.x=-Math.PI/2;rugM.position.y=.025;lg.add(rugM);
+    for(let k=0;k<5;k++){const a=Math.PI*.9+k*.32;const sx=Math.cos(a)*1.45,sz=Math.sin(a)*1.45;const sb=box(.95,.34,.75,fab,sx,.17,sz,lg);sb.rotation.y=-a+Math.PI/2;const bk=box(.95,.4,.18,fab,Math.cos(a)*1.85,.46,Math.sin(a)*1.85,lg);bk.rotation.y=-a+Math.PI/2}
+    box(.3,.26,.28,std(0x5ad1ff,{roughness:.8}),-1.3,.47,-.6,lg);box(.3,.26,.28,std(0xff4fa3,{roughness:.8}),-.3,.47,-1.35,lg);
+    cyl(.55,.55,.05,std(0xf7f7f5,{roughness:.2}),0,.4,0,lg,48);cyl(.08,.14,.38,steel,0,.2,0,lg,16);
+    for(const [px,pz] of [[CX-6.9,-.3],[CX+7.0,.2]]){const pg=new THREE.Group();pg.position.set(px,0,pz);G2.add(pg);cyl(.32,.26,.7,dark,0,.35,0,pg,24);const lf=std(0x3c8f4a,{roughness:.8,flatShading:true});for(let q=0;q<12;q++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(rnd(.2,.34),0),lf);b.position.set(rnd(-.3,.3),1.0+q*.13,rnd(-.3,.3));pg.add(b)}}
+    // observation dais (back right) with loungers and a telescope
+    const ob=new THREE.Group();ob.position.set(CX+4.4,0,-4.6);ob.rotation.y=-.5;G2.add(ob);cyl(1.8,1.9,.28,white,0,.14,0,ob,48);cyl(1.81,1.81,.03,steel,0,.29,0,ob,48);
+    for(const lx of [-.7,.5]){const l=new THREE.Group();l.position.set(lx,.3,.2);ob.add(l);box(.6,.14,1.4,dark,0,.09,0,l);box(.55,.07,1.05,fab,0,.19,.18,l);const bk=box(.55,.07,.45,fab,0,.33,-.45,l);bk.rotation.x=.7}
+    {const tl=cyl(.07,.1,1.1,dark,1.1,1.2,-.6,ob,16);tl.rotation.z=1.0;tl.rotation.y=.6;for(const a of [0,2.1,4.2]){const leg=cyl(.015,.015,.95,steel,1.1+Math.cos(a)*.18,.72,-.6+Math.sin(a)*.18,ob,6);leg.rotation.set(Math.sin(a)*.2,0,-Math.cos(a)*.2)}}
+    // holo-table (front right)
+    const ht=new THREE.Group();ht.position.set(CX+4.2,0,2.6);G2.add(ht);cyl(1.0,1.15,.75,dark,0,.38,0,ht,48);cyl(1.02,1.02,.04,std(0x5ad1ff,{emissive:0x2a8fbf,emissiveIntensity:.8}),0,.77,0,ht,48);
     const hp=new THREE.Group();hp.position.y=1.7;ht.add(hp);anim.stHolo=hp;hp.add(new THREE.Mesh(new THREE.SphereGeometry(.62,28,18),new THREE.MeshBasicMaterial({color:0x4fe0ff,wireframe:true,transparent:true,opacity:.5,toneMapped:false})));
     const rg=new THREE.Mesh(new THREE.TorusGeometry(.95,.012,6,72),new THREE.MeshBasicMaterial({color:0xb06bff,toneMapped:false}));rg.rotation.x=1.25;hp.add(rg);glow(0x4fe0ff,3,0,1.7,0,.35,ht);
-    for(let i=0;i<4;i++) box(.5,.6,.04,std(0x0f1a2a,{emissive:0x1d6fa0,emissiveIntensity:.5,transparent:true,opacity:.8}),Math.cos(i*1.57)*1.3,1.5,Math.sin(i*1.57)*1.3,ht).rotation.y=-i*1.57+Math.PI/2;
-    // mining racks along the back of the left wall
-    for(let k=0;k<3;k++){const rk=new THREE.Group();rk.position.set(-7.3,0,-4.6+k*1.05);G2.add(rk);box(.9,2.6,.8,dark,0,1.3,0,rk);
-      for(let r=0;r<10;r++) for(let i=0;i<5;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.018,6,6),new THREE.MeshBasicMaterial({color:i%3?0x39ff88:0x5ad1ff}));m.position.set(.46,.3+r*.22,-.3+i*.15);rk.add(m);anim.stLeds.push(m)}}
-    // airlock on the left wall
-    {const al=new THREE.Group();al.position.set(X0+.05,1.6,.1);al.rotation.y=Math.PI/2;G2.add(al);const ring=new THREE.Mesh(new THREE.TorusGeometry(1.15,.12,16,48),steel);al.add(ring);
-      const door=new THREE.Mesh(new THREE.CircleGeometry(1.05,48),std(0xc9ced8,{metalness:.6,roughness:.35}));door.position.z=.01;al.add(door);box(.06,2.1,.02,dark,0,0,.03,al);
-      for(let i=0;i<12;i++){const a=i/12*Math.PI*2;glow(0x5ad1ff,.22,Math.cos(a)*1.15,Math.sin(a)*1.15,.12,.8,al)}}
-    // a shuttle docked outside
-    {const sh=new THREE.Group();sh.position.set(-2.5,4.2,-11);G2.add(sh);anim.stShip=sh;const hull=std(0xdfe3ea,{metalness:.5,roughness:.4});
-      const body=new THREE.Mesh(new THREE.CylinderGeometry(.5,.7,3.2,16),hull);body.rotation.z=Math.PI/2;sh.add(body);const nose=new THREE.Mesh(new THREE.ConeGeometry(.5,1.1,16),hull);nose.rotation.z=-Math.PI/2;nose.position.x=2.15;sh.add(nose);
-      box(1.4,.06,2.6,hull,-.4,0,0,sh);glow(0x5ad1ff,1.6,-1.8,0,0,.6,sh)}
-    // lighting for the station
-    L.st1=new THREE.PointLight(0xf2f6ff,0,24,2);L.st1.position.set(1,6.2,1);G2.add(L.st1);
-    L.st2=new THREE.PointLight(0x5ad1ff,0,8,2);L.st2.position.set(6.4,2.4,2.4);G2.add(L.st2);
+    // mining racks curving round the back left
+    for(let k=0;k<4;k++){const a=Math.PI*1.12+k*.13, rr=R-.9;const rk=new THREE.Group();rk.position.set(CX+Math.cos(a)*rr,0,Math.sin(a)*rr);rk.rotation.y=-a-Math.PI/2;G2.add(rk);box(.85,2.4,.75,dark,0,1.2,0,rk);
+      for(let r=0;r<9;r++) for(let q=0;q<5;q++){const m=new THREE.Mesh(new THREE.SphereGeometry(.018,6,6),new THREE.MeshBasicMaterial({color:q%3?0x39ff88:0x5ad1ff}));m.position.set(-.3+q*.15,.3+r*.22,.39);rk.add(m);anim.stLeds.push(m)}}
+    // lighting
+    L.st1=new THREE.PointLight(0xf2f6ff,0,24,2);L.st1.position.set(CX,HUB-.6,0);G2.add(L.st1);
+    L.st2=new THREE.PointLight(0x5ad1ff,0,8,2);L.st2.position.set(CX+4.2,2.4,2.6);G2.add(L.st2);
     L.stSun=new THREE.DirectionalLight(0xfff1dc,0);L.stSun.position.set(8,9,-14);G2.add(L.stSun);
   }
   function stationOn(){return modernOn>=11}
@@ -3378,7 +3398,7 @@ const Room=(()=>{
     if(nCus!=='rgb'&&anim.armLed&&tierOf('chair')>=2) anim.armLed.color.setHSL(rgbHue(t),1,.6);
     if(!nCus&&anim.ledBack&&tierOf('led')>=2) anim.ledBack.material.color.copy(anim.ledMat.color);
     // penthouse: pool shimmer and fireworks
-    if(modernOn>=11){if(anim.stHolo){anim.stHolo.rotation.y+=dt*.4;anim.stHolo.position.y=1.7+Math.sin(t*1.1)*.05}if(anim.stShip){anim.stShip.position.y=4.2+Math.sin(t*.4)*.15;anim.stShip.rotation.z=Math.sin(t*.3)*.04}anim.stLeds.forEach((m,i)=>{m.visible=Math.sin(t*(4+i%7)+i*1.3)>-.4})}
+    if(modernOn>=11){if(anim.stRing) anim.stRing.rotation.y+=dt*.03; if(anim.stHolo){anim.stHolo.rotation.y+=dt*.4;anim.stHolo.position.y=1.7+Math.sin(t*1.1)*.05}if(anim.stShip){anim.stShip.position.y=1.6+Math.sin(t*.4)*.06;anim.stShip.rotation.z=Math.sin(t*.3)*.04}anim.stLeds.forEach((m,i)=>{m.visible=Math.sin(t*(4+i%7)+i*1.3)>-.4})}
     if(modernOn>=6&&anim.crystals){anim.crystals.rotation.y+=dt*.35;anim.crystals.position.y=5.7+Math.sin(t*.8)*.08}
     if(modernOn>=7&&anim.aqTex) anim.aqTex.offset.x=(anim.aqTex.offset.x+dt*.012)%1;
     if(modernOn>=10&&anim.holo){anim.holo.rotation.y+=dt*.5;anim.holo.position.y=2.4+Math.sin(t*1.2)*.05}
@@ -3391,7 +3411,7 @@ const Room=(()=>{
     if(Math.abs(shiftT-shiftC)>.5){shiftC+=(shiftT-shiftC)*Math.min(1,dt*7);applyView()}
     titleC+=(titleT-titleC)*Math.min(1,dt*1.6);
     const portrait=VW/VH<.8, pent=modernOn>0, tk=titleC;
-    const tgt=modernOn>=11?(portrait?[13,17,34,1,2.6,-1]:[16.5,10.5,19.5,1,1.4,-1.2]):pent?(portrait?[5.4,7.8,17.5,.9,3.4,-.9]:[8.0,6.4,12.2,.3,3.0,-.9]):(portrait?[4.2,4.4,10.0,-.5,1.5,-1.0]:[5.6,3.8,7.8,-.7,1.35,-1.0]);
+    const tgt=modernOn>=11?(portrait?[14,19,37,1,2.4,-1]:[18,12,21,1,1.6,-1.2]):pent?(portrait?[5.4,7.8,17.5,.9,3.4,-.9]:[8.0,6.4,12.2,.3,3.0,-.9]):(portrait?[4.2,4.4,10.0,-.5,1.5,-1.0]:[5.6,3.8,7.8,-.7,1.35,-1.0]);
     if(!anim.cam||anim.snapCam){anim.cam=tgt.slice();anim.snapCam=false} for(let i=0;i<6;i++) anim.cam[i]+=(tgt[i]-anim.cam[i])*Math.min(1,dt*2.2);
     const [bx,by,bz,lx,ly,lz]=anim.cam;
     const tz=portrait?.15:.9, tx=portrait?.35:.9;
