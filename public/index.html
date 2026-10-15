@@ -1668,7 +1668,7 @@ function candlesFromHist(r){const c=[];for(let i=1;i<r.hist.length;i++){const o=
 function fixBroken(){
   if(!G.fixes||typeof G.fixes!=='object') G.fixes={};
   let hit=false;
-  TR.coins.forEach(r=>{if(r.alive&&(!isFinite(r.mc)||r.mc>MC_HARD||/ribbington/i.test(r.name||'')||(r.units>0&&!r.event&&posVal(r)>2e9))){r.mc=isFinite(r.mc)?Math.min(r.mc,MC_HARD):MC_HARD;doRug(r,false);hit=true;
+  TR.coins.forEach(r=>{if(r.alive&&(!isFinite(r.mc)||r.mc>MC_HARD||/ribbington/i.test(r.name||'')||(r.units>0&&!r.event&&posVal(r)>5e11))){r.mc=isFinite(r.mc)?Math.min(r.mc,MC_HARD):MC_HARD;doRug(r,false);hit=true;
     toast('$'+r.ticker+' was rugged. That position is gone.','bad',8000)}});
   if(typeof coin!=='undefined'&&coin&&coin.alive&&(!isFinite(mcapOf(coin))||mcapOf(coin)>MC_HARD||/ribbington/i.test(coin.name||''))){coin.devTokens=0;endCoin('Rugged by the market (broken coin)',false);hit=true}
   if(!G.fixes.cash1&&G.cash>1e10){G.fixes.cash1=Date.now();const was=G.cash;G.cash=2e7;G.peakCash=Math.min(G.peakCash||0,2e7);hit=true;
@@ -1700,6 +1700,8 @@ function trenchBuy(id,amt){
   if(G.cash<amt) return toast('Not enough cash','bad');
   const net=amt*(1-feeRate()), mult=1; if(!r.grad&&r.age<5) r.snipe=true;
   // constant-product pool: price impact is real, but buying then selling straight away gives your money back
+  // big orders find deeper liquidity (more market makers show up), so a whale buy isn't eaten by its own slippage
+  {const need=4*net/Math.max(1,r.mc); if(poolX(r)<need) r.px=need}
   const q=poolBuy(r,net); if(q.mc>MC_HARD*.4) return toast('Order too big. That would push $'+r.ticker+' past '+fmtUSD(MC_HARD*.4)+'. Try a smaller amount.','bad');
   G.cash-=amt; r.units+=q.units*mult; r.cost+=amt; r.mc=q.mc; r.px=q.px; r.hist[r.hist.length-1]=r.mc; if(r.mc>r.ath) r.ath=r.mc; liveCandle(r);
   if(tierOf('neon')) r.boost=4;
