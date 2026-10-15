@@ -659,13 +659,15 @@ const SUB='₀₁₂₃₄₅₆₇₈₉';
 function fmtUSD(n,dp){
   if(!isFinite(n)) return '$0';
   const s=n<0?'-':''; n=Math.abs(n);
+  if(n>=1e15) return s+'$'+(n/1e15).toFixed(n>=1e17?0:1)+' quadrillion';
+  if(n>=1e12) return s+'$'+(n/1e12).toFixed(n>=1e14?0:1)+' trillion';
   if(n>=1e9) return s+'$'+(n/1e9).toFixed(2)+'B';
   if(n>=1e6) return s+'$'+(n/1e6).toFixed(2)+'M';
   if(n>=1e5) return s+'$'+(n/1e3).toFixed(0)+'K';
   if(n>=1e3) return s+'$'+(n/1e3).toFixed(n>=1e4?1:2)+'K';
   return s+'$'+n.toFixed(dp!=null?dp:(n<10?2:0));
 }
-function fmtCash(n){return (n<0?'-$':'$')+Math.round(Math.abs(n)).toLocaleString('en-GB')}
+function fmtCash(n){if(Math.abs(n)>=1e12) return fmtUSD(n);return (n<0?'-$':'$')+Math.round(Math.abs(n)).toLocaleString('en-GB')}
 function fmtPrice(p){
   if(!(p>0)) return '$0';
   if(p<0.001){const e=Math.floor(Math.log10(p));const zeros=-e-1;const sig=Math.round(p*Math.pow(10,-e+3));return '$0.0'+String(zeros).split('').map(d=>SUB[+d]).join('')+sig;}
@@ -711,9 +713,9 @@ const SHOP=[
   {k:'chair',name:'Gaming chair',price:15000,tiers:['Gold','Rose gold','Platinum','Diamond','Black gold'],p:t=>'+'+(4*t)+'% profit on graduated coins',desc:'Whales respect the throne.'},
   {k:'trophy',name:'Trophy shelf',price:25000,tiers:['Bronze cup','Silver cup','Gold cup','Platinum cup','Crystal cup'],p:t=>'+'+(2*t)+'% bonus on winning trades',desc:'Trader of the Year. You gave it to yourself.'},
   {k:'penthouse',name:'Penthouse view',price:60000,tiers:['40th floor','60th floor','80th floor','Sky lounge','Top of the city'],p:t=>'Earn '+(.05*t).toFixed(2)+'% of your bags every minute',desc:'Move up. The skyline outside gets brighter every tier.'},
-  {k:'mansion',name:'Modern penthouse',price:10000000,tiers:['Glass penthouse','Infinity pool','Bar & lights','Gold & marble','Sky palace'],p:t=>'+'+(4*t)+'% bonus on winning trades',desc:'Move out of the bedroom. Full glass wall, a balcony over the city and a proper modern setup.'},
+  {k:'mansion',name:'Modern penthouse',price:10000000,max:10,tiers:['Glass penthouse','Infinity pool','Bar & lights','Gold & marble','Sky palace','Diamond suite','Aquarium wall','Sky garden','Stratosphere','Orbital palace'],p:t=>'+'+(4*t)+'% bonus on winning trades',desc:'Move out of the bedroom. Full glass wall, a balcony over the city and a proper modern setup.'},
 ];
-const TIER_MULT=[0,1,5,25,120,600], MAXT=5, ROMAN=['','I','II','III','IV','V'];
+const TIER_MULT=[0,1,5,25,120,600,3000,15000,75000,375000,2000000], MAXT=5, ROMAN=['','I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const maxT=it=>it.max||MAXT, TOTAL_T=()=>SHOP.reduce((a,x)=>a+maxT(x),0);
 const fridgeCut=t=>Math.min(.8,.15+.15*t), sleuthCut=t=>Math.max(.3,1-.15*t);
 const roomScale=()=>1+.3*tierOf('mansion');
@@ -1671,8 +1673,6 @@ function fixBroken(){
   TR.coins.forEach(r=>{if(r.alive&&(!isFinite(r.mc)||r.mc>MC_HARD||/ribbington/i.test(r.name||'')||(r.units>0&&!r.event&&posVal(r)>5e11))){r.mc=isFinite(r.mc)?Math.min(r.mc,MC_HARD):MC_HARD;doRug(r,false);hit=true;
     toast('$'+r.ticker+' was rugged. That position is gone.','bad',8000)}});
   if(typeof coin!=='undefined'&&coin&&coin.alive&&(!isFinite(mcapOf(coin))||mcapOf(coin)>MC_HARD||/ribbington/i.test(coin.name||''))){coin.devTokens=0;endCoin('Rugged by the market (broken coin)',false);hit=true}
-  if(!G.fixes.cash1&&G.cash>1e10){G.fixes.cash1=Date.now();const was=G.cash;G.cash=2e7;G.peakCash=Math.min(G.peakCash||0,2e7);hit=true;
-    toast('Glitched cash removed ('+fmtUSD(was)+' → '+fmtUSD(G.cash)+').','warn',9000)}
   if(hit){save();saveRun();if(typeof renderAll==='function') renderAll()}
 }
 function normCoins(){TR.coins.forEach(r=>{if(r.alive&&(r.mc>MC_HARD||!isFinite(r.mc))){r.mc=Math.min(r.mc,MC_HARD)||MC_HARD;news('$'+r.ticker+' flew too close to the sun. The dev pulled everything at '+fmtUSD(r.mc)+'.');doRug(r,false);return}if(!r.c||!r.c.length) r.c=candlesFromHist(r);if(r.born==null) r.born=G.tick-(r.age||0)*SUBS;if(!r.ath) r.ath=r.mc;if(r.vol==null) r.vol=0;if(!r.boost) r.boost=0;if(!r.rugIn) r.rugIn=0;if(r.grad==null) r.grad=false})}
@@ -1722,8 +1722,8 @@ function trenchSell(id,frac){
 }
 function riskOf(r){const sc=(r.dev>15?2:r.dev>8?1:0)+(r.locked?0:2)+0;return sc>=4?['HIGH RISK','hi']:sc>=2?['MEDIUM','md']:['LOW RISK','lo']}
 function parseAmt(v){
-  v=String(v||'').trim().toLowerCase().replace(/[$,£\s]/g,''); const m=v.match(/^(\d*\.?\d+)([kmb]?)$/); if(!m) return NaN;
-  return parseFloat(m[1])*({'':1,k:1e3,m:1e6,b:1e9}[m[2]]);
+  v=String(v||'').trim().toLowerCase().replace(/[$,£\s]/g,''); const m=v.match(/^(\d*\.?\d+)([kmbt]?)$/); if(!m) return NaN;
+  return parseFloat(m[1])*({'':1,k:1e3,m:1e6,b:1e9,t:1e12}[m[2]]);
 }
 function askAmount(kick,title,desc,cb,quick){
   openModal(`<div class="kick">${kick}</div><h3>${title}</h3><p>${desc} Type an amount like 750, 25k, 1.5m or 2b.</p>
@@ -2526,7 +2526,7 @@ const Room=(()=>{
   const ok=!!window.THREE; let qEff='high',lowered=false,fpsAcc=0,fpsN=0,fpsT=0,bootT=performance.now(),titleT=0,titleC=0; let R,S,C,canvas,visible=true,shiftT=0,shiftC=0,flashC=null,flashT=0,rugAnim=null,bust=false;
   const scr={}, L={}, groups=[], anim={}, oldRoom=[], tierGroups=[];
   // a group that shows only while an item's tier is between min and max
-  function tg(key,min,max,parent){const g=new THREE.Group();g.visible=false;(parent||S).add(g);tierGroups.push({g,key,min,max:max||9});return g} let modern=null, modernOn=null;
+  function tg(key,min,max,parent){const g=new THREE.Group();g.visible=false;(parent||S).add(g);tierGroups.push({g,key,min,max:max||99});return g} let modern=null, modernOn=null;
   const tagOld=n0=>{for(let i=n0;i<S.children.length;i++) oldRoom.push(S.children[i])};
   const mouse={x:0,y:0};
   function ctex(w,h,draw){const cv=document.createElement('canvas');cv.width=w;cv.height=h;const g=cv.getContext('2d');if(draw) draw(g,w,h);const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return{t,cv,g}}
@@ -2568,6 +2568,22 @@ const Room=(()=>{
       const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;const tg=tmp.getContext('2d');(day?drawSkylineDay:drawSkyline)(tg,w,h,rich);
       g.fillStyle=day?'#5f9fd8':'#070a22';g.fillRect(0,0,w,h);g.drawImage(tmp,0,h*.24);
       const hz=g.createLinearGradient(0,h*.55,0,h);hz.addColorStop(0,day?'rgba(220,235,248,0)':'rgba(120,60,140,0)');hz.addColorStop(1,day?'rgba(220,235,248,.55)':'rgba(120,60,140,.35)');g.fillStyle=hz;g.fillRect(0,0,w,h);return}
+    if(level>=3){ // stratosphere (3) and orbit (4)
+      const sky=g.createLinearGradient(0,0,0,h);
+      if(level===3){sky.addColorStop(0,'#01030c');sky.addColorStop(.55,day?'#0b2a6a':'#060b2a');sky.addColorStop(.72,day?'#3a8fe0':'#16305e')}else{sky.addColorStop(0,'#000004');sky.addColorStop(1,'#03030c')}
+      g.fillStyle=sky;g.fillRect(0,0,w,h);
+      for(let i=0;i<(level===4?520:260);i++){g.fillStyle='rgba(255,255,255,'+rnd(.15,level===4?1:.6)+')';const z=rnd(.8,2);g.fillRect(rnd(0,w),rnd(0,h*(level===4?1:.6)),z,z)}
+      const R=level===3?w*1.6:h*.75, cx=level===3?w*.5:w*.3, cy=level===3?h*.72+R:h*1.02;
+      const halo=g.createRadialGradient(cx,cy,R*.98,cx,cy,R*1.06);halo.addColorStop(0,'rgba(120,190,255,.9)');halo.addColorStop(1,'rgba(120,190,255,0)');g.fillStyle=halo;g.beginPath();g.arc(cx,cy,R*1.06,0,7);g.fill();
+      const eg=g.createRadialGradient(cx-R*.3,cy-R*.4,R*.1,cx,cy,R);eg.addColorStop(0,day?'#3f8fd8':'#0c2a52');eg.addColorStop(.7,day?'#1d5aa0':'#071a36');eg.addColorStop(1,day?'#0e3466':'#030c1c');
+      g.save();g.beginPath();g.arc(cx,cy,R,0,7);g.clip();g.fillStyle=eg;g.fillRect(0,0,w,h);
+      for(let i=0;i<55;i++){g.fillStyle=day?'rgba(70,150,80,.55)':'rgba(20,50,30,.5)';g.beginPath();g.ellipse(cx+rnd(-R,R),cy+rnd(-R,R),rnd(30,160),rnd(15,70),rnd(0,3),0,7);g.fill()}
+      for(let i=0;i<140;i++){g.fillStyle='rgba(255,255,255,'+(day?rnd(.3,.75):rnd(.05,.2))+')';g.beginPath();g.ellipse(cx+rnd(-R,R),cy+rnd(-R,R),rnd(20,110),rnd(6,22),rnd(-.4,.4),0,7);g.fill()}
+      if(!day) for(let i=0;i<700;i++){g.fillStyle=pick(['#ffd27a','#ffb36b','#fff1c2']);g.globalAlpha=rnd(.3,.9);g.fillRect(cx+rnd(-R,R),cy+rnd(-R,R),1.6,1.6)} g.globalAlpha=1;
+      g.restore();
+      if(level===4){const mx=w*.8,my=h*.22,mr=h*.07,mg=g.createRadialGradient(mx-mr*.3,my-mr*.3,0,mx,my,mr);mg.addColorStop(0,'#f2f0e8');mg.addColorStop(1,'#8a8a90');g.fillStyle=mg;g.beginPath();g.arc(mx,my,mr,0,7);g.fill()}
+      if(day){const sx=level===3?w*.82:w*.62,sy=h*.18,sg=g.createRadialGradient(sx,sy,0,sx,sy,h*.2);sg.addColorStop(0,'rgba(255,255,255,1)');sg.addColorStop(.1,'rgba(255,250,230,.8)');sg.addColorStop(1,'rgba(255,240,200,0)');g.fillStyle=sg;g.fillRect(0,0,w,h)}
+      return}
     // above the clouds
     const sky=g.createLinearGradient(0,0,0,h);
     if(day){sky.addColorStop(0,'#3f86d6');sky.addColorStop(.6,'#8ec2ee');sky.addColorStop(1,'#d6ebfa')}else{sky.addColorStop(0,'#050720');sky.addColorStop(.6,'#151a48');sky.addColorStop(1,'#2a2560')}
@@ -2728,6 +2744,29 @@ const Room=(()=>{
       box(1.9,.28,.85,paint,0,.26,0,car);const cab=box(.9,.24,.72,std(0x101018,{metalness:.6,roughness:.1}),-.1,.5,0,car);cab.scale.set(1,1,1);
       box(.5,.06,.86,paint,.72,.38,0,car);for(const [wx,wz] of [[.62,.44],[.62,-.44],[-.62,.44],[-.62,-.44]]){const w=cyl(.16,.16,.12,std(0x0c0c10,{roughness:.6}),wx,.16,wz,car,16);w.rotation.x=Math.PI/2}
       for(const lz of [.3,-.3]){const hl=box(.02,.05,.16,new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false}),.96,.3,lz,car)}glow(0xffd36b,2.2,0,.1,0,.25,car)}
+    // VI: diamond suite: a floating crystal cluster in the double-height space
+    {const g=tg('mansion',6);const cm=new THREE.MeshStandardMaterial({color:0xdff4ff,metalness:.2,roughness:.05,transparent:true,opacity:.72,emissive:0x6fb8ff,emissiveIntensity:.35});
+      const cl=new THREE.Group();cl.position.set(.9,5.7,.4);g.add(cl);anim.crystals=cl;
+      for(let i=0;i<9;i++){const c=new THREE.Mesh(new THREE.OctahedronGeometry(rnd(.12,.32),0),cm);c.position.set(rnd(-.45,.45),rnd(-.4,.4),rnd(-.45,.45));c.rotation.set(rnd(0,3),rnd(0,3),0);c.scale.y=1.6;cl.add(c)}
+      cyl(.004,.004,2.2,std(0xe6ebf5,{metalness:.9,roughness:.2}),.9,6.9,.4,g,6);glow(0x9ad8ff,3.2,.9,5.7,.4,.35,g);
+      L.dia=new THREE.PointLight(0x9ad8ff,0,6,2);L.dia.position.set(.9,5.4,.4);g.add(L.dia)}
+    // VII: aquarium wall on the tall left wall
+    {const g=tg('mansion',7);const aq=ctex(1024,512,(c,w,h)=>{const gr=c.createLinearGradient(0,0,0,h);gr.addColorStop(0,'#0d5c8f');gr.addColorStop(1,'#03203f');c.fillStyle=gr;c.fillRect(0,0,w,h);
+        for(let i=0;i<40;i++){c.fillStyle='rgba(255,255,255,'+rnd(.05,.25)+')';c.beginPath();c.arc(rnd(0,w),rnd(0,h),rnd(2,6),0,7);c.fill()}
+        for(let i=0;i<9;i++){const x=rnd(0,w),y=h-rnd(10,60);c.strokeStyle=pick(['#2f9e5f','#4fbf7a','#1f6e4a']);c.lineWidth=6;c.beginPath();c.moveTo(x,h);c.quadraticCurveTo(x+rnd(-30,30),y-80,x+rnd(-20,20),y-rnd(120,220));c.stroke()}
+        for(let i=0;i<22;i++){const x=rnd(30,w-30),y=rnd(40,h-90),sz=rnd(10,22),col=pick(['#ff9f43','#ffd36b','#ff4fa3','#5ad1ff','#ffffff']);c.fillStyle=col;c.beginPath();c.ellipse(x,y,sz,sz*.55,0,0,7);c.fill();c.beginPath();c.moveTo(x-sz*.8,y);c.lineTo(x-sz*1.6,y-sz*.6);c.lineTo(x-sz*1.6,y+sz*.6);c.fill();c.fillStyle='#000';c.beginPath();c.arc(x+sz*.5,y-sz*.1,2.5,0,7);c.fill()}});
+      aq.t.wrapS=THREE.RepeatWrapping;anim.aqTex=aq.t;const pl=new THREE.Mesh(new THREE.PlaneGeometry(4.2,2.5),new THREE.MeshBasicMaterial({map:aq.t,toneMapped:false}));pl.rotation.y=Math.PI/2;pl.position.set(-3.17,6.05,.8);g.add(pl);
+      const fr=std(0x1a1c22,{metalness:.6,roughness:.3});box(.08,.08,4.36,fr,-3.15,7.33,.8,g);box(.08,.08,4.36,fr,-3.15,4.77,.8,g);box(.08,2.64,.08,fr,-3.15,6.05,-1.38,g);box(.08,2.64,.08,fr,-3.15,6.05,2.98,g);
+      glow(0x3fb8ff,4,-2.9,6.05,.8,.3,g);L.aq=new THREE.PointLight(0x3fb8ff,0,6,2);L.aq.position.set(-2.5,6,.8);g.add(L.aq)}
+    // VIII: sky garden: trees on the balcony and vines spilling off the mezzanine
+    {const g=tg('mansion',8);const lf=std(0x3c8f4a,{roughness:.8,flatShading:true}),lf2=std(0x2f7d5b,{roughness:.8,flatShading:true}),tr=std(0x6b4a2f,{roughness:.9});
+      for(const tx of [-3.3,-1.1,.9]){box(.7,.5,.7,std(0x2a2b30),tx,.25,-4.35,g);cyl(.06,.09,1.4,tr,tx,1.2,-4.35,g,8);for(let i=0;i<10;i++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(rnd(.22,.38),0),i%2?lf:lf2);b.position.set(tx+rnd(-.4,.4),1.9+rnd(-.2,.5),-4.35+rnd(-.4,.4));g.add(b)}}
+      for(let x=-3.7;x<-.7;x+=.28){const len=rnd(.4,1.3);cyl(.012,.012,len,lf2,x,3.68-len/2,2.32,g,5);for(let k=0;k<3;k++){const b=new THREE.Mesh(new THREE.IcosahedronGeometry(.06,0),lf);b.position.set(x+rnd(-.05,.05),3.68-rnd(.1,len),2.33);g.add(b)}}}
+    // X: orbital palace: hologram planet in the middle of the room
+    {const g=tg('mansion',10);const hp=new THREE.Group();hp.position.set(.9,2.4,.6);g.add(hp);anim.holo=hp;
+      hp.add(new THREE.Mesh(new THREE.SphereGeometry(.55,24,16),new THREE.MeshBasicMaterial({color:0x4fe0ff,wireframe:true,transparent:true,opacity:.55,toneMapped:false})));
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.85,.012,6,64),new THREE.MeshBasicMaterial({color:0xb06bff,toneMapped:false}));ring.rotation.x=1.2;hp.add(ring);
+      cyl(.35,.42,.12,std(0x1a1c22,{metalness:.8,roughness:.3}),.9,1.2,.6,g,32);glow(0x4fe0ff,2.6,.9,2.4,.6,.35,g)}
     // V: helipad + hovering helicopter
     {const g=tg('mansion',5);const pad=new THREE.Mesh(new THREE.CircleGeometry(.72,40),new THREE.MeshStandardMaterial({color:0x2b2c33,roughness:.8}));pad.rotation.x=-Math.PI/2;pad.position.set(-2.6,.03,-3.45);g.add(pad);
       const ht=ctex(256,256,(c,w,h)=>{c.clearRect(0,0,w,h);c.strokeStyle='#ffd36b';c.lineWidth=12;c.beginPath();c.arc(128,128,110,0,Math.PI*2);c.stroke();c.fillStyle='#ffffff';c.font='700 150px "Chakra Petch",sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('H',128,138)});
@@ -2935,15 +2974,15 @@ const Room=(()=>{
   function applyModern(tier){
     if(!modern||tier===modernOn) return; modernOn=tier; const on=tier>0;
     if(anim.loft3) anim.loft3.visible=tier>=3;
-    {const lv=tier>=5?2:tier>=3?1:0;if(on&&lv!==anim.cityLv){anim.cityLv=lv;const n=anim.cityNightTex,d=anim.cityDayTex;
+    {const lv=tier>=10?4:tier>=9?3:tier>=5?2:tier>=3?1:0;if(on&&lv!==anim.cityLv){anim.cityLv=lv;const n=anim.cityNightTex,d=anim.cityDayTex;
       drawView(n.g,2048,1024,lv,false,6);n.t.needsUpdate=true;drawView(d.g,2048,1024,lv,true,6);d.t.needsUpdate=true}}
-    anim.mPool.visible=tier>=2; anim.loungers.visible=tier<4; if(anim.rainMesh) anim.rainMesh.visible=!on; anim.mCove.visible=tier>=3; anim.mFw.visible=tier>=5;
+    anim.mPool.visible=tier>=2; anim.loungers.visible=tier<4; if(anim.rainMesh) anim.rainMesh.visible=!on; anim.mCove.visible=tier>=3; anim.mFw.visible=tier>=5&&tier<9;
     L.pool.intensity=tier>=2?1:0; L.cove.intensity=tier>=3?.7:0;
-    const gold=tier>=4; anim.mullMat.color.set(gold?0xc9a14a:0x16171d); anim.mullMat.metalness=gold?.95:.7; anim.mullMat.roughness=gold?.2:.3;
+    const gold=tier>=4; anim.mullMat.color.set(tier>=10?0x7fe8ff:tier>=6?0xe6ebf5:gold?0xc9a14a:0x16171d); anim.mullMat.metalness=gold?.95:.7; anim.mullMat.roughness=gold?.2:.3;
     anim.railMat.color.set(gold?0xd4af37:0xc9ccd6); anim.pendGlass.forEach(g=>g.material.color.set(gold?0xffd98a:0xffe2b8));
     modern.visible=on; oldRoom.forEach(o=>o.visible=!on);
     anim.floor.material.map=!on?anim.woodMap:tier>=4?anim.marble:anim.lightWood; anim.floor.material.roughness=!on?.55:tier>=4?.32:.4; anim.floor.material.metalness=tier>=4?.15:.05; anim.floor.material.needsUpdate=true;
-    if(L.bar) L.bar.intensity=tier>=3?.8:0; if(L.chand) L.chand.intensity=tier>=4?1.2:0;
+    if(L.bar) L.bar.intensity=tier>=3?.8:0; if(L.chand) L.chand.intensity=tier>=4?1.2:0; if(L.dia) L.dia.intensity=tier>=6?1:0; if(L.aq) L.aq.intensity=tier>=7?1.1:0;
     anim.leftMat.color.set(on?0x1f2127:0x241f3c);
     anim.deskMat.color.set(on?0xece8e1:0x3b2a24); anim.drawerMat.color.set(on?0xdcd6cc:0x2f2420);
     L.amb.color.set(on?0x8a90b8:0x3a3468); L.amb.intensity=on?.75:.55; L.hemi.intensity=on?.6:.45; L.moon.intensity=on?.7:.45;
@@ -3268,6 +3307,9 @@ const Room=(()=>{
     if(nCus!=='rgb'&&anim.armLed&&tierOf('chair')>=2) anim.armLed.color.setHSL(rgbHue(t),1,.6);
     if(!nCus&&anim.ledBack&&tierOf('led')>=2) anim.ledBack.material.color.copy(anim.ledMat.color);
     // penthouse: pool shimmer and fireworks
+    if(modernOn>=6&&anim.crystals){anim.crystals.rotation.y+=dt*.35;anim.crystals.position.y=5.7+Math.sin(t*.8)*.08}
+    if(modernOn>=7&&anim.aqTex) anim.aqTex.offset.x=(anim.aqTex.offset.x+dt*.012)%1;
+    if(modernOn>=10&&anim.holo){anim.holo.rotation.y+=dt*.5;anim.holo.position.y=2.4+Math.sin(t*1.2)*.05}
     if(modernOn>=2&&anim.waterMat){anim.waterMat.opacity=.78+Math.sin(t*2.2)*.07;L.pool.intensity=.9+Math.sin(t*1.7)*.15}
     if(modernOn>=5&&anim.fw) anim.fw.forEach(f=>{f.t+=dt;const life=1.6;if(f.t>life+rnd(.2,1.6)){f.t=0;f.x=rnd(-9,11);f.y=rnd(4,8.5)}
       const k=Math.min(1,f.t/life);f.sp.position.set(f.x,f.y-k*.6,-13.5);f.sp.scale.setScalar(.4+k*4.2);f.sp.material.opacity=f.t<life?(1-k)*.85:0});
